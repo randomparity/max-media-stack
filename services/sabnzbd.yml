@@ -1,0 +1,18 @@
+---
+sabnzbd:
+  name: sabnzbd
+  description: "SABnzbd - Usenet Downloader"
+  image: "lscr.io/linuxserver/sabnzbd:latest"
+  publish_ports:
+    - "8080:8080"
+  volumes:
+    - "/home/mms/config/sabnzbd:/config:Z"
+    - "/data:/data"
+  environment:
+    - "PUID={{ mms_uid }}"
+    - "PGID={{ mms_gid }}"
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:8080/api?mode=version || exit 1"
+  health_interval: "60s"
+  backup_type: "sabnzbd"
+  backup_db_files: ["sabnzbd.ini"]

@@ -1,0 +1,9 @@
+---
+# quadlet_service defaults
+
+# Service name must be provided
+# service_name: prowlarr
+
+# Health check wait timeout (seconds)
+quadlet_health_timeout: 120
+quadlet_health_delay: 10

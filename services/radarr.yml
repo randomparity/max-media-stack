@@ -1,0 +1,18 @@
+---
+radarr:
+  name: radarr
+  description: "Radarr - Movie Manager"
+  image: "lscr.io/linuxserver/radarr:latest"
+  publish_ports:
+    - "7878:7878"
+  volumes:
+    - "/home/mms/config/radarr:/config:Z"
+    - "/data:/data"
+  environment:
+    - "PUID={{ mms_uid }}"
+    - "PGID={{ mms_gid }}"
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:7878/ping || exit 1"
+  health_interval: "60s"
+  backup_type: "arr"
+  backup_db_files: ["radarr.db"]

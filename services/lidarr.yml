@@ -1,0 +1,18 @@
+---
+lidarr:
+  name: lidarr
+  description: "Lidarr - Music Manager"
+  image: "lscr.io/linuxserver/lidarr:latest"
+  publish_ports:
+    - "8686:8686"
+  volumes:
+    - "/home/mms/config/lidarr:/config:Z"
+    - "/data:/data"
+  environment:
+    - "PUID={{ mms_uid }}"
+    - "PGID={{ mms_gid }}"
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:8686/ping || exit 1"
+  health_interval: "60s"
+  backup_type: "arr"
+  backup_db_files: ["lidarr.db"]

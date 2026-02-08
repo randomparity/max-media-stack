@@ -1,0 +1,18 @@
+---
+jellyfin:
+  name: jellyfin
+  description: "Jellyfin - Media Server"
+  image: "lscr.io/linuxserver/jellyfin:latest"
+  publish_ports:
+    - "8096:8096"
+  volumes:
+    - "/home/mms/config/jellyfin:/config:Z"
+    - "/data/media:/data/media:ro"
+  environment:
+    - "PUID={{ mms_uid }}"
+    - "PGID={{ mms_gid }}"
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:8096/health || exit 1"
+  health_interval: "60s"
+  backup_type: "jellyfin"
+  backup_db_files: ["jellyfin.db"]
