@@ -262,7 +262,29 @@ vault_proxmox_api_token_secret: "<token-secret-from-step-1>"
 
 ## Backup Encryption with age
 
-MMS encrypts backups using [age](https://age-encryption.org/), a simple file encryption tool. Encryption uses a public key (safe to store in config); decryption requires the corresponding private key (identity file), which should be kept offline or in a secure location — never on the backup server itself.
+MMS encrypts backups using `age`, a simple file encryption tool. Encryption uses a public key (safe to store in config); decryption requires the corresponding private key (identity file), which should be kept offline or in a secure location — never on the backup server itself.
+
+The `age` package is automatically installed on the MMS VM by the backup role. You only need to install it on your **workstation** for key generation and restores.
+
+### Installing age
+
+```bash
+# Fedora / RHEL 9+
+sudo dnf install age
+
+# Ubuntu / Debian (21.04+)
+sudo apt install age
+
+# macOS
+brew install age
+```
+
+This installs two binaries: `age` (encrypt/decrypt) and `age-keygen` (key generation). Verify with:
+
+```bash
+age --version
+age-keygen --version
+```
 
 ### Generating keys
 
