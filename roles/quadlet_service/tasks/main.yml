@@ -13,11 +13,11 @@
 
 - name: Set service variable
   ansible.builtin.set_fact:
-    service: "{{ lookup('vars', service_name) }}"
+    quadlet_service_def: "{{ lookup('vars', service_name) }}"
 
 - name: Create config directory
   ansible.builtin.file:
-    path: "{{ mms_config_dir }}/{{ service.name }}"
+    path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}"
     state: directory
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
@@ -27,10 +27,10 @@
 - name: Deploy environment file
   ansible.builtin.copy:
     content: |
-      {% for env in service.environment %}
+      {% for env in quadlet_service_def.environment %}
       {{ env }}
       {% endfor %}
-    dest: "{{ mms_config_dir }}/{{ service.name }}/{{ service.name }}.env"
+    dest: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ quadlet_service_def.name }}.env"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
     mode: "0600"
@@ -40,7 +40,7 @@
 - name: Deploy container quadlet
   ansible.builtin.template:
     src: "{{ playbook_dir }}/../templates/quadlet/container.j2"
-    dest: "{{ mms_quadlet_dir }}/{{ service.name }}.container"
+    dest: "{{ mms_quadlet_dir }}/{{ quadlet_service_def.name }}.container"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
     mode: "0644"
@@ -54,7 +54,7 @@
 
 - name: Enable and start service
   ansible.builtin.systemd:
-    name: "{{ service.name }}.service"
+    name: "{{ quadlet_service_def.name }}.service"
     enabled: true
     state: started
     scope: user
@@ -65,13 +65,13 @@
 - name: Wait for service health check
   ansible.builtin.command:
     cmd: >-
-      podman healthcheck run {{ service.name }}
-  register: health_result
-  until: health_result.rc == 0
-  retries: "{{ (quadlet_health_timeout / quadlet_health_delay) | int }}"
-  delay: "{{ quadlet_health_delay }}"
+      podman healthcheck run {{ quadlet_service_def.name }}
+  register: quadlet_service_health_result
+  until: quadlet_service_health_result.rc == 0
+  retries: "{{ (quadlet_service_health_timeout / quadlet_service_health_delay) | int }}"
+  delay: "{{ quadlet_service_health_delay }}"
   changed_when: false
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
-  when: service.health_cmd is defined
+  when: quadlet_service_def.health_cmd is defined

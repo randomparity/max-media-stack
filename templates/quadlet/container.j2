@@ -1,30 +1,30 @@
 {{ ansible_managed | comment }}
 
 [Unit]
-Description={{ service.description }}
+Description={{ quadlet_service_def.description }}
 After=network-online.target
-{% if service.after is defined %}
-{% for dep in service.after %}
+{% if quadlet_service_def.after is defined %}
+{% for dep in quadlet_service_def.after %}
 After={{ dep }}
 {% endfor %}
 {% endif %}
 
 [Container]
-Image={{ service.image }}
+Image={{ quadlet_service_def.image }}
 Network={{ mms_network_name }}.network
-{% for port in service.publish_ports %}
+{% for port in quadlet_service_def.publish_ports %}
 PublishPort={{ port }}
 {% endfor %}
-{% for vol in service.volumes %}
+{% for vol in quadlet_service_def.volumes %}
 Volume={{ vol }}
 {% endfor %}
-EnvironmentFile={{ mms_config_dir }}/{{ service.name }}/{{ service.name }}.env
-{% if service.health_cmd is defined %}
-HealthCmd={{ service.health_cmd }}
-HealthInterval={{ service.health_interval | default('60s') }}
+EnvironmentFile={{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ quadlet_service_def.name }}.env
+{% if quadlet_service_def.health_cmd is defined %}
+HealthCmd={{ quadlet_service_def.health_cmd }}
+HealthInterval={{ quadlet_service_def.health_interval | default('60s') }}
 {% endif %}
-{% if service.secrets is defined %}
-{% for secret in service.secrets %}
+{% if quadlet_service_def.secrets is defined %}
+{% for secret in quadlet_service_def.secrets %}
 Secret={{ secret }}
 {% endfor %}
 {% endif %}
