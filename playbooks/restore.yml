@@ -32,7 +32,7 @@
       when: backup_file is match('.*\\.age$')
 
   tasks:
-    - name: Restore standard service
+    - name: Restore standard service  # noqa: no-relative-paths
       ansible.builtin.include_tasks:
         file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
       vars:
@@ -42,7 +42,7 @@
         _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
       when: service_name in ['prowlarr', 'radarr', 'sonarr', 'lidarr', 'jellyfin']
 
-    - name: Restore sabnzbd
+    - name: Restore sabnzbd  # noqa: no-relative-paths
       ansible.builtin.include_tasks:
         file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
       vars:
@@ -52,7 +52,7 @@
         _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}/sabnzbd"
       when: service_name == 'sabnzbd'
 
-    - name: Restore immich database
+    - name: Restore immich database  # noqa: no-relative-paths
       ansible.builtin.include_tasks:
         file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
       vars:
@@ -64,7 +64,7 @@
           podman exec -i immich-postgres psql -U postgres
       when: service_name == 'immich' and 'db' in backup_file
 
-    - name: Restore immich config
+    - name: Restore immich config  # noqa: no-relative-paths
       ansible.builtin.include_tasks:
         file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
       vars:

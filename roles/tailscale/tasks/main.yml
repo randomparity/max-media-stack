@@ -36,6 +36,7 @@
       tailscale up
       --authkey={{ tailscale_auth_key }}
       --hostname={{ tailscale_hostname }}
+  changed_when: true
   when: _tailscale_needs_auth | bool
   no_log: true
 
@@ -46,7 +47,7 @@
     mode: "0755"
   register: _tailscale_serve_script
 
-- name: Run tailscale serve configuration
+- name: Run tailscale serve configuration  # noqa: no-handler
   ansible.builtin.command:
     cmd: "{{ tailscale_serve_script }}"
   register: _tailscale_serve

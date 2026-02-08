@@ -31,6 +31,7 @@
     cmd: >-
       podman cp /tmp/immich-migration-dump.sql
       {{ migrate_immich_target_db_container }}:/tmp/immich-migration-dump.sql
+  changed_when: true
   become: true
   become_user: "{{ migrate_user }}"
 
