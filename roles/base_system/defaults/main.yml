@@ -6,6 +6,8 @@ base_system_timezone: "{{ mms_timezone }}"
 base_system_hostname: "{{ mms_vm_name }}"
 
 base_system_packages:
+  - qemu-guest-agent
+  - container-selinux
   - nfs-utils
   - cifs-utils
   - age
@@ -13,7 +15,7 @@ base_system_packages:
   - sqlite
 
 base_system_seboolean:
-  - name: container_use_nfs
+  - name: virt_use_nfs
     state: true
   - name: container_manage_cgroup
     state: true

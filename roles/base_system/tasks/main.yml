@@ -19,10 +19,27 @@
     cmd: loginctl enable-linger {{ base_system_user }}
     creates: /var/lib/systemd/linger/{{ base_system_user }}
 
+- name: Wait for cloud-init to finish
+  ansible.builtin.command:
+    cmd: cloud-init status --wait
+  changed_when: false
+  failed_when: false
+
+- name: Clean stale dnf cache
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: true
+
 - name: Install required packages
   ansible.builtin.dnf:
     name: "{{ base_system_packages }}"
     state: present
+
+- name: Enable and start QEMU guest agent
+  ansible.builtin.systemd:
+    name: qemu-guest-agent
+    enabled: true
+    state: started
 
 - name: Set timezone
   community.general.timezone:
