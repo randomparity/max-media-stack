@@ -1,0 +1,6 @@
+---
+# Encrypt this file with: ansible-vault encrypt inventory/group_vars/all/vault.yml
+#
+# vault_tailscale_auth_key: "tskey-auth-..."
+# vault_immich_db_password: "changeme"
+# vault_backup_age_public_key: "age1..."

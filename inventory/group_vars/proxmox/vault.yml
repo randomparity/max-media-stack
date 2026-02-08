@@ -1,0 +1,5 @@
+---
+# Encrypt this file with: ansible-vault encrypt inventory/group_vars/proxmox/vault.yml
+#
+# vault_proxmox_api_user: "ansible@pam!mms"
+# vault_proxmox_api_token_secret: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

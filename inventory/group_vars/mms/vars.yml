@@ -1,0 +1,47 @@
+---
+# MMS VM specifications
+mms_vm_id: 200
+mms_vm_name: mms
+mms_vm_ip: 192.168.1.200
+mms_vm_gateway: 192.168.1.1
+mms_vm_cidr: 24
+mms_vm_cores: 4
+mms_vm_memory: 8192
+mms_vm_disk_size: 50G
+mms_vm_bridge: vmbr0
+mms_vm_nameserver: 192.168.1.1
+
+# SSH public key for cloud-init
+mms_vm_ssh_pubkey: "" # Set to your SSH public key
+
+# NFS mounts from TrueNAS
+mms_nfs_server: 192.168.1.50
+mms_nfs_mounts:
+  - src: "{{ mms_nfs_server }}:/mnt/tank/media"
+    dest: /data/media
+    opts: "rw,hard,intr,_netdev,nfsvers=4"
+  - src: "{{ mms_nfs_server }}:/mnt/tank/usenet"
+    dest: /data/usenet
+    opts: "rw,hard,intr,_netdev,nfsvers=4"
+  - src: "{{ mms_nfs_server }}:/mnt/tank/photos"
+    dest: /data/photos
+    opts: "rw,hard,intr,_netdev,nfsvers=4"
+
+# Services to deploy (matches filenames in services/)
+mms_services:
+  - prowlarr
+  - radarr
+  - sonarr
+  - lidarr
+  - sabnzbd
+  - jellyfin
+
+# Tailscale serve mappings (service_name: port)
+mms_tailscale_serve:
+  prowlarr: 9696
+  radarr: 7878
+  sonarr: 8989
+  lidarr: 8686
+  sabnzbd: 8080
+  jellyfin: 443
+  immich: 2283
