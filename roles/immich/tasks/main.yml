@@ -33,10 +33,7 @@
 
 - name: Determine if secret needs update
   ansible.builtin.set_fact:
-    _immich_secret_needs_update: >-
-      {{ _immich_secret_inspect.rc != 0
-         or _immich_stored_hash is failed
-         or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash }}
+    _immich_secret_needs_update: "{{ _immich_secret_inspect.rc != 0 or _immich_stored_hash is failed or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash }}"
 
 - name: Remove existing secret
   ansible.builtin.command:

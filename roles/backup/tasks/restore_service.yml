@@ -10,12 +10,14 @@
     name: "{{ _restore_service }}"
     state: stopped
     scope: user
+  environment: "{{ mms_systemd_env }}"
   when: _restore_service | length > 0
 
 - name: "Decrypt {{ _restore_label }} backup"
   ansible.builtin.command:
     cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-{{ _restore_label }}.{{ _restore_tmp_ext }} {{ backup_file }}"
-  when: backup_file is match('.*\.age$')
+  changed_when: true
+  when: backup_file is match('.*\.age$') and not ansible_check_mode
 
 - name: "Set {{ _restore_label }} restore file path"
   ansible.builtin.set_fact:
@@ -24,12 +26,15 @@
 - name: "Restore {{ _restore_label }}"
   ansible.builtin.shell:  # noqa: command-instead-of-shell
     cmd: "{{ _restore_cmd }}"
+  changed_when: true
+  when: not ansible_check_mode
 
 - name: "Start {{ _restore_label }} service"
   ansible.builtin.systemd:
     name: "{{ _restore_service }}"
     state: started
     scope: user
+  environment: "{{ mms_systemd_env }}"
   when: _restore_service | length > 0
 
 - name: "Clean up {{ _restore_label }} temp file"
