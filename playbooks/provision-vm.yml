@@ -1,4 +1,83 @@
 ---
+- name: Ensure Fedora cloud image template exists on Proxmox
+  hosts: proxmox
+  gather_facts: false
+
+  pre_tasks:
+    - name: Check if template VM exists
+      community.proxmox.proxmox_vm_info:
+        api_host: "{{ proxmox_api_host }}"
+        api_port: "{{ proxmox_api_port }}"
+        api_user: "{{ vault_proxmox_api_user }}"
+        api_token_id: "{{ vault_proxmox_api_user }}"
+        api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ proxmox_template_vmid }}"
+      register: _template_info
+      failed_when: false
+
+    - name: Set template exists fact
+      ansible.builtin.set_fact:
+        _template_exists: "{{ _template_info.proxmox_vms is defined and _template_info.proxmox_vms | length > 0 }}"
+
+  tasks:
+    - name: Download Fedora cloud image
+      ansible.builtin.get_url:
+        url: "{{ proxmox_cloud_image_url }}"
+        dest: "/tmp/{{ proxmox_cloud_image_filename }}"
+        mode: "0644"
+      delegate_to: "{{ proxmox_api_host }}"
+      when: not _template_exists
+
+    - name: Create template VM
+      ansible.builtin.command:
+        cmd: >-
+          qm create {{ proxmox_template_vmid }}
+          --name {{ proxmox_template_name }}
+          --memory 2048
+          --cores 2
+          --net0 virtio,bridge={{ mms_vm_bridge }}
+          --scsihw virtio-scsi-pci
+      delegate_to: "{{ proxmox_api_host }}"
+      changed_when: true
+      when: not _template_exists
+
+    - name: Import cloud image disk to template
+      ansible.builtin.command:
+        cmd: >-
+          qm set {{ proxmox_template_vmid }}
+          --scsi0 {{ proxmox_storage }}:0,import-from=/tmp/{{ proxmox_cloud_image_filename }}
+      delegate_to: "{{ proxmox_api_host }}"
+      changed_when: true
+      when: not _template_exists
+
+    - name: Configure template for cloud-init
+      ansible.builtin.command:
+        cmd: >-
+          qm set {{ proxmox_template_vmid }}
+          --ide2 {{ proxmox_storage }}:cloudinit
+          --boot order=scsi0
+          --serial0 socket
+          --vga serial0
+          --agent enabled=1
+      delegate_to: "{{ proxmox_api_host }}"
+      changed_when: true
+      when: not _template_exists
+
+    - name: Convert VM to template
+      ansible.builtin.command:
+        cmd: qm template {{ proxmox_template_vmid }}
+      delegate_to: "{{ proxmox_api_host }}"
+      changed_when: true
+      when: not _template_exists
+
+    - name: Clean up downloaded image
+      ansible.builtin.file:
+        path: "/tmp/{{ proxmox_cloud_image_filename }}"
+        state: absent
+      delegate_to: "{{ proxmox_api_host }}"
+      when: not _template_exists
+
 - name: Provision MMS VM on Proxmox
   hosts: proxmox
   gather_facts: false

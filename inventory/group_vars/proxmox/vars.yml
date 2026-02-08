@@ -9,3 +9,7 @@ proxmox_iso_storage: cola-vm-iso
 # VM template
 proxmox_template_name: fedora-cloud
 proxmox_template_vmid: 9000
+
+# Fedora cloud image for template creation
+proxmox_cloud_image_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/41/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2"
+proxmox_cloud_image_filename: "Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2"
