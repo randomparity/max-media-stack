@@ -146,13 +146,13 @@ This will:
 /data/                          # NFS from TrueNAS
 ├── media/
 │   ├── movies/                 # Radarr library
-│   ├── tv/                     # Sonarr library
+│   ├── series/                  # Sonarr library
 │   └── music/                  # Lidarr library
 ├── usenet/
 │   ├── incomplete/             # SABnzbd in-progress
 │   └── complete/
 │       ├── movies/             # Completed movie downloads
-│       ├── tv/                 # Completed TV downloads
+│       ├── series/              # Completed TV downloads
 │       └── music/              # Completed music downloads
 └── photos/                     # Immich uploads
 
