@@ -28,4 +28,4 @@ mms_systemd_env:
 mms_ansible_user: dave
 
 # Backup encryption
-mms_backup_age_public_key: "" # Set in vault or override
+mms_backup_age_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfM/NNXzwgAWWSHDhrxCKDoAJaav+ovtr28YU0Ykxz"  # Set in vault or override
