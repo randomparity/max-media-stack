@@ -1,0 +1,39 @@
+---
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ansible ansible-lint yamllint
+
+      - name: Install Galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Create dummy vault password file
+        run: echo "dummy" > /tmp/vault_pass_mms
+
+      - name: Run yamllint
+        run: yamllint .
+        env:
+          ANSIBLE_VAULT_PASSWORD_FILE: /tmp/vault_pass_mms
+
+      - name: Run ansible-lint
+        run: ansible-lint playbooks/ roles/
+        env:
+          ANSIBLE_VAULT_PASSWORD_FILE: /tmp/vault_pass_mms
