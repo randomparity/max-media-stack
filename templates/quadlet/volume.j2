@@ -1,0 +1,12 @@
+{{ ansible_managed | comment }}
+
+[Volume]
+VolumeName={{ volume_name }}
+{% if volume_driver is defined %}
+Driver={{ volume_driver }}
+{% endif %}
+{% if volume_options is defined %}
+{% for opt in volume_options %}
+Options={{ opt }}
+{% endfor %}
+{% endif %}

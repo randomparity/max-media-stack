@@ -1,0 +1,46 @@
+---
+- name: Create Podman config directory
+  ansible.builtin.file:
+    path: "{{ mms_home }}/.config/containers"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy registries.conf
+  ansible.builtin.template:
+    src: registries.conf.j2
+    dest: "{{ mms_home }}/.config/containers/registries.conf"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+
+- name: Deploy storage.conf
+  ansible.builtin.template:
+    src: storage.conf.j2
+    dest: "{{ mms_home }}/.config/containers/storage.conf"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+
+- name: Create quadlet directory
+  ansible.builtin.file:
+    path: "{{ mms_quadlet_dir }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy mms.network quadlet
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/../templates/quadlet/network.j2"
+    dest: "{{ mms_quadlet_dir }}/mms.network"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Reload systemd user daemon

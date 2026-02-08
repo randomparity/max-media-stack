@@ -1,0 +1,10 @@
+---
+- name: Reload systemd user daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"

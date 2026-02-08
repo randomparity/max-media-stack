@@ -1,0 +1,10 @@
+---
+# Podman configuration defaults
+
+podman_registries:
+  - docker.io
+  - ghcr.io
+  - lscr.io
+
+podman_storage_root: "/home/{{ mms_user }}/.local/share/containers/storage"
+podman_storage_driver: overlay
