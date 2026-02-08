@@ -2,6 +2,7 @@
 - name: Ensure Fedora cloud image template exists on Proxmox
   hosts: proxmox
   gather_facts: false
+  connection: local
 
   pre_tasks:
     - name: Check if template VM exists
@@ -27,6 +28,8 @@
         dest: "/tmp/{{ proxmox_cloud_image_filename }}"
         mode: "0644"
       delegate_to: "{{ proxmox_api_host }}"
+      vars:
+        ansible_connection: ssh
       when: not _template_exists
 
     - name: Create template VM
@@ -39,6 +42,8 @@
           --net0 virtio,bridge={{ mms_vm_bridge }}
           --scsihw virtio-scsi-pci
       delegate_to: "{{ proxmox_api_host }}"
+      vars:
+        ansible_connection: ssh
       changed_when: true
       when: not _template_exists
 
@@ -48,6 +53,8 @@
           qm set {{ proxmox_template_vmid }}
           --scsi0 {{ proxmox_storage }}:0,import-from=/tmp/{{ proxmox_cloud_image_filename }}
       delegate_to: "{{ proxmox_api_host }}"
+      vars:
+        ansible_connection: ssh
       changed_when: true
       when: not _template_exists
 
@@ -61,6 +68,8 @@
           --vga serial0
           --agent enabled=1
       delegate_to: "{{ proxmox_api_host }}"
+      vars:
+        ansible_connection: ssh
       changed_when: true
       when: not _template_exists
 
@@ -68,6 +77,8 @@
       ansible.builtin.command:
         cmd: qm template {{ proxmox_template_vmid }}
       delegate_to: "{{ proxmox_api_host }}"
+      vars:
+        ansible_connection: ssh
       changed_when: true
       when: not _template_exists
 
@@ -76,6 +87,8 @@
         path: "/tmp/{{ proxmox_cloud_image_filename }}"
         state: absent
       delegate_to: "{{ proxmox_api_host }}"
+      vars:
+        ansible_connection: ssh
       when: not _template_exists
 
 - name: Provision MMS VM on Proxmox
