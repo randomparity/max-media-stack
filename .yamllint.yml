@@ -4,6 +4,8 @@ extends: default
 ignore:
   - .venv/
   - collections/
+  - "**/vault.yml"
+  - "**/vault_*.yml"
 
 rules:
   line-length:
