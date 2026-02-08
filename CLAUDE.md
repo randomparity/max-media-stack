@@ -62,5 +62,5 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Variables prefixed with `mms_` for global, `vault_` for secrets
 - Roles use `defaults/main.yml` for overridable defaults
 - Handlers used for service restarts and daemon-reload
-- SELinux: `:Z` for local config volumes, no labels for NFS (uses `container_use_nfs` boolean)
+- SELinux: `:Z` for local config volumes, no labels for NFS (uses `virt_use_nfs` boolean)
 - All services join the shared `mms.network` for inter-container DNS

@@ -13,59 +13,67 @@
 
     - name: Set template exists fact
       ansible.builtin.set_fact:
-        _template_exists: "{{ _template_check.rc == 0 }}"
+        _template_exists: "{{ (_template_check.rc == 0) | bool }}"
 
   tasks:
-    - name: Download Fedora cloud image
-      ansible.builtin.get_url:
-        url: "{{ proxmox_cloud_image_url }}"
-        dest: "/tmp/{{ proxmox_cloud_image_filename }}"
-        mode: "0644"
+    - name: Create Fedora cloud image template
       when: not _template_exists
+      block:
+        - name: Download Fedora cloud image
+          ansible.builtin.get_url:
+            url: "{{ proxmox_cloud_image_url }}"
+            dest: "/tmp/{{ proxmox_cloud_image_filename }}"
+            mode: "0644"
 
-    - name: Create template VM
-      ansible.builtin.command:
-        cmd: >-
-          qm create {{ proxmox_template_vmid }}
-          --name {{ proxmox_template_name }}
-          --memory 2048
-          --cores 2
-          --net0 virtio,bridge={{ mms_vm_bridge }}{% if mms_vm_vlan is defined and mms_vm_vlan %},tag={{ mms_vm_vlan }}{% endif %}
-          --scsihw virtio-scsi-pci
-      changed_when: true
-      when: not _template_exists
+        - name: Create template VM
+          ansible.builtin.command:
+            cmd: >-
+              qm create {{ proxmox_template_vmid }}
+              --name {{ proxmox_template_name }}
+              --memory 2048
+              --cores 2
+              --net0 virtio,bridge={{ mms_vm_bridge }}{% if mms_vm_vlan is defined and mms_vm_vlan %},tag={{ mms_vm_vlan }}{% endif %}
+              --scsihw virtio-scsi-pci
+          changed_when: true
 
-    - name: Import cloud image disk to template
-      ansible.builtin.command:
-        cmd: >-
-          qm set {{ proxmox_template_vmid }}
-          --scsi0 {{ proxmox_storage }}:0,import-from=/tmp/{{ proxmox_cloud_image_filename }}
-      changed_when: true
-      when: not _template_exists
+        - name: Import cloud image disk to template
+          ansible.builtin.command:
+            cmd: >-
+              qm set {{ proxmox_template_vmid }}
+              --scsi0 {{ proxmox_storage }}:0,import-from=/tmp/{{ proxmox_cloud_image_filename }}
+          changed_when: true
 
-    - name: Configure template for cloud-init
-      ansible.builtin.command:
-        cmd: >-
-          qm set {{ proxmox_template_vmid }}
-          --ide2 {{ proxmox_storage }}:cloudinit
-          --boot order=scsi0
-          --serial0 socket
-          --vga serial0
-          --agent enabled=1
-      changed_when: true
-      when: not _template_exists
+        - name: Configure template for cloud-init
+          ansible.builtin.command:
+            cmd: >-
+              qm set {{ proxmox_template_vmid }}
+              --ide2 {{ proxmox_storage }}:cloudinit
+              --boot order=scsi0
+              --serial0 socket
+              --vga serial0
+              --agent enabled=1
+          changed_when: true
 
-    - name: Convert VM to template
-      ansible.builtin.command:
-        cmd: qm template {{ proxmox_template_vmid }}
-      changed_when: true
-      when: not _template_exists
+        - name: Convert VM to template
+          ansible.builtin.command:
+            cmd: qm template {{ proxmox_template_vmid }}
+          changed_when: true
 
-    - name: Clean up downloaded image
-      ansible.builtin.file:
-        path: "/tmp/{{ proxmox_cloud_image_filename }}"
-        state: absent
-      when: not _template_exists
+      rescue:
+        - name: Clean up failed template VM
+          ansible.builtin.command:
+            cmd: qm destroy {{ proxmox_template_vmid }} --purge
+          failed_when: false
+
+        - name: Re-raise failure
+          ansible.builtin.fail:
+            msg: "Template creation failed. Partial VM cleaned up."
+
+      always:
+        - name: Clean up downloaded image
+          ansible.builtin.file:
+            path: "/tmp/{{ proxmox_cloud_image_filename }}"
+            state: absent
 
 - name: Provision MMS VM on Proxmox
   hosts: proxmox

@@ -6,12 +6,12 @@
     - name: Create mms group
       ansible.builtin.group:
         name: mms
-        gid: 1100
+        gid: 3000
 
     - name: Create mms user
       ansible.builtin.user:
         name: mms
-        uid: 1100
+        uid: 3000
         group: mms
 
     - name: Create quadlet directory

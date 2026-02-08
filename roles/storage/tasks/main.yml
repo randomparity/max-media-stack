@@ -14,6 +14,9 @@
     state: mounted
   loop: "{{ storage_nfs_mounts }}"
 
+# NFS directories: use become_user instead of owner/group/mode because
+# NFS root_squash prevents root from setting file attributes.
+# The mms user creates directories with its default umask.
 - name: Create TRaSH-guide media directories
   ansible.builtin.file:
     path: "{{ storage_data_dir }}/media/{{ item }}"

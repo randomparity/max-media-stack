@@ -33,7 +33,7 @@
 
 - name: Determine if secret needs update
   ansible.builtin.set_fact:
-    _immich_secret_needs_update: "{{ _immich_secret_inspect.rc != 0 or _immich_stored_hash is failed or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash }}"
+    _immich_secret_needs_update: "{{ (_immich_secret_inspect.rc != 0 or _immich_stored_hash is failed or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash) | bool }}"
 
 - name: Remove existing secret
   ansible.builtin.command:
@@ -41,7 +41,7 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
-  when: _immich_secret_needs_update and _immich_secret_inspect.rc == 0
+  when: (_immich_secret_needs_update | bool) and _immich_secret_inspect.rc == 0
   no_log: true
 
 - name: Create Immich DB password secret
@@ -50,7 +50,7 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env | combine({'IMMICH_DB_PASSWORD': vault_immich_db_password}) }}"
-  when: _immich_secret_needs_update
+  when: _immich_secret_needs_update | bool
   no_log: true
 
 - name: Store password hash
@@ -61,7 +61,7 @@
     group: "{{ mms_user }}"
     mode: "0600"
   become: true
-  when: _immich_secret_needs_update
+  when: _immich_secret_needs_update | bool
 
 - name: Deploy Immich environment file
   ansible.builtin.template:
