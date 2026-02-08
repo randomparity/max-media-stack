@@ -2,13 +2,18 @@
 profile: moderate
 
 warn_list:
+  # Vault password file not present in CI/dev environments
   - internal-error
+  # Podman/rsync operations have no equivalent Ansible module
   - command-instead-of-module
+  # Migrate role uses "service - Task" naming pattern for clarity
   - name[casing]
   - name[template]
+  # Acceptable in migrate/backup roles that use short-lived internal vars
   - no-changed-when
   - no-handler
   - no-relative-paths
+  # Migrate role internal vars use _prefix convention instead of role prefix
   - var-naming[no-role-prefix]
   - yaml[line-length]
 
@@ -17,5 +22,7 @@ exclude_paths:
   - collections/
   - .github/
   - .cache/
+  - "*/vault.yml"
+  - "*/vault_*.yml"
 
 offline: true
