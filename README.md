@@ -66,14 +66,28 @@ Edit the following files with your environment details:
 
 ### 3. Configure secrets
 
-The vault files are already encrypted in the repository. To edit them, first create a vault password file, then use `ansible-vault edit` to decrypt each file in your `$EDITOR`, make changes, and re-encrypt on save.
+First, create a vault password file:
 
 ```bash
-# Create vault password file
 echo 'your-vault-password' > ~/.vault_pass_mms
 chmod 0600 ~/.vault_pass_mms
+```
 
-# Edit each vault file — uncomment the placeholders and fill in real values
+**Fresh install** — the vault files contain commented-out placeholders in plain text. Edit them with your values, then encrypt:
+
+```bash
+# Edit the plaintext vault files with your real values
+$EDITOR inventory/group_vars/proxmox/vault.yml
+$EDITOR inventory/group_vars/all/vault.yml
+
+# Encrypt them
+ansible-vault encrypt inventory/group_vars/proxmox/vault.yml
+ansible-vault encrypt inventory/group_vars/all/vault.yml
+```
+
+**Already encrypted** — if the vault files have been encrypted previously, use `ansible-vault edit` to decrypt in your `$EDITOR`, make changes, and re-encrypt on save:
+
+```bash
 ansible-vault edit inventory/group_vars/proxmox/vault.yml
 ansible-vault edit inventory/group_vars/all/vault.yml
 ```
