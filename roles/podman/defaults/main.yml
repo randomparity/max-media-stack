@@ -1,6 +1,9 @@
 ---
 # Podman configuration defaults
 
+podman_packages:
+  - podman
+
 podman_registries:
   - docker.io
   - ghcr.io

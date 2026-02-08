@@ -1,4 +1,10 @@
 ---
+- name: Install Podman packages
+  ansible.builtin.dnf:
+    name: "{{ podman_packages }}"
+    state: present
+  become: true
+
 - name: Create Podman config directory
   ansible.builtin.file:
     path: "{{ mms_home }}/.config/containers"
