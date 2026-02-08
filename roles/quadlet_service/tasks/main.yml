@@ -3,6 +3,14 @@
   ansible.builtin.include_vars:
     file: "{{ playbook_dir }}/../services/{{ service_name }}.yml"
 
+- name: Validate service definition key matches service_name
+  ansible.builtin.assert:
+    that:
+      - lookup('vars', service_name, default='__missing__') != '__missing__'
+    fail_msg: >-
+      Service definition file services/{{ service_name }}.yml does not contain
+      a top-level key '{{ service_name }}'. Check the file contents.
+
 - name: Set service variable
   ansible.builtin.set_fact:
     service: "{{ lookup('vars', service_name) }}"
