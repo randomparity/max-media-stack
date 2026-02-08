@@ -1,0 +1,27 @@
+---
+# Proxmox API connection
+proxmox_vm_api_host: "{{ proxmox_api_host }}"
+proxmox_vm_api_port: "{{ proxmox_api_port | default(8006) }}"
+proxmox_vm_api_user: "{{ vault_proxmox_api_user }}"
+proxmox_vm_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+proxmox_vm_node: "{{ proxmox_node }}"
+proxmox_vm_storage: "{{ proxmox_storage }}"
+
+# VM settings
+proxmox_vm_id: "{{ mms_vm_id }}"
+proxmox_vm_name: "{{ mms_vm_name }}"
+proxmox_vm_cores: "{{ mms_vm_cores }}"
+proxmox_vm_memory: "{{ mms_vm_memory }}"
+proxmox_vm_disk_size: "{{ mms_vm_disk_size }}"
+proxmox_vm_bridge: "{{ mms_vm_bridge }}"
+
+# Cloud-init
+proxmox_vm_ciuser: "{{ mms_ansible_user }}"
+proxmox_vm_ssh_pubkey: "{{ mms_vm_ssh_pubkey }}"
+proxmox_vm_ip: "{{ mms_vm_ip }}"
+proxmox_vm_cidr: "{{ mms_vm_cidr }}"
+proxmox_vm_gateway: "{{ mms_vm_gateway }}"
+proxmox_vm_nameserver: "{{ mms_vm_nameserver }}"
+
+# Timeouts
+proxmox_vm_ssh_timeout: 300

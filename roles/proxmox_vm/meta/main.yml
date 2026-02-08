@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: proxmox_vm
+  author: MMS
+  description: Provision a Proxmox VM from a cloud-init template
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Fedora
+      versions:
+        - all
+
+dependencies: []
