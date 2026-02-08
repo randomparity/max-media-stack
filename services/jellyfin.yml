@@ -2,7 +2,7 @@
 jellyfin:
   name: jellyfin
   description: "Jellyfin - Media Server"
-  image: "lscr.io/linuxserver/jellyfin:latest"
+  image: "lscr.io/linuxserver/jellyfin:10.11.6ubu2404-ls19"
   publish_ports:
     - "8096:8096"
   volumes:
