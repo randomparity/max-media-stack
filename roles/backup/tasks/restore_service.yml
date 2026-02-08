@@ -1,0 +1,39 @@
+---
+# Common restore task file, included via include_tasks with these vars:
+#   _restore_label   — identifier for temp file naming (e.g. "radarr", "immich-db")
+#   _restore_tmp_ext — temp file extension: "tar.zst" or "sql.zst"
+#   _restore_service — systemd user service to stop/start (empty string to skip)
+#   _restore_cmd     — shell command for extract/restore (may reference {{ _restore_file }})
+
+- name: "Stop {{ _restore_label }} service"
+  ansible.builtin.systemd:
+    name: "{{ _restore_service }}"
+    state: stopped
+    scope: user
+  when: _restore_service | length > 0
+
+- name: "Decrypt {{ _restore_label }} backup"
+  ansible.builtin.command:
+    cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-{{ _restore_label }}.{{ _restore_tmp_ext }} {{ backup_file }}"
+  when: backup_file is match('.*\.age$')
+
+- name: "Set {{ _restore_label }} restore file path"
+  ansible.builtin.set_fact:
+    _restore_file: "{{ '/tmp/restore-' + _restore_label + '.' + _restore_tmp_ext if backup_file is match('.*\\.age$') else backup_file }}"
+
+- name: "Restore {{ _restore_label }}"
+  ansible.builtin.shell:  # noqa: command-instead-of-shell
+    cmd: "{{ _restore_cmd }}"
+
+- name: "Start {{ _restore_label }} service"
+  ansible.builtin.systemd:
+    name: "{{ _restore_service }}"
+    state: started
+    scope: user
+  when: _restore_service | length > 0
+
+- name: "Clean up {{ _restore_label }} temp file"
+  ansible.builtin.file:
+    path: "/tmp/restore-{{ _restore_label }}.{{ _restore_tmp_ext }}"
+    state: absent
+  when: backup_file is match('.*\.age$')
