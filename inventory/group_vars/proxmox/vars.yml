@@ -1,10 +1,10 @@
 ---
 # Proxmox API connection
-proxmox_api_host: 192.168.1.10
+proxmox_api_host: 192.168.5.20
 proxmox_api_port: 8006
-proxmox_node: pve
-proxmox_storage: local-lvm
-proxmox_iso_storage: local
+proxmox_node: pve1
+proxmox_storage: cola-vm-store
+proxmox_iso_storage: cola-vm-iso
 
 # VM template
 proxmox_template_name: fedora-cloud
