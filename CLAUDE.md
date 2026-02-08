@@ -44,7 +44,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 
 ## Architecture
 
-- **Rootless Podman**: All containers run as `mms` user (1100:1100) with Quadlet files in `~mms/.config/containers/systemd/`
+- **Rootless Podman**: All containers run as `mms` user (3000:3000) with Quadlet files in `~mms/.config/containers/systemd/`
 - **Data-driven services**: Each service defined in `services/<name>.yml`; the generic `quadlet_service` role renders templates
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`

@@ -22,7 +22,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  ┌───────────────────────────────────────────────┐  │
 │  │  Fedora VM (mms)                              │  │
 │  │  ┌─────────────────────────────────────────┐  │  │
-│  │  │  Rootless Podman (mms user, 1100:1100)  │  │  │
+│  │  │  Rootless Podman (mms user, 3000:3000)  │  │  │
 │  │  │                                         │  │  │
 │  │  │  prowlarr  radarr  sonarr  lidarr       │  │  │
 │  │  │  sabnzbd   jellyfin                     │  │  │
