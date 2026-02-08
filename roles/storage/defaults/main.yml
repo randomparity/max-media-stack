@@ -1,0 +1,23 @@
+---
+storage_user: "{{ mms_user }}"
+storage_uid: "{{ mms_uid }}"
+storage_gid: "{{ mms_gid }}"
+storage_data_dir: "{{ mms_data_dir }}"
+storage_config_dir: "{{ mms_config_dir }}"
+storage_backup_dir: "{{ mms_backup_dir }}"
+storage_home: "{{ mms_home }}"
+
+storage_nfs_mounts: "{{ mms_nfs_mounts }}"
+storage_services: "{{ mms_services }}"
+
+# TRaSH-guide-compatible directory structure
+storage_media_dirs:
+  - movies
+  - tv
+  - music
+
+storage_usenet_dirs:
+  - incomplete
+  - complete/movies
+  - complete/tv
+  - complete/music

@@ -1,0 +1,61 @@
+---
+- name: Create NFS mount points
+  ansible.builtin.file:
+    path: "{{ item.dest }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ storage_nfs_mounts }}"
+
+- name: Mount NFS shares
+  ansible.posix.mount:
+    src: "{{ item.src }}"
+    path: "{{ item.dest }}"
+    fstype: nfs
+    opts: "{{ item.opts }}"
+    state: mounted
+  loop: "{{ storage_nfs_mounts }}"
+
+- name: Create TRaSH-guide media directories
+  ansible.builtin.file:
+    path: "{{ storage_data_dir }}/media/{{ item }}"
+    state: directory
+    owner: "{{ storage_uid }}"
+    group: "{{ storage_gid }}"
+    mode: "0775"
+  loop: "{{ storage_media_dirs }}"
+
+- name: Create TRaSH-guide usenet directories
+  ansible.builtin.file:
+    path: "{{ storage_data_dir }}/usenet/{{ item }}"
+    state: directory
+    owner: "{{ storage_uid }}"
+    group: "{{ storage_gid }}"
+    mode: "0775"
+  loop: "{{ storage_usenet_dirs }}"
+
+- name: Create photos directory
+  ansible.builtin.file:
+    path: "{{ storage_data_dir }}/photos"
+    state: directory
+    owner: "{{ storage_uid }}"
+    group: "{{ storage_gid }}"
+    mode: "0775"
+
+- name: Create config directories for each service
+  ansible.builtin.file:
+    path: "{{ storage_config_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ storage_uid }}"
+    group: "{{ storage_gid }}"
+    mode: "0750"
+  loop: "{{ storage_services + ['immich'] }}"
+
+- name: Create backup staging directory
+  ansible.builtin.file:
+    path: "{{ storage_backup_dir }}"
+    state: directory
+    owner: "{{ storage_uid }}"
+    group: "{{ storage_gid }}"
+    mode: "0750"
