@@ -5,21 +5,15 @@
 
   pre_tasks:
     - name: Check if template VM exists
-      community.proxmox.proxmox_vm_info:
-        api_host: "{{ proxmox_api_host }}"
-        api_port: "{{ proxmox_api_port }}"
-        api_user: "{{ vault_proxmox_api_user }}"
-        api_token_id: "{{ vault_proxmox_api_user }}"
-        api_token_secret: "{{ vault_proxmox_api_token_secret }}"
-        node: "{{ proxmox_node }}"
-        vmid: "{{ proxmox_template_vmid }}"
-      register: _template_info
+      ansible.builtin.command:
+        cmd: qm status {{ proxmox_template_vmid }}
+      register: _template_check
+      changed_when: false
       failed_when: false
-      delegate_to: localhost
 
     - name: Set template exists fact
       ansible.builtin.set_fact:
-        _template_exists: "{{ _template_info.proxmox_vms is defined and _template_info.proxmox_vms | length > 0 }}"
+        _template_exists: "{{ _template_check.rc == 0 }}"
 
   tasks:
     - name: Download Fedora cloud image
