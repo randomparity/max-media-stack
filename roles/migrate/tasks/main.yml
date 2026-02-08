@@ -1,0 +1,73 @@
+---
+- name: Create Proxmox snapshot for rollback
+  community.proxmox.proxmox_snap:
+    api_host: "{{ proxmox_api_host }}"
+    api_port: "{{ proxmox_api_port | default(8006) }}"
+    api_user: "{{ vault_proxmox_api_user }}"
+    api_token_id: "{{ vault_proxmox_api_user | regex_search('!(.+)$', '\\1') | first }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    vmid: "{{ mms_vm_id }}"
+    snapname: "{{ migrate_snapshot_name }}"
+    description: "Snapshot before MMS migration from {{ migrate_source_host }}"
+    state: present
+  delegate_to: localhost
+  when: migrate_create_snapshot
+
+- name: Pre-checks - Verify SQLite database integrity on source
+  ansible.builtin.include_tasks: precheck.yml
+  loop: "{{ migrate_services }}"
+  loop_control:
+    loop_var: _migrate_service
+
+- name: Migrate service configs from source LXC
+  ansible.builtin.include_tasks: sync_service.yml
+  loop: "{{ migrate_services }}"
+  loop_control:
+    loop_var: _migrate_service
+
+- name: Migrate Immich
+  ansible.builtin.include_tasks: immich.yml
+  when: migrate_immich
+
+- name: Fix ownership on all config directories
+  ansible.builtin.file:
+    path: "{{ migrate_config_dir }}"
+    owner: "{{ migrate_uid }}"
+    group: "{{ migrate_gid }}"
+    recurse: true
+  become: true
+
+- name: Start all services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    scope: user
+  loop: "{{ migrate_services }}"
+  become: true
+  become_user: "{{ migrate_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ migrate_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ migrate_uid }}/bus"
+
+- name: Start Immich services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    scope: user
+  loop:
+    - immich-postgres
+    - immich-redis
+    - immich-server
+    - immich-ml
+  become: true
+  become_user: "{{ migrate_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ migrate_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ migrate_uid }}/bus"
+  when: migrate_immich
+
+- name: Wait for services to become healthy
+  ansible.builtin.include_tasks: healthcheck.yml
+  loop: "{{ migrate_services }}"
+  loop_control:
+    loop_var: _migrate_service

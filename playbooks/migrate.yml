@@ -1,0 +1,15 @@
+---
+- name: Migrate services from LXC to MMS VM
+  hosts: mms
+  become: true
+
+  pre_tasks:
+    - name: Validate source_host is provided
+      ansible.builtin.assert:
+        that:
+          - source_host is defined
+          - source_host | length > 0
+        fail_msg: "source_host is required. Usage: ansible-playbook playbooks/migrate.yml -e source_host=<lxc-hostname>"
+
+  roles:
+    - migrate
