@@ -1,0 +1,18 @@
+---
+# Encrypt backup files with age
+# Requires: backup_file variable (path to unencrypted backup)
+
+- name: Encrypt backup with age
+  ansible.builtin.command:
+    cmd: >-
+      age -r {{ backup_age_public_key }}
+      -o {{ backup_file }}.age
+      {{ backup_file }}
+    creates: "{{ backup_file }}.age"
+  when: backup_age_public_key | length > 0
+
+- name: Remove unencrypted backup after encryption
+  ansible.builtin.file:
+    path: "{{ backup_file }}"
+    state: absent
+  when: backup_age_public_key | length > 0

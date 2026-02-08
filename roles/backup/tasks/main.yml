@@ -1,0 +1,79 @@
+---
+- name: Ensure backup directory exists
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0750"
+
+- name: Ensure per-service backup directories exist
+  ansible.builtin.file:
+    path: "{{ backup_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0750"
+  loop: "{{ mms_services + ['immich'] }}"
+
+- name: Install age encryption tool
+  ansible.builtin.dnf:
+    name: age
+    state: present
+  become: true
+  become_user: root
+  when: backup_age_public_key | length > 0
+
+- name: Ensure user bin directory exists
+  ansible.builtin.file:
+    path: "/home/{{ backup_user }}/bin"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0755"
+
+- name: Deploy backup script
+  ansible.builtin.template:
+    src: mms-backup.sh.j2
+    dest: "/home/{{ backup_user }}/bin/mms-backup.sh"
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0750"
+
+- name: Deploy restore script
+  ansible.builtin.template:
+    src: mms-restore.sh.j2
+    dest: "/home/{{ backup_user }}/bin/mms-restore.sh"
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0750"
+
+- name: Ensure systemd user directory exists
+  ansible.builtin.file:
+    path: "/home/{{ backup_user }}/.config/systemd/user"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0755"
+
+- name: Deploy systemd backup service
+  ansible.builtin.template:
+    src: mms-backup.service.j2
+    dest: "/home/{{ backup_user }}/.config/systemd/user/mms-backup.service"
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0644"
+  notify:
+    - Reload systemd user daemon
+    - Enable backup timer
+
+- name: Deploy systemd backup timer
+  ansible.builtin.template:
+    src: mms-backup.timer.j2
+    dest: "/home/{{ backup_user }}/.config/systemd/user/mms-backup.timer"
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0644"
+  notify:
+    - Reload systemd user daemon
+    - Enable backup timer

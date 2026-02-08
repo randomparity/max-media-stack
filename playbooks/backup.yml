@@ -1,0 +1,8 @@
+---
+- name: Run MMS backups
+  hosts: mms
+  become: true
+  become_user: "{{ mms_user }}"
+
+  roles:
+    - backup

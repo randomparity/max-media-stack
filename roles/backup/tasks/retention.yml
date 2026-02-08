@@ -1,0 +1,32 @@
+---
+# Apply retention policy: keep N daily, N weekly, N monthly backups
+# Requires: retention_service variable
+
+- name: "{{ retention_service }} - Find all backup files"
+  ansible.builtin.find:
+    paths: "{{ backup_dir }}/{{ retention_service }}"
+    patterns: "{{ retention_service }}*.tar.zst,{{ retention_service }}*.tar.zst.age,{{ retention_service }}*.sql.zst,{{ retention_service }}*.sql.zst.age"
+    age: "{{ backup_retention_daily + 1 }}d"
+  register: _old_backups
+
+- name: "{{ retention_service }} - Identify backups to remove"
+  ansible.builtin.set_fact:
+    _backups_to_delete: >-
+      {{
+        _old_backups.files
+        | sort(attribute='mtime')
+        | map(attribute='path')
+        | list
+      }}
+
+- name: "{{ retention_service }} - Calculate retention cutoffs"
+  ansible.builtin.set_fact:
+    _daily_cutoff: "{{ '%Y-%m-%d' | strftime(ansible_date_time.epoch | int - (backup_retention_daily * 86400)) }}"
+    _weekly_cutoff: "{{ '%Y-%m-%d' | strftime(ansible_date_time.epoch | int - (backup_retention_weekly * 7 * 86400)) }}"
+    _monthly_cutoff: "{{ '%Y-%m-%d' | strftime(ansible_date_time.epoch | int - (backup_retention_monthly * 30 * 86400)) }}"
+
+- name: "{{ retention_service }} - Remove backups older than retention policy"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ _old_backups.files | selectattr('mtime', 'lt', (ansible_date_time.epoch | int - (backup_retention_monthly * 30 * 86400))) | map(attribute='path') | list }}"
