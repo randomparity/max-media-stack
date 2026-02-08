@@ -1,0 +1,19 @@
+---
+- name: Deploy a single MMS service
+  hosts: mms
+  become: true
+
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"
+
+  pre_tasks:
+    - name: Validate service_name is provided
+      ansible.builtin.assert:
+        that:
+          - service_name is defined
+          - service_name | length > 0
+        fail_msg: "You must specify -e service_name=<name>"
+
+  roles:
+    - quadlet_service

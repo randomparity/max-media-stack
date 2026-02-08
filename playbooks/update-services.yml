@@ -1,0 +1,21 @@
+---
+- name: Update all MMS services
+  hosts: mms
+  become: true
+  become_user: "{{ mms_user }}"
+
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"
+
+  tasks:
+    - name: Run podman auto-update
+      ansible.builtin.command:
+        cmd: podman auto-update --format "{{ '{{' }}.Unit{{ '}}' }} {{ '{{' }}.Image{{ '}}' }} {{ '{{' }}.Updated{{ '}}' }}"
+      register: _auto_update
+      changed_when: "'true' in _auto_update.stdout"
+
+    - name: Show update results
+      ansible.builtin.debug:
+        var: _auto_update.stdout_lines
+      when: _auto_update.stdout_lines | length > 0

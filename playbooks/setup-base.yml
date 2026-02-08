@@ -1,0 +1,10 @@
+---
+- name: Base system setup
+  hosts: mms
+  become: true
+  roles:
+    - base_system
+    - podman
+    - storage
+    - firewall
+    - tailscale
