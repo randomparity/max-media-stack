@@ -28,9 +28,9 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │  sabnzbd   jellyfin                     │  │  │
 │  │  │  immich-server  immich-ml               │  │  │
 │  │  │  immich-postgres immich-redis           │  │  │
-│  │  │          ┌──────────┐                   │  │  │
+│  │  │          ┌─────────-─┐                  │  │  │
 │  │  │          │mms.network│                  │  │  │
-│  │  │          └──────────┘                   │  │  │
+│  │  │          └──────────-┘                  │  │  │
 │  │  └─────────────────────────────────────────┘  │  │
 │  │                                               │  │
 │  │  Tailscale ──── HTTPS access (no LAN expose)  │  │
