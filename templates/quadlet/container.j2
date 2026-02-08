@@ -10,6 +10,7 @@ After={{ dep }}
 {% endif %}
 
 [Container]
+ContainerName={{ quadlet_service_def.name }}
 Image={{ quadlet_service_def.image }}
 Network={{ mms_network_name }}.network
 {% for port in quadlet_service_def.publish_ports %}
