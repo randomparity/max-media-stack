@@ -15,6 +15,7 @@
     cmd: firewall-cmd --get-default-zone
   register: _firewall_current_zone
   changed_when: false
+  check_mode: false
 
 - name: Set default zone to drop
   ansible.builtin.command:

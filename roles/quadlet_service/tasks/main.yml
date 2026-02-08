@@ -74,4 +74,4 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
-  when: quadlet_service_def.health_cmd is defined
+  when: quadlet_service_def.health_cmd is defined and not ansible_check_mode

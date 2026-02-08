@@ -17,6 +17,7 @@
   register: _immich_secret_inspect
   changed_when: false
   failed_when: false
+  check_mode: false
 
 - name: Compute desired password hash
   ansible.builtin.set_fact:
@@ -184,6 +185,7 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode
 
 - name: Enable and start immich-redis
   ansible.builtin.systemd:
@@ -206,6 +208,7 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode
 
 - name: Enable and start immich-server
   ansible.builtin.systemd:
@@ -238,3 +241,4 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode
