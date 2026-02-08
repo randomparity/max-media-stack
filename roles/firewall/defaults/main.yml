@@ -1,0 +1,4 @@
+---
+firewall_default_zone: drop
+firewall_tailscale_interface: tailscale0
+firewall_tailscale_zone: trusted
