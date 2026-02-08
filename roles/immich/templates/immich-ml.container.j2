@@ -1,0 +1,26 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Immich - Machine Learning
+After=network-online.target
+After=immich-postgres.service
+After=immich-redis.service
+
+[Container]
+Image={{ immich_ml_image }}
+Network={{ mms_network_name }}.network
+ContainerName=immich-ml
+Volume=immich-ml-cache.volume:/cache
+EnvironmentFile={{ mms_config_dir }}/immich/immich.env
+Secret=immich-db-password,type=env,target=DB_PASSWORD
+HealthCmd=curl -sf http://localhost:3003/ping || exit 1
+HealthInterval=60s
+NoNewPrivileges=true
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target
