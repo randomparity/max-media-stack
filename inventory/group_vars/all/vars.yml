@@ -1,0 +1,31 @@
+---
+# MMS global variables
+
+# Service user
+mms_user: mms
+mms_uid: 1100
+mms_gid: 1100
+
+# Timezone
+mms_timezone: America/New_York
+
+# Paths
+mms_home: /home/mms
+mms_config_dir: /home/mms/config
+mms_backup_dir: /home/mms/backups
+mms_data_dir: /data
+mms_quadlet_dir: /home/mms/.config/containers/systemd
+
+# Podman network
+mms_network_name: mms
+
+# Rootless Podman systemd environment (used in handlers and tasks)
+mms_systemd_env:
+  XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
+  DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"
+
+# Ansible user for initial SSH access
+mms_ansible_user: dave
+
+# Backup encryption
+mms_backup_age_public_key: "" # Set in vault or override

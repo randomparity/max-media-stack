@@ -1,0 +1,9 @@
+---
+- name: Provision MMS VM
+  import_playbook: provision-vm.yml
+
+- name: Configure base system
+  import_playbook: setup-base.yml
+
+- name: Deploy services
+  import_playbook: deploy-services.yml

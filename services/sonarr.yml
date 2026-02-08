@@ -1,0 +1,18 @@
+---
+sonarr:
+  name: sonarr
+  description: "Sonarr - TV Series Manager"
+  image: "lscr.io/linuxserver/sonarr:latest"
+  publish_ports:
+    - "8989:8989"
+  volumes:
+    - "{{ mms_config_dir }}/sonarr:/config:Z"
+    - "{{ mms_data_dir }}:/data"
+  environment:
+    - "PUID={{ mms_uid }}"
+    - "PGID={{ mms_gid }}"
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:8989/ping || exit 1"
+  health_interval: "60s"
+  backup_type: "arr"
+  backup_db_files: ["sonarr.db"]

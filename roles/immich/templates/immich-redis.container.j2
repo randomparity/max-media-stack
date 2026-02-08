@@ -1,0 +1,21 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Immich - Redis (Valkey)
+After=network-online.target
+
+[Container]
+Image={{ immich_redis_image }}
+Network={{ mms_network_name }}.network
+ContainerName=immich-redis
+Volume=immich-redis.volume:/data
+HealthCmd=valkey-cli ping | grep -q PONG
+HealthInterval=30s
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

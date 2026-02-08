@@ -1,0 +1,2 @@
+---
+# Handlers intentionally empty - sysctl module handles its own reload

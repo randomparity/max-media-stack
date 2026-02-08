@@ -1,0 +1,17 @@
+---
+- name: Deploy a single MMS service
+  hosts: mms
+  become: true
+
+  environment: "{{ mms_systemd_env }}"
+
+  pre_tasks:
+    - name: Validate service_name is provided
+      ansible.builtin.assert:
+        that:
+          - service_name is defined
+          - service_name | length > 0
+        fail_msg: "You must specify -e service_name=<name>"
+
+  roles:
+    - quadlet_service

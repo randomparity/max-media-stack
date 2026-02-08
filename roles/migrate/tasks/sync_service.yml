@@ -1,0 +1,26 @@
+---
+- name: "{{ _migrate_service }} - Stop service on target before sync"
+  ansible.builtin.systemd:
+    name: "{{ _migrate_service }}"
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ migrate_user }}"
+  failed_when: false
+
+- name: "{{ _migrate_service }} - Rsync config from source LXC"
+  ansible.builtin.command:
+    cmd: >-
+      rsync {{ migrate_rsync_opts }}
+      {{ migrate_source_user }}@{{ migrate_source_host }}:{{ migrate_source_config_base }}/{{ _migrate_service }}/
+      {{ migrate_config_dir }}/{{ _migrate_service }}/
+  register: _rsync_result
+  changed_when: _rsync_result.rc == 0
+
+- name: "{{ _migrate_service }} - Fix ownership"
+  ansible.builtin.file:
+    path: "{{ migrate_config_dir }}/{{ _migrate_service }}"
+    owner: "{{ migrate_uid }}"
+    group: "{{ migrate_gid }}"
+    recurse: true
+  become: true

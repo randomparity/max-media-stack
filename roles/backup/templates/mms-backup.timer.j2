@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Unit]
+Description=MMS Daily Backup Timer
+
+[Timer]
+OnCalendar={{ backup_schedule }}
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

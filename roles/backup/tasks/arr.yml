@@ -1,0 +1,22 @@
+---
+# Backup an *arr service (Radarr, Sonarr, Lidarr, Prowlarr)
+# Requires: backup_service_name variable
+
+- name: "{{ backup_service_name }} - Stop service before backup"
+  ansible.builtin.systemd:
+    name: "{{ backup_service_name }}"
+    state: stopped
+    scope: user
+
+- name: "{{ backup_service_name }} - Create compressed backup"
+  ansible.builtin.shell:
+    cmd: >-
+      tar -cf - -C {{ backup_config_dir }} {{ backup_service_name }}
+      | zstd -T0 -o {{ backup_dir }}/{{ backup_service_name }}/{{ backup_service_name }}-{{ ansible_date_time.date }}.tar.zst
+    creates: "{{ backup_dir }}/{{ backup_service_name }}/{{ backup_service_name }}-{{ ansible_date_time.date }}.tar.zst"
+
+- name: "{{ backup_service_name }} - Start service after backup"
+  ansible.builtin.systemd:
+    name: "{{ backup_service_name }}"
+    state: started
+    scope: user

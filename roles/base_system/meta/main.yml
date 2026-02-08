@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: base_system
+  author: MMS
+  description: Base system configuration for MMS host
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Fedora
+      versions:
+        - all
+
+dependencies: []

@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Unit]
+Description=MMS Backup Service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/{{ backup_user }}/bin/mms-backup.sh
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

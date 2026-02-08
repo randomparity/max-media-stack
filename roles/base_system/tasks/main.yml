@@ -1,0 +1,48 @@
+---
+- name: Create mms group
+  ansible.builtin.group:
+    name: "{{ base_system_user }}"
+    gid: "{{ base_system_gid }}"
+    state: present
+
+- name: Create mms user
+  ansible.builtin.user:
+    name: "{{ base_system_user }}"
+    uid: "{{ base_system_uid }}"
+    group: "{{ base_system_user }}"
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Enable loginctl linger for mms user
+  ansible.builtin.command:
+    cmd: loginctl enable-linger {{ base_system_user }}
+    creates: /var/lib/systemd/linger/{{ base_system_user }}
+
+- name: Install required packages
+  ansible.builtin.dnf:
+    name: "{{ base_system_packages }}"
+    state: present
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ base_system_timezone }}"
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ base_system_hostname }}"
+
+- name: Set SELinux booleans
+  ansible.posix.seboolean:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    persistent: true
+  loop: "{{ base_system_seboolean }}"
+
+- name: Allow unprivileged port binding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_unprivileged_port_start
+    value: "{{ base_system_sysctl_unprivileged_port_start }}"
+    sysctl_file: /etc/sysctl.d/99-mms.conf
+    reload: true
+    state: present

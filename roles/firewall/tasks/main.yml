@@ -1,0 +1,40 @@
+---
+- name: Ensure firewalld is installed
+  ansible.builtin.dnf:
+    name: firewalld
+    state: present
+
+- name: Ensure firewalld is running and enabled
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Get current default zone
+  ansible.builtin.command:
+    cmd: firewall-cmd --get-default-zone
+  register: _firewall_current_zone
+  changed_when: false
+
+- name: Set default zone to drop
+  ansible.builtin.command:
+    cmd: firewall-cmd --set-default-zone={{ firewall_default_zone }}
+  when: _firewall_current_zone.stdout | trim != firewall_default_zone
+
+- name: Assign tailscale0 to trusted zone
+  ansible.posix.firewalld:
+    zone: "{{ firewall_tailscale_zone }}"
+    interface: "{{ firewall_tailscale_interface }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  notify: Reload firewalld
+
+- name: Allow SSH in drop zone for emergency access
+  ansible.posix.firewalld:
+    zone: "{{ firewall_default_zone }}"
+    service: ssh
+    permanent: true
+    immediate: true
+    state: enabled
+  notify: Reload firewalld

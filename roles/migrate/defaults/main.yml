@@ -1,0 +1,33 @@
+---
+# Source LXC host (passed via -e source_host=)
+migrate_source_host: "{{ source_host }}"
+migrate_source_user: root
+
+# Service user on target
+migrate_user: "{{ mms_user | default('mms') }}"
+migrate_uid: "{{ mms_uid | default(1100) }}"
+migrate_gid: "{{ mms_gid | default(1100) }}"
+
+# Paths on target
+migrate_config_dir: "{{ mms_config_dir | default('/home/mms/config') }}"
+migrate_data_dir: "{{ mms_data_dir | default('/data') }}"
+
+# Source config paths (typical LXC rootfs layout)
+migrate_source_config_base: /opt
+
+# Services to migrate (default: all mms_services)
+migrate_services: "{{ mms_services | default([]) }}"
+
+# Immich migration
+migrate_immich: true
+migrate_immich_source_db_container: immich-postgres
+migrate_immich_target_db_container: immich-postgres
+migrate_immich_source_photos: /opt/immich/upload
+migrate_immich_target_photos: "{{ migrate_data_dir }}/photos"
+
+# Proxmox snapshot before migration
+migrate_create_snapshot: true
+migrate_snapshot_name: pre-migration
+
+# Rsync options
+migrate_rsync_opts: "--archive --compress --info=progress2"

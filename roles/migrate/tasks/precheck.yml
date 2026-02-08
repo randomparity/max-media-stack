@@ -1,0 +1,18 @@
+---
+- name: "{{ _migrate_service }} - Load service definition"
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/../services/{{ _migrate_service }}.yml"
+    name: _svc_def
+
+- name: "{{ _migrate_service }} - Check SQLite integrity on source"
+  ansible.builtin.command:
+    cmd: >-
+      ssh {{ migrate_source_user }}@{{ migrate_source_host }}
+      sqlite3 {{ migrate_source_config_base }}/{{ _migrate_service }}/{{ item }}
+      "PRAGMA integrity_check;"
+  register: _sqlite_check
+  failed_when: "'ok' not in _sqlite_check.stdout"
+  changed_when: false
+  loop: "{{ _svc_def[_migrate_service].backup_db_files | default([]) }}"
+  delegate_to: localhost
+  when: _svc_def[_migrate_service].backup_type | default('') == 'arr'

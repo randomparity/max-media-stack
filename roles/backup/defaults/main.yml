@@ -1,0 +1,30 @@
+---
+# Backup directory
+backup_dir: "{{ mms_backup_dir | default('/home/mms/backups') }}"
+
+# Retention policy
+backup_retention_daily: 7
+backup_retention_weekly: 4
+backup_retention_monthly: 6
+
+# Age encryption public key
+backup_age_public_key: "{{ mms_backup_age_public_key | default('') }}"
+
+# Backup schedule (systemd timer OnCalendar)
+backup_schedule: "*-*-* 03:00:00"
+
+# Config base path
+backup_config_dir: "{{ mms_config_dir | default('/home/mms/config') }}"
+
+# Service user
+backup_user: "{{ mms_user | default('mms') }}"
+
+# Age identity (private key) file for restore decryption
+# Must be provided via -e when restoring encrypted backups
+backup_age_identity_file: ""
+
+# Immich PostgreSQL container name
+backup_immich_db_container: immich-postgres
+
+# Immich photos source directory
+backup_immich_photos_dir: "{{ mms_data_dir | default('/data') }}/photos"

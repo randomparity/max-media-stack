@@ -1,0 +1,92 @@
+---
+- name: Check if VM already exists
+  community.proxmox.proxmox_vm_info:
+    api_host: "{{ proxmox_vm_api_host }}"
+    api_port: "{{ proxmox_vm_api_port }}"
+    api_user: "{{ proxmox_vm_api_user }}"
+    api_token_id: "{{ proxmox_vm_api_user }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    node: "{{ proxmox_vm_node }}"
+    vmid: "{{ proxmox_vm_id }}"
+  register: _proxmox_vm_info
+  failed_when: false
+
+- name: Clone VM from template
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_vm_api_host }}"
+    api_port: "{{ proxmox_vm_api_port }}"
+    api_user: "{{ proxmox_vm_api_user }}"
+    api_token_id: "{{ proxmox_vm_api_user }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    node: "{{ proxmox_vm_node }}"
+    vmid: "{{ proxmox_vm_id }}"
+    name: "{{ proxmox_vm_name }}"
+    clone: "{{ proxmox_template_name }}"
+    full: true
+    storage: "{{ proxmox_vm_storage }}"
+    timeout: 300
+  when: _proxmox_vm_info.proxmox_vms is not defined or _proxmox_vm_info.proxmox_vms | length == 0
+
+- name: Configure VM hardware
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_vm_api_host }}"
+    api_port: "{{ proxmox_vm_api_port }}"
+    api_user: "{{ proxmox_vm_api_user }}"
+    api_token_id: "{{ proxmox_vm_api_user }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    node: "{{ proxmox_vm_node }}"
+    vmid: "{{ proxmox_vm_id }}"
+    cores: "{{ proxmox_vm_cores }}"
+    memory: "{{ proxmox_vm_memory }}"
+    net:
+      net0: "virtio,bridge={{ proxmox_vm_bridge }}"
+    update: true
+
+- name: Configure cloud-init settings
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_vm_api_host }}"
+    api_port: "{{ proxmox_vm_api_port }}"
+    api_user: "{{ proxmox_vm_api_user }}"
+    api_token_id: "{{ proxmox_vm_api_user }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    node: "{{ proxmox_vm_node }}"
+    vmid: "{{ proxmox_vm_id }}"
+    ciuser: "{{ proxmox_vm_ciuser }}"
+    sshkeys: "{{ proxmox_vm_ssh_pubkey }}"
+    ipconfig:
+      ipconfig0: "ip={{ proxmox_vm_ip }}/{{ proxmox_vm_cidr }},gw={{ proxmox_vm_gateway }}"
+    nameservers:
+      - "{{ proxmox_vm_nameserver }}"
+    update: true
+
+- name: Resize VM disk
+  community.proxmox.proxmox_disk:
+    api_host: "{{ proxmox_vm_api_host }}"
+    api_port: "{{ proxmox_vm_api_port }}"
+    api_user: "{{ proxmox_vm_api_user }}"
+    api_token_id: "{{ proxmox_vm_api_user }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    node: "{{ proxmox_vm_node }}"
+    vmid: "{{ proxmox_vm_id }}"
+    disk: scsi0
+    size: "{{ proxmox_vm_disk_size }}"
+    state: resized
+
+- name: Start VM
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_vm_api_host }}"
+    api_port: "{{ proxmox_vm_api_port }}"
+    api_user: "{{ proxmox_vm_api_user }}"
+    api_token_id: "{{ proxmox_vm_api_user }}"
+    api_token_secret: "{{ proxmox_vm_api_token_secret }}"
+    node: "{{ proxmox_vm_node }}"
+    vmid: "{{ proxmox_vm_id }}"
+    state: started
+
+- name: Wait for SSH to become available
+  ansible.builtin.wait_for:
+    host: "{{ proxmox_vm_ip }}"
+    port: 22
+    delay: 10
+    timeout: "{{ proxmox_vm_ssh_timeout }}"
+  delegate_to: localhost

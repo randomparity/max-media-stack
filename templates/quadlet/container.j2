@@ -1,0 +1,39 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description={{ service.description }}
+After=network-online.target
+{% if service.after is defined %}
+{% for dep in service.after %}
+After={{ dep }}
+{% endfor %}
+{% endif %}
+
+[Container]
+Image={{ service.image }}
+Network={{ mms_network_name }}.network
+{% for port in service.publish_ports %}
+PublishPort={{ port }}
+{% endfor %}
+{% for vol in service.volumes %}
+Volume={{ vol }}
+{% endfor %}
+EnvironmentFile={{ mms_config_dir }}/{{ service.name }}/{{ service.name }}.env
+{% if service.health_cmd is defined %}
+HealthCmd={{ service.health_cmd }}
+HealthInterval={{ service.health_interval | default('60s') }}
+{% endif %}
+{% if service.secrets is defined %}
+{% for secret in service.secrets %}
+Secret={{ secret }}
+{% endfor %}
+{% endif %}
+NoNewPrivileges=true
+AutoUpdate=registry
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+
+[storage]
+driver = "{{ podman_storage_driver }}"
+graphroot = "{{ podman_storage_root }}"

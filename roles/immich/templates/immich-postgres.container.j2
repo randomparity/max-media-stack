@@ -1,0 +1,25 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Immich - PostgreSQL with pgvecto.rs
+After=network-online.target
+
+[Container]
+Image={{ immich_postgres_image }}
+Network={{ mms_network_name }}.network
+ContainerName=immich-postgres
+Volume=immich-pgdata.volume:/var/lib/postgresql/data
+Environment=POSTGRES_DB={{ immich_db_name }}
+Environment=POSTGRES_USER={{ immich_db_user }}
+Environment=POSTGRES_INITDB_ARGS="--data-checksums"
+Secret=immich-db-password,type=env,target=POSTGRES_PASSWORD
+HealthCmd=pg_isready -d {{ immich_db_name }} -U {{ immich_db_user }}
+HealthInterval=30s
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

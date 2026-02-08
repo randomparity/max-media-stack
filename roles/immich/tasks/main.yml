@@ -1,0 +1,218 @@
+---
+- name: Create Immich config directory
+  ansible.builtin.file:
+    path: "{{ mms_config_dir }}/immich"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Create Immich DB password podman secret
+  ansible.builtin.command:
+    cmd: podman secret create immich-db-password -
+    stdin: "{{ vault_immich_db_password }}"
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  register: secret_create
+  changed_when: secret_create.rc == 0
+  failed_when: false
+  no_log: true
+
+- name: Update Immich DB password podman secret if it exists
+  when: secret_create.rc != 0
+  block:
+    - name: Remove existing secret
+      ansible.builtin.command:
+        cmd: podman secret rm immich-db-password
+      become: true
+      become_user: "{{ mms_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
+      changed_when: true
+      no_log: true
+
+    - name: Recreate secret
+      ansible.builtin.command:
+        cmd: podman secret create immich-db-password -
+        stdin: "{{ vault_immich_db_password }}"
+      become: true
+      become_user: "{{ mms_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
+      changed_when: true
+      no_log: true
+
+- name: Deploy Immich environment file
+  ansible.builtin.template:
+    src: immich.env.j2
+    dest: "{{ mms_config_dir }}/immich/immich.env"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+  become: true
+  notify:
+    - Restart immich-server
+    - Restart immich-ml
+
+# Volume quadlets
+- name: Deploy immich-pgdata volume quadlet
+  ansible.builtin.template:
+    src: immich-pgdata.volume.j2
+    dest: "{{ mms_quadlet_dir }}/immich-pgdata.volume"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Reload systemd user daemon
+
+- name: Deploy immich-redis volume quadlet
+  ansible.builtin.template:
+    src: immich-redis.volume.j2
+    dest: "{{ mms_quadlet_dir }}/immich-redis.volume"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Reload systemd user daemon
+
+- name: Deploy immich-ml-cache volume quadlet
+  ansible.builtin.template:
+    src: immich-ml-cache.volume.j2
+    dest: "{{ mms_quadlet_dir }}/immich-ml-cache.volume"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Reload systemd user daemon
+
+# Container quadlets
+- name: Deploy immich-postgres container quadlet
+  ansible.builtin.template:
+    src: immich-postgres.container.j2
+    dest: "{{ mms_quadlet_dir }}/immich-postgres.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart immich-postgres
+
+- name: Deploy immich-redis container quadlet
+  ansible.builtin.template:
+    src: immich-redis.container.j2
+    dest: "{{ mms_quadlet_dir }}/immich-redis.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart immich-redis
+
+- name: Deploy immich-server container quadlet
+  ansible.builtin.template:
+    src: immich-server.container.j2
+    dest: "{{ mms_quadlet_dir }}/immich-server.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart immich-server
+
+- name: Deploy immich-ml container quadlet
+  ansible.builtin.template:
+    src: immich-ml.container.j2
+    dest: "{{ mms_quadlet_dir }}/immich-ml.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart immich-ml
+
+# Flush handlers to ensure daemon-reload happens before starting services
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+# Enable and start services in dependency order
+- name: Enable and start immich-postgres
+  ansible.builtin.systemd:
+    name: immich-postgres.service
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Wait for PostgreSQL to be ready
+  ansible.builtin.command:
+    cmd: podman healthcheck run immich-postgres
+  register: pg_health
+  until: pg_health.rc == 0
+  retries: 12
+  delay: 10
+  changed_when: false
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Enable and start immich-redis
+  ansible.builtin.systemd:
+    name: immich-redis.service
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Wait for Redis to be ready
+  ansible.builtin.command:
+    cmd: podman healthcheck run immich-redis
+  register: redis_health
+  until: redis_health.rc == 0
+  retries: 12
+  delay: 5
+  changed_when: false
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Enable and start immich-server
+  ansible.builtin.systemd:
+    name: immich-server.service
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Enable and start immich-ml
+  ansible.builtin.systemd:
+    name: immich-ml.service
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Wait for Immich server health check
+  ansible.builtin.command:
+    cmd: podman healthcheck run immich-server
+  register: server_health
+  until: server_health.rc == 0
+  retries: 18
+  delay: 10
+  changed_when: false
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"

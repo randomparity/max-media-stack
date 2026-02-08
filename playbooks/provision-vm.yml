@@ -1,0 +1,7 @@
+---
+- name: Provision MMS VM on Proxmox
+  hosts: proxmox
+  gather_facts: false
+  connection: local
+  roles:
+    - proxmox_vm

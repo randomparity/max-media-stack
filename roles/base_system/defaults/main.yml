@@ -1,0 +1,22 @@
+---
+base_system_user: "{{ mms_user }}"
+base_system_uid: "{{ mms_uid }}"
+base_system_gid: "{{ mms_gid }}"
+base_system_timezone: "{{ mms_timezone }}"
+base_system_hostname: "{{ mms_vm_name }}"
+
+base_system_packages:
+  - podman
+  - nfs-utils
+  - cifs-utils
+  - age
+  - curl
+  - sqlite
+
+base_system_seboolean:
+  - name: container_use_nfs
+    state: true
+  - name: container_manage_cgroup
+    state: true
+
+base_system_sysctl_unprivileged_port_start: 0

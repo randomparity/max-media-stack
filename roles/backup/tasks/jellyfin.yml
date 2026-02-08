@@ -1,0 +1,21 @@
+---
+# Backup Jellyfin (stop required, exclude cache)
+
+- name: "jellyfin - Stop service before backup"
+  ansible.builtin.systemd:
+    name: jellyfin
+    state: stopped
+    scope: user
+
+- name: "jellyfin - Create compressed backup excluding cache"
+  ansible.builtin.shell:
+    cmd: >-
+      tar -cf - -C {{ backup_config_dir }} --exclude='jellyfin/cache' jellyfin
+      | zstd -T0 -o {{ backup_dir }}/jellyfin/jellyfin-{{ ansible_date_time.date }}.tar.zst
+    creates: "{{ backup_dir }}/jellyfin/jellyfin-{{ ansible_date_time.date }}.tar.zst"
+
+- name: "jellyfin - Start service after backup"
+  ansible.builtin.systemd:
+    name: jellyfin
+    state: started
+    scope: user

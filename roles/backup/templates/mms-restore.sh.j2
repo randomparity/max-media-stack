@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+# MMS Restore Script - Decrypt and restore service backups
+set -euo pipefail
+
+usage() {
+    echo "Usage: $0 <service_name> <backup_file>"
+    echo ""
+    echo "Services: prowlarr, radarr, sonarr, lidarr, sabnzbd, jellyfin, immich"
+    echo ""
+    echo "Examples:"
+    echo "  $0 radarr /home/{{ backup_user }}/backups/radarr/radarr-2025-01-15.tar.zst.age"
+    echo "  $0 immich /home/{{ backup_user }}/backups/immich/immich-db-2025-01-15.sql.zst.age"
+    exit 1
+}
+
+[[ $# -lt 2 ]] && usage
+
+SERVICE="$1"
+BACKUP_FILE="$2"
+CONFIG_DIR="{{ backup_config_dir }}"
+WORK_DIR=$(mktemp -d)
+
+trap 'rm -rf "$WORK_DIR"' EXIT
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+decrypt_file() {
+    local src="$1"
+    local dest="$2"
+    if [[ "$src" == *.age ]]; then
+        log "Decrypting ${src}..."
+        echo "Enter your age identity key file path:"
+        read -r AGE_KEY_FILE
+        age -d -i "$AGE_KEY_FILE" -o "$dest" "$src"
+    else
+        cp "$src" "$dest"
+    fi
+}
+
+restore_arr() {
+    local archive="$WORK_DIR/backup.tar.zst"
+    decrypt_file "$BACKUP_FILE" "$archive"
+
+    log "Stopping ${SERVICE}..."
+    systemctl --user stop "${SERVICE}" || true
+
+    log "Removing existing config..."
+    rm -rf "${CONFIG_DIR:?}/${SERVICE}"
+
+    log "Extracting backup..."
+    zstd -d "$archive" --stdout | tar -xf - -C "${CONFIG_DIR}"
+
+    log "Fixing ownership..."
+    # Ownership should already be correct for rootless podman
+
+    log "Starting ${SERVICE}..."
+    systemctl --user start "${SERVICE}"
+    log "${SERVICE} restore complete"
+}
+
+restore_sabnzbd() {
+    local archive="$WORK_DIR/backup.tar.zst"
+    decrypt_file "$BACKUP_FILE" "$archive"
+
+    log "Stopping sabnzbd..."
+    systemctl --user stop sabnzbd || true
+
+    log "Extracting backup..."
+    zstd -d "$archive" --stdout | tar -xf - -C "${CONFIG_DIR}/sabnzbd"
+
+    log "Starting sabnzbd..."
+    systemctl --user start sabnzbd
+    log "sabnzbd restore complete"
+}
+
+restore_jellyfin() {
+    local archive="$WORK_DIR/backup.tar.zst"
+    decrypt_file "$BACKUP_FILE" "$archive"
+
+    log "Stopping jellyfin..."
+    systemctl --user stop jellyfin || true
+
+    log "Removing existing config (keeping cache)..."
+    find "${CONFIG_DIR}/jellyfin" -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf {} +
+
+    log "Extracting backup..."
+    zstd -d "$archive" --stdout | tar -xf - -C "${CONFIG_DIR}"
+
+    log "Starting jellyfin..."
+    systemctl --user start jellyfin
+    log "jellyfin restore complete"
+}
+
+restore_immich_db() {
+    local archive="$WORK_DIR/backup.sql.zst"
+    decrypt_file "$BACKUP_FILE" "$archive"
+
+    log "Decompressing database dump..."
+    zstd -d "$archive" -o "$WORK_DIR/backup.sql"
+
+    log "Restoring PostgreSQL database..."
+    podman exec -i {{ backup_immich_db_container }} psql -U postgres < "$WORK_DIR/backup.sql"
+
+    log "immich database restore complete"
+}
+
+restore_immich_config() {
+    local archive="$WORK_DIR/backup.tar.zst"
+    decrypt_file "$BACKUP_FILE" "$archive"
+
+    log "Extracting immich config backup..."
+    zstd -d "$archive" --stdout | tar -xf - -C "${CONFIG_DIR}"
+
+    log "immich config restore complete"
+}
+
+case "$SERVICE" in
+    prowlarr|radarr|sonarr|lidarr)
+        restore_arr
+        ;;
+    sabnzbd)
+        restore_sabnzbd
+        ;;
+    jellyfin)
+        restore_jellyfin
+        ;;
+    immich)
+        if [[ "$BACKUP_FILE" == *db* ]]; then
+            restore_immich_db
+        else
+            restore_immich_config
+        fi
+        ;;
+    *)
+        echo "Unknown service: $SERVICE"
+        usage
+        ;;
+esac
