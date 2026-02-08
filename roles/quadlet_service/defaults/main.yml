@@ -5,5 +5,5 @@
 # service_name: prowlarr
 
 # Health check wait timeout (seconds)
-quadlet_health_timeout: 120
-quadlet_health_delay: 10
+quadlet_service_health_timeout: 120
+quadlet_service_health_delay: 10

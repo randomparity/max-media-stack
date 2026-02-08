@@ -1,6 +1,6 @@
 ---
 # Immich version
-immich_version: release
+immich_version: v2.5.5
 
 # Database
 immich_db_name: immich
@@ -8,7 +8,7 @@ immich_db_user: immich
 # immich_db_password is set via vault_immich_db_password
 
 # Redis
-immich_redis_image: "docker.io/valkey/valkey:latest"
+immich_redis_image: "docker.io/valkey/valkey:8.1.5"
 
 # PostgreSQL with pgvecto.rs
 immich_postgres_image: "docker.io/tensorchord/pgvecto-rs:pg16-v0.2.0"

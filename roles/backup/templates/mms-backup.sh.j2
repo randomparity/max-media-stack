@@ -7,6 +7,14 @@ BACKUP_DIR="{{ backup_dir }}"
 CONFIG_DIR="{{ backup_config_dir }}"
 DATE=$(date +%Y-%m-%d)
 AGE_KEY="{{ backup_age_public_key }}"
+DRY_RUN="${DRY_RUN:-false}"
+
+# Parse CLI flags
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run) DRY_RUN=true ;;
+    esac
+done
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
@@ -90,22 +98,63 @@ encrypt_file() {
     fi
 }
 
+prune_tier() {
+    local tier="$1"
+    local keep="$2"
+    shift 2
+    local files=("$@")
+    local count=${#files[@]}
+
+    if (( count <= keep )); then
+        log "  ${tier}: ${count} backups, keeping all (limit: ${keep})"
+        return
+    fi
+
+    log "  ${tier}: ${count} backups, keeping ${keep}, pruning $(( count - keep ))"
+    for (( i = keep; i < count; i++ )); do
+        if [[ "$DRY_RUN" == "true" ]]; then
+            log "  [dry-run] Would remove: ${files[$i]}"
+        else
+            log "  Removing: ${files[$i]}"
+            rm -f "${files[$i]}"
+        fi
+    done
+}
+
 apply_retention() {
     local service="$1"
     local dir="${BACKUP_DIR}/${service}"
-    local monthly_cutoff daily_cutoff
-
-    daily_cutoff=$(date -d "-{{ backup_retention_daily }} days" +%s 2>/dev/null || date -v-{{ backup_retention_daily }}d +%s)
-    monthly_cutoff=$(date -d "-{{ backup_retention_monthly * 30 }} days" +%s 2>/dev/null || date -v-{{ backup_retention_monthly * 30 }}d +%s)
+    local monthly=() weekly=() daily=()
 
     log "Applying retention policy for ${service}..."
-    find "$dir" -maxdepth 1 -type f \( -name '*.tar.zst' -o -name '*.tar.zst.age' -o -name '*.sql.zst' -o -name '*.sql.zst.age' \) | while read -r f; do
-        file_age=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f")
-        if (( file_age < monthly_cutoff )); then
-            log "Removing old backup: $f"
-            rm -f "$f"
+
+    # Collect and classify backup files by date extracted from filename
+    while IFS= read -r f; do
+        # Extract YYYY-MM-DD from filename (matches service-YYYY-MM-DD. or immich-db-YYYY-MM-DD.)
+        local fname
+        fname=$(basename "$f")
+        local file_date
+        file_date=$(echo "$fname" | grep -oP '\d{4}-\d{2}-\d{2}')
+        [[ -z "$file_date" ]] && continue
+
+        local day dow
+        day=${file_date##*-}
+
+        # Classify: day 01 → monthly, Sunday → weekly, else → daily
+        # Use date to get day-of-week (0=Sunday)
+        dow=$(date -d "${file_date}" +%w 2>/dev/null || date -j -f "%Y-%m-%d" "${file_date}" +%w)
+        if [[ "$day" == "01" ]]; then
+            monthly+=("$f")
+        elif [[ "$dow" == "0" ]]; then
+            weekly+=("$f")
+        else
+            daily+=("$f")
         fi
-    done
+    done < <(find "$dir" -maxdepth 1 -type f \( -name '*.tar.zst' -o -name '*.tar.zst.age' -o -name '*.sql.zst' -o -name '*.sql.zst.age' \) | sort -r)
+
+    [[ ${#daily[@]} -gt 0 ]] && prune_tier "daily" {{ backup_retention_daily }} "${daily[@]}"
+    [[ ${#weekly[@]} -gt 0 ]] && prune_tier "weekly" {{ backup_retention_weekly }} "${weekly[@]}"
+    [[ ${#monthly[@]} -gt 0 ]] && prune_tier "monthly" {{ backup_retention_monthly }} "${monthly[@]}"
 }
 
 # Ensure backup directories exist

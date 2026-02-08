@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Check mms group exists
+      ansible.builtin.command:
+        cmd: getent group mms
+      changed_when: false
+
+    - name: Check mms user exists
+      ansible.builtin.command:
+        cmd: getent passwd mms
+      changed_when: false
+
+    - name: Check required packages are installed
+      ansible.builtin.dnf:
+        name:
+          - nfs-utils
+          - curl
+          - sqlite
+        state: present
+      check_mode: true
+      register: _packages
+      failed_when: _packages.changed

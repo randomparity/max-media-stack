@@ -32,127 +32,47 @@
       when: backup_file is match('.*\\.age$')
 
   tasks:
-    - name: Restore arr service
-      when: service_name in ['prowlarr', 'radarr', 'sonarr', 'lidarr']
-      block:
-        - name: Stop arr service
-          ansible.builtin.systemd:
-            name: "{{ service_name }}"
-            state: stopped
-            scope: user
+    - name: Restore standard service  # noqa: no-relative-paths
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+      vars:
+        _restore_label: "{{ service_name }}"
+        _restore_tmp_ext: tar.zst
+        _restore_service: "{{ service_name }}"
+        _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+      when: service_name in ['prowlarr', 'radarr', 'sonarr', 'lidarr', 'jellyfin']
 
-        - name: Decrypt backup if encrypted
-          ansible.builtin.command:
-            cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-{{ service_name }}.tar.zst {{ backup_file }}"
-          when: backup_file is match('.*\\.age$')
-
-        - name: Set restore file path
-          ansible.builtin.set_fact:
-            _restore_file: "{{ '/tmp/restore-' + service_name + '.tar.zst' if backup_file is match('.*\\.age$') else backup_file }}"
-
-        - name: Extract backup
-          ansible.builtin.command:
-            cmd: "bash -c 'zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}'"
-
-        - name: Start arr service
-          ansible.builtin.systemd:
-            name: "{{ service_name }}"
-            state: started
-            scope: user
-
-        - name: Clean up temp file
-          ansible.builtin.file:
-            path: "/tmp/restore-{{ service_name }}.tar.zst"
-            state: absent
-          when: backup_file is match('.*\\.age$')
-
-    - name: Restore sabnzbd
+    - name: Restore sabnzbd  # noqa: no-relative-paths
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+      vars:
+        _restore_label: sabnzbd
+        _restore_tmp_ext: tar.zst
+        _restore_service: sabnzbd
+        _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}/sabnzbd"
       when: service_name == 'sabnzbd'
-      block:
-        - name: Stop sabnzbd
-          ansible.builtin.systemd:
-            name: sabnzbd
-            state: stopped
-            scope: user
 
-        - name: Decrypt backup if encrypted
-          ansible.builtin.command:
-            cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-sabnzbd.tar.zst {{ backup_file }}"
-          when: backup_file is match('.*\\.age$')
-
-        - name: Set restore file path
-          ansible.builtin.set_fact:
-            _restore_file: "{{ '/tmp/restore-sabnzbd.tar.zst' if backup_file is match('.*\\.age$') else backup_file }}"
-
-        - name: Extract backup
-          ansible.builtin.command:
-            cmd: "bash -c 'zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}/sabnzbd'"
-
-        - name: Start sabnzbd
-          ansible.builtin.systemd:
-            name: sabnzbd
-            state: started
-            scope: user
-
-    - name: Restore jellyfin
-      when: service_name == 'jellyfin'
-      block:
-        - name: Stop jellyfin
-          ansible.builtin.systemd:
-            name: jellyfin
-            state: stopped
-            scope: user
-
-        - name: Decrypt backup if encrypted
-          ansible.builtin.command:
-            cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-jellyfin.tar.zst {{ backup_file }}"
-          when: backup_file is match('.*\\.age$')
-
-        - name: Set restore file path
-          ansible.builtin.set_fact:
-            _restore_file: "{{ '/tmp/restore-jellyfin.tar.zst' if backup_file is match('.*\\.age$') else backup_file }}"
-
-        - name: Extract backup excluding cache
-          ansible.builtin.command:
-            cmd: "bash -c 'zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}'"
-
-        - name: Start jellyfin
-          ansible.builtin.systemd:
-            name: jellyfin
-            state: started
-            scope: user
-
-    - name: Restore immich database
+    - name: Restore immich database  # noqa: no-relative-paths
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+      vars:
+        _restore_label: immich-db
+        _restore_tmp_ext: sql.zst
+        _restore_service: ""
+        _restore_cmd: >-
+          zstd -d {{ _restore_file }} --stdout |
+          podman exec -i immich-postgres psql -U postgres
       when: service_name == 'immich' and 'db' in backup_file
-      block:
-        - name: Decrypt backup if encrypted
-          ansible.builtin.command:
-            cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-immich-db.sql.zst {{ backup_file }}"
-          when: backup_file is match('.*\\.age$')
 
-        - name: Set restore file path
-          ansible.builtin.set_fact:
-            _restore_file: "{{ '/tmp/restore-immich-db.sql.zst' if backup_file is match('.*\\.age$') else backup_file }}"
-
-        - name: Decompress and restore database
-          ansible.builtin.shell:
-            cmd: "zstd -d {{ _restore_file }} --stdout | podman exec -i immich-postgres psql -U postgres"
-
-    - name: Restore immich config
+    - name: Restore immich config  # noqa: no-relative-paths
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+      vars:
+        _restore_label: immich-config
+        _restore_tmp_ext: tar.zst
+        _restore_service: ""
+        _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
       when: service_name == 'immich' and 'config' in backup_file
-      block:
-        - name: Decrypt backup if encrypted
-          ansible.builtin.command:
-            cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-immich-config.tar.zst {{ backup_file }}"
-          when: backup_file is match('.*\\.age$')
-
-        - name: Set restore file path
-          ansible.builtin.set_fact:
-            _restore_file: "{{ '/tmp/restore-immich-config.tar.zst' if backup_file is match('.*\\.age$') else backup_file }}"
-
-        - name: Extract config backup
-          ansible.builtin.command:
-            cmd: "bash -c 'zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}'"
 
     - name: Fix ownership after restore
       ansible.builtin.command:

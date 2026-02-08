@@ -17,7 +17,7 @@ PYTHON_BIN := $(shell \
 		echo none; \
 	fi)
 
-.PHONY: help setup lint check deploy clean
+.PHONY: help setup hooks lint check deploy clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -27,7 +27,7 @@ setup: $(VENV)/bin/ansible ## Create venv and install Ansible + Galaxy collectio
 
 $(VENV)/bin/ansible: $(VENV)/bin/activate requirements.yml
 	$(ACTIVATE) && pip install --upgrade pip
-	$(ACTIVATE) && pip install ansible ansible-lint yamllint
+	$(ACTIVATE) && pip install ansible ansible-lint yamllint pre-commit
 	$(ACTIVATE) && ansible-galaxy collection install -r requirements.yml
 	@touch $@
 
@@ -48,8 +48,11 @@ else
 	$(error No suitable Python found. Install uv, pyenv, or python3 >= $(PYTHON_MIN))
 endif
 
+hooks: $(VENV)/bin/ansible ## Install pre-commit hooks into .git/hooks
+	$(ACTIVATE) && pre-commit install
+
 lint: $(VENV)/bin/ansible ## Run ansible-lint and yamllint
-	$(ACTIVATE) && yamllint .
+	$(ACTIVATE) && yamllint -c .yamllint.yml .
 	$(ACTIVATE) && ansible-lint playbooks/ roles/
 
 check: $(VENV)/bin/ansible ## Dry-run site.yml (check mode)

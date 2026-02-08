@@ -11,5 +11,13 @@
           - source_host | length > 0
         fail_msg: "source_host is required. Usage: ansible-playbook playbooks/migrate.yml -e source_host=<lxc-hostname>"
 
+    - name: Add source LXC to in-memory inventory
+      ansible.builtin.add_host:
+        name: "{{ source_host }}"
+        groups: migration_sources
+        # LXC containers use root — Proxmox default
+        ansible_user: root
+      changed_when: false
+
   roles:
     - migrate

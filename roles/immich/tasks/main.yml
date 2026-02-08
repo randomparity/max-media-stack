@@ -8,41 +8,61 @@
     mode: "0755"
   become: true
 
-- name: Create Immich DB password podman secret
+- name: Check if Immich DB password secret exists
+  ansible.builtin.command:
+    cmd: podman secret inspect immich-db-password
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  register: _immich_secret_inspect
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Compute desired password hash
+  ansible.builtin.set_fact:
+    _immich_db_password_hash: "{{ vault_immich_db_password | hash('sha256') }}"
+  no_log: true
+
+- name: Read stored password hash
+  ansible.builtin.slurp:
+    src: "{{ mms_config_dir }}/immich/.db-password.sha256"
+  become: true
+  register: _immich_stored_hash
+  failed_when: false
+
+- name: Determine if secret needs update
+  ansible.builtin.set_fact:
+    _immich_secret_needs_update: "{{ _immich_secret_inspect.rc != 0 or _immich_stored_hash is failed or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash }}"
+
+- name: Remove existing secret
+  ansible.builtin.command:
+    cmd: podman secret rm immich-db-password
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: _immich_secret_needs_update and _immich_secret_inspect.rc == 0
+  no_log: true
+
+- name: Create Immich DB password secret
   ansible.builtin.command:
     cmd: podman secret create immich-db-password -
     stdin: "{{ vault_immich_db_password }}"
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
-  register: secret_create
-  changed_when: secret_create.rc == 0
-  failed_when: false
+  when: _immich_secret_needs_update
   no_log: true
 
-- name: Update Immich DB password podman secret if it exists
-  when: secret_create.rc != 0
-  block:
-    - name: Remove existing secret
-      ansible.builtin.command:
-        cmd: podman secret rm immich-db-password
-      become: true
-      become_user: "{{ mms_user }}"
-      environment:
-        XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
-      changed_when: true
-      no_log: true
-
-    - name: Recreate secret
-      ansible.builtin.command:
-        cmd: podman secret create immich-db-password -
-        stdin: "{{ vault_immich_db_password }}"
-      become: true
-      become_user: "{{ mms_user }}"
-      environment:
-        XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
-      changed_when: true
-      no_log: true
+- name: Store password hash
+  ansible.builtin.copy:
+    content: "{{ _immich_db_password_hash }}\n"
+    dest: "{{ mms_config_dir }}/immich/.db-password.sha256"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+  become: true
+  when: _immich_secret_needs_update
 
 - name: Deploy Immich environment file
   ansible.builtin.template:
@@ -162,6 +182,7 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode
 
 - name: Enable and start immich-redis
   ansible.builtin.systemd:
@@ -184,6 +205,7 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode
 
 - name: Enable and start immich-server
   ansible.builtin.systemd:
@@ -216,3 +238,4 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode

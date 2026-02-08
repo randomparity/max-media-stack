@@ -6,7 +6,6 @@ base_system_timezone: "{{ mms_timezone }}"
 base_system_hostname: "{{ mms_vm_name }}"
 
 base_system_packages:
-  - podman
   - nfs-utils
   - cifs-utils
   - age

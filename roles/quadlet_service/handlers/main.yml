@@ -9,7 +9,7 @@
 
 - name: Restart quadlet service
   ansible.builtin.systemd:
-    name: "{{ service.name }}.service"
+    name: "{{ quadlet_service_def.name }}.service"
     state: restarted
     scope: user
   become: true

@@ -1,0 +1,25 @@
+---
+profile: moderate
+
+warn_list:
+  # Vault password file not present in CI/dev environments
+  - internal-error
+  # Podman/rsync operations have no equivalent Ansible module
+  - command-instead-of-module
+  # Migrate role uses "service - Task" naming pattern for clarity
+  - name[casing]
+  - name[template]
+  # Migrate role internal vars use _prefix convention instead of role prefix
+  - var-naming[no-role-prefix]
+  - yaml[line-length]
+
+exclude_paths:
+  - .venv/
+  - collections/
+  - .github/
+  - .cache/
+  - "*/vault.yml"
+  - "*/vault_*.yml"
+  - roles/quadlet_service/molecule/services/
+
+offline: true

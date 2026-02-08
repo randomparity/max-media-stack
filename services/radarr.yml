@@ -2,7 +2,7 @@
 radarr:
   name: radarr
   description: "Radarr - Movie Manager"
-  image: "lscr.io/linuxserver/radarr:latest"
+  image: "lscr.io/linuxserver/radarr:6.0.4.10291-ls291"
   publish_ports:
     - "7878:7878"
   volumes:

@@ -15,10 +15,12 @@
     cmd: firewall-cmd --get-default-zone
   register: _firewall_current_zone
   changed_when: false
+  check_mode: false
 
 - name: Set default zone to drop
   ansible.builtin.command:
     cmd: firewall-cmd --set-default-zone={{ firewall_default_zone }}
+  changed_when: true
   when: _firewall_current_zone.stdout | trim != firewall_default_zone
 
 - name: Assign tailscale0 to trusted zone
