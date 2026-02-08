@@ -23,16 +23,5 @@ provisioner:
         mms_systemd_env:
           XDG_RUNTIME_DIR: /run/user/1100
           DBUS_SESSION_BUS_ADDRESS: unix:path=/run/user/1100/bus
+        mms_network_name: mms
         service_name: testapp
-        testapp:
-          name: testapp
-          description: "Test Application"
-          image: "docker.io/library/nginx:alpine"
-          publish_ports:
-            - "8080:80"
-          volumes:
-            - "/opt/mms/config/testapp:/config:Z"
-          environment:
-            - "PUID=1100"
-            - "PGID=1100"
-            - "TZ=America/New_York"
