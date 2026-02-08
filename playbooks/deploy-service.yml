@@ -3,9 +3,7 @@
   hosts: mms
   become: true
 
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"
+  environment: "{{ mms_systemd_env }}"
 
   pre_tasks:
     - name: Validate service_name is provided

@@ -6,8 +6,8 @@ sabnzbd:
   publish_ports:
     - "8080:8080"
   volumes:
-    - "/home/mms/config/sabnzbd:/config:Z"
-    - "/data:/data"
+    - "{{ mms_config_dir }}/sabnzbd:/config:Z"
+    - "{{ mms_data_dir }}:/data"
   environment:
     - "PUID={{ mms_uid }}"
     - "PGID={{ mms_gid }}"

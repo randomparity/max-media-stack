@@ -24,6 +24,13 @@
         that: _backup_stat.stat.exists
         fail_msg: "Backup file not found: {{ backup_file }}"
 
+    - name: Validate age identity file for encrypted backups
+      ansible.builtin.assert:
+        that:
+          - backup_age_identity_file | length > 0
+        fail_msg: "backup_age_identity_file is required for encrypted backups. Use -e backup_age_identity_file=/path/to/key"
+      when: backup_file is match('.*\\.age$')
+
   tasks:
     - name: Restore arr service
       when: service_name in ['prowlarr', 'radarr', 'sonarr', 'lidarr']

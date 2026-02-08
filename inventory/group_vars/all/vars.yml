@@ -19,6 +19,11 @@ mms_quadlet_dir: /home/mms/.config/containers/systemd
 # Podman network
 mms_network_name: mms
 
+# Rootless Podman systemd environment (used in handlers and tasks)
+mms_systemd_env:
+  XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
+  DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"
+
 # Ansible user for initial SSH access
 mms_ansible_user: dave
 

@@ -6,8 +6,8 @@ jellyfin:
   publish_ports:
     - "8096:8096"
   volumes:
-    - "/home/mms/config/jellyfin:/config:Z"
-    - "/data/media:/data/media:ro"
+    - "{{ mms_config_dir }}/jellyfin:/config:Z"
+    - "{{ mms_data_dir }}/media:{{ mms_data_dir }}/media:ro"
   environment:
     - "PUID={{ mms_uid }}"
     - "PGID={{ mms_gid }}"

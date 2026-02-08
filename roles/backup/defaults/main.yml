@@ -19,6 +19,10 @@ backup_config_dir: "{{ mms_config_dir | default('/home/mms/config') }}"
 # Service user
 backup_user: "{{ mms_user | default('mms') }}"
 
+# Age identity (private key) file for restore decryption
+# Must be provided via -e when restoring encrypted backups
+backup_age_identity_file: ""
+
 # Immich PostgreSQL container name
 backup_immich_db_container: immich-postgres
 

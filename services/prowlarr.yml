@@ -6,7 +6,7 @@ prowlarr:
   publish_ports:
     - "9696:9696"
   volumes:
-    - "/home/mms/config/prowlarr:/config:Z"
+    - "{{ mms_config_dir }}/prowlarr:/config:Z"
   environment:
     - "PUID={{ mms_uid }}"
     - "PGID={{ mms_gid }}"

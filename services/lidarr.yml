@@ -6,8 +6,8 @@ lidarr:
   publish_ports:
     - "8686:8686"
   volumes:
-    - "/home/mms/config/lidarr:/config:Z"
-    - "/data:/data"
+    - "{{ mms_config_dir }}/lidarr:/config:Z"
+    - "{{ mms_data_dir }}:/data"
   environment:
     - "PUID={{ mms_uid }}"
     - "PGID={{ mms_gid }}"

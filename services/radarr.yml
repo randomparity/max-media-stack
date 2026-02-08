@@ -6,8 +6,8 @@ radarr:
   publish_ports:
     - "7878:7878"
   volumes:
-    - "/home/mms/config/radarr:/config:Z"
-    - "/data:/data"
+    - "{{ mms_config_dir }}/radarr:/config:Z"
+    - "{{ mms_data_dir }}:/data"
   environment:
     - "PUID={{ mms_uid }}"
     - "PGID={{ mms_gid }}"

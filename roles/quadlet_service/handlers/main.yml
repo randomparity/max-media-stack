@@ -5,9 +5,7 @@
     scope: user
   become: true
   become_user: "{{ mms_user }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"
+  environment: "{{ mms_systemd_env }}"
 
 - name: Restart quadlet service
   ansible.builtin.systemd:
@@ -16,6 +14,4 @@
     scope: user
   become: true
   become_user: "{{ mms_user }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ mms_uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mms_uid }}/bus"
+  environment: "{{ mms_systemd_env }}"
