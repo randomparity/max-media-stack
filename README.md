@@ -64,23 +64,28 @@ Edit the following files with your environment details:
 - `inventory/group_vars/mms/vars.yml` — VM specs, NFS server IP, SSH public key
 - `inventory/group_vars/all/vars.yml` — Timezone, user settings
 
-### 3. Create vault files
+### 3. Configure secrets
+
+The vault files are already encrypted in the repository. To edit them, first create a vault password file, then use `ansible-vault edit` to decrypt each file in your `$EDITOR`, make changes, and re-encrypt on save.
 
 ```bash
 # Create vault password file
 echo 'your-vault-password' > ~/.vault_pass_mms
 chmod 0600 ~/.vault_pass_mms
 
-# Encrypt secrets
-ansible-vault encrypt inventory/group_vars/all/vault.yml
-ansible-vault encrypt inventory/group_vars/proxmox/vault.yml
+# Edit each vault file — uncomment the placeholders and fill in real values
+ansible-vault edit inventory/group_vars/proxmox/vault.yml
+ansible-vault edit inventory/group_vars/all/vault.yml
 ```
 
-Required secrets:
-- `vault_proxmox_api_user` — Proxmox API token user
-- `vault_proxmox_api_token_secret` — Proxmox API token secret
+`inventory/group_vars/proxmox/vault.yml` — Proxmox API credentials:
+- `vault_proxmox_api_user` — API token in `user@realm!tokenid` format (e.g., `ansible@pam!mms`)
+- `vault_proxmox_api_token_secret` — Token secret UUID from Proxmox
+
+`inventory/group_vars/all/vault.yml` — Service credentials:
 - `vault_tailscale_auth_key` — Tailscale pre-auth key
 - `vault_immich_db_password` — Immich PostgreSQL password
+- `vault_backup_age_public_key` — Age public key for backup encryption
 
 ### 4. Deploy
 
