@@ -41,7 +41,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 
 ## Prerequisites
 
-- Proxmox 9.x with API token configured
+- Proxmox 9.x with API token configured (see [Proxmox API Token Setup](#proxmox-api-token-setup) below)
 - TrueNAS with NFS exports for media, usenet, and photos
 - Tailscale account with pre-generated auth key
 - Fedora cloud image template on Proxmox
@@ -161,6 +161,85 @@ This will:
 ```
 
 This follows the [TRaSH Guides](https://trash-guides.info/) recommended folder structure, enabling hardlinks between download and library directories.
+
+## Proxmox API Token Setup
+
+MMS uses the Proxmox API to provision and manage VMs. Create a dedicated user and API token with the minimum required permissions.
+
+### 1. Create the user and token
+
+In the Proxmox web UI (**Datacenter > Permissions**):
+
+1. Go to **Users** and create a new user:
+   - User name: `ansible`
+   - Realm: `pam` (Linux PAM)
+   - No password needed (token-only access)
+
+2. Go to **API Tokens** and create a token for the user:
+   - User: `ansible@pam`
+   - Token ID: `mms`
+   - **Uncheck** "Privilege Separation" (token inherits the user's permissions)
+
+3. Copy the token secret — it is only shown once.
+
+Or via the CLI on the Proxmox host:
+
+```bash
+pveum user add ansible@pam
+pveum user token add ansible@pam mms --privsep 0
+```
+
+### 2. Create a custom role with least-privilege permissions
+
+```bash
+pveum role add MMS-Provisioner --privs \
+  "VM.Allocate VM.Clone VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.Memory VM.Config.Network VM.Config.Options VM.Audit VM.PowerMgmt Datastore.AllocateSpace Datastore.Audit VM.Snapshot VM.Snapshot.Rollback"
+```
+
+Permission breakdown:
+
+| Permission | Used by |
+|---|---|
+| `VM.Allocate` | Create new VMs from clone |
+| `VM.Clone` | Clone template to new VM |
+| `VM.Config.Cloudinit` | Set cloud-init user, SSH keys, IP |
+| `VM.Config.CPU` | Set core count |
+| `VM.Config.Disk` | Resize root disk |
+| `VM.Config.Memory` | Set RAM |
+| `VM.Config.Network` | Set bridge/NIC |
+| `VM.Config.Options` | General VM configuration |
+| `VM.Audit` | Query VM info and status |
+| `VM.PowerMgmt` | Start/stop VM |
+| `VM.Snapshot`, `VM.Snapshot.Rollback` | Pre-migration snapshots (migrate role) |
+| `Datastore.AllocateSpace` | Allocate disk on storage |
+| `Datastore.Audit` | Query storage info |
+
+### 3. Assign the role to the user
+
+```bash
+pveum acl modify /vms/<VMID> --user ansible@pam --role MMS-Provisioner
+```
+
+Replace `<VMID>` with your VM ID (e.g., `202`), or use `/vms` to grant access to all VMs on the node.
+
+If the token needs access to clone from a template on a specific storage:
+
+```bash
+pveum acl modify /storage/<STORAGE> --user ansible@pam --role MMS-Provisioner
+```
+
+### 4. Store credentials in the vault
+
+The vault expects the full `user@realm!tokenid` format:
+
+```bash
+ansible-vault edit inventory/group_vars/proxmox/vault.yml
+```
+
+```yaml
+vault_proxmox_api_user: "ansible@pam!mms"
+vault_proxmox_api_token_secret: "<token-secret-from-step-1>"
+```
 
 ## Adding a New Service
 
