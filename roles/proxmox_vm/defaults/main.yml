@@ -2,10 +2,12 @@
 # Proxmox API connection
 proxmox_vm_api_host: "{{ proxmox_api_host }}"
 proxmox_vm_api_port: "{{ proxmox_api_port | default(8006) }}"
-proxmox_vm_api_user: "{{ vault_proxmox_api_user }}"
+proxmox_vm_api_user: "{{ vault_proxmox_api_user.split('!')[0] }}"
+proxmox_vm_api_token_id: "{{ vault_proxmox_api_user.split('!')[1] }}"
 proxmox_vm_api_token_secret: "{{ vault_proxmox_api_token_secret }}"
 proxmox_vm_node: "{{ proxmox_node }}"
 proxmox_vm_storage: "{{ proxmox_storage }}"
+proxmox_vm_template_vmid: "{{ proxmox_template_vmid }}"
 
 # VM settings
 proxmox_vm_id: "{{ mms_vm_id }}"
@@ -14,6 +16,7 @@ proxmox_vm_cores: "{{ mms_vm_cores }}"
 proxmox_vm_memory: "{{ mms_vm_memory }}"
 proxmox_vm_disk_size: "{{ mms_vm_disk_size }}"
 proxmox_vm_bridge: "{{ mms_vm_bridge }}"
+proxmox_vm_vlan: "{{ mms_vm_vlan | default(omit) }}"
 
 # Cloud-init
 proxmox_vm_ciuser: "{{ mms_ansible_user }}"

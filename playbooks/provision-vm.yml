@@ -30,7 +30,7 @@
           --name {{ proxmox_template_name }}
           --memory 2048
           --cores 2
-          --net0 virtio,bridge={{ mms_vm_bridge }}
+          --net0 virtio,bridge={{ mms_vm_bridge }}{% if mms_vm_vlan is defined and mms_vm_vlan %},tag={{ mms_vm_vlan }}{% endif %}
           --scsihw virtio-scsi-pci
       changed_when: true
       when: not _template_exists
