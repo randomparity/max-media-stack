@@ -4,3 +4,5 @@ yamllint>=1.33
 molecule>=24.0
 molecule-plugins[docker]>=24.0
 pre-commit>=3.0
+proxmoxer>=2.0
+requests>=2.30
