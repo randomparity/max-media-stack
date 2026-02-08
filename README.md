@@ -46,7 +46,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 - Tailscale account with pre-generated auth key
 - Fedora cloud image template on Proxmox
 - Ansible 2.15+ with collections: `community.general`, `community.proxmox`, `ansible.posix`, `containers.podman`
-- `age` encryption key pair for backups (public key in config, private key kept offline)
+- `age` encryption key pair for backups (see [Backup Encryption with age](#backup-encryption-with-age) below)
 
 ## Quick Start
 
@@ -259,6 +259,85 @@ ansible-vault edit inventory/group_vars/proxmox/vault.yml
 vault_proxmox_api_user: "ansible@pam!mms"
 vault_proxmox_api_token_secret: "<token-secret-from-step-1>"
 ```
+
+## Backup Encryption with age
+
+MMS encrypts backups using [age](https://age-encryption.org/), a simple file encryption tool. Encryption uses a public key (safe to store in config); decryption requires the corresponding private key (identity file), which should be kept offline or in a secure location — never on the backup server itself.
+
+### Generating keys
+
+`age` supports two key types. Either works with MMS.
+
+**Option A: Native age keys (recommended)**
+
+```bash
+age-keygen -o age-identity.txt
+```
+
+This creates `age-identity.txt` containing both keys:
+
+```
+# created: 2026-01-15T10:30:00Z
+# public key: age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
+AGE-SECRET-KEY-1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+The public key (starts with `age1...`) goes in your Ansible config. Keep the identity file safe for restores.
+
+**Option B: SSH keys**
+
+If you already have an ed25519 SSH key, `age` can encrypt to it directly — no extra key generation needed:
+
+```bash
+# Your existing public key works as the age recipient
+cat ~/.ssh/id_ed25519.pub
+# ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... user@host
+```
+
+For restores, `age` uses the corresponding private key (`~/.ssh/id_ed25519`).
+
+### Configuration
+
+Set the public key in `inventory/group_vars/all/vars.yml`:
+
+```yaml
+# Native age key:
+mms_backup_age_public_key: "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"
+
+# Or SSH public key:
+mms_backup_age_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA..."
+```
+
+Leave empty to disable backup encryption:
+
+```yaml
+mms_backup_age_public_key: ""
+```
+
+### Restoring encrypted backups
+
+The restore playbook needs the private key (identity file) path:
+
+```bash
+# With a native age identity file:
+ansible-playbook playbooks/restore.yml \
+  -e service_name=radarr \
+  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age \
+  -e backup_age_identity_file=/path/to/age-identity.txt
+
+# With an SSH private key:
+ansible-playbook playbooks/restore.yml \
+  -e service_name=radarr \
+  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age \
+  -e backup_age_identity_file=~/.ssh/id_ed25519
+```
+
+### Key management best practices
+
+- Store the identity file (private key) **off the MMS server** — on your workstation, in a password manager, or on an encrypted USB drive
+- The public key is not sensitive and is safe to commit to the repository
+- If you lose the identity file, encrypted backups cannot be recovered
+- Test a restore after initial setup to confirm the key pair works end-to-end
 
 ## Adding a New Service
 
