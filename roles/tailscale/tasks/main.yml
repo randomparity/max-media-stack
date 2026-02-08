@@ -1,0 +1,53 @@
+---
+- name: Add Tailscale RPM repository
+  ansible.builtin.get_url:
+    url: "{{ tailscale_repo_url }}"
+    dest: /etc/yum.repos.d/tailscale.repo
+    mode: "0644"
+
+- name: Install Tailscale
+  ansible.builtin.dnf:
+    name: tailscale
+    state: present
+
+- name: Enable and start tailscaled
+  ansible.builtin.systemd:
+    name: tailscaled
+    state: started
+    enabled: true
+
+- name: Check Tailscale status
+  ansible.builtin.command:
+    cmd: tailscale status --json
+  register: _tailscale_status
+  changed_when: false
+  failed_when: false
+
+- name: Determine if Tailscale needs authentication
+  ansible.builtin.set_fact:
+    _tailscale_needs_auth: >-
+      {{ _tailscale_status.rc != 0 or
+         (_tailscale_status.stdout | default('{}') | from_json).get('BackendState', '') != 'Running' }}
+
+- name: Authenticate with Tailscale
+  ansible.builtin.command:
+    cmd: >-
+      tailscale up
+      --authkey={{ tailscale_auth_key }}
+      --hostname={{ tailscale_hostname }}
+  when: _tailscale_needs_auth | bool
+  no_log: true
+
+- name: Deploy tailscale serve script
+  ansible.builtin.template:
+    src: tailscale-serve.sh.j2
+    dest: "{{ tailscale_serve_script }}"
+    mode: "0755"
+  register: _tailscale_serve_script
+
+- name: Run tailscale serve configuration
+  ansible.builtin.command:
+    cmd: "{{ tailscale_serve_script }}"
+  register: _tailscale_serve
+  changed_when: "'configured' in _tailscale_serve.stdout"
+  when: _tailscale_serve_script.changed
