@@ -1,0 +1,21 @@
+---
+driver:
+  name: docker
+
+platforms:
+  - name: base-system-test
+    image: fedora:41
+    command: /usr/sbin/init
+    privileged: true
+    pre_build_image: true
+
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      base-system-test:
+        mms_user: mms
+        mms_uid: "1100"
+        mms_gid: "1100"
+        mms_timezone: America/New_York
+        mms_vm_name: test-host

@@ -1,0 +1,38 @@
+---
+driver:
+  name: docker
+
+platforms:
+  - name: quadlet-service-test
+    image: fedora:41
+    command: /usr/sbin/init
+    privileged: true
+    pre_build_image: true
+
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      quadlet-service-test:
+        mms_user: mms
+        mms_uid: "1100"
+        mms_gid: "1100"
+        mms_timezone: America/New_York
+        mms_config_dir: /opt/mms/config
+        mms_quadlet_dir: /home/mms/.config/containers/systemd
+        mms_systemd_env:
+          XDG_RUNTIME_DIR: /run/user/1100
+          DBUS_SESSION_BUS_ADDRESS: unix:path=/run/user/1100/bus
+        service_name: testapp
+        testapp:
+          name: testapp
+          description: "Test Application"
+          image: "docker.io/library/nginx:alpine"
+          publish_ports:
+            - "8080:80"
+          volumes:
+            - "/opt/mms/config/testapp:/config:Z"
+          environment:
+            - "PUID=1100"
+            - "PGID=1100"
+            - "TZ=America/New_York"
