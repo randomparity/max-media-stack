@@ -42,9 +42,9 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 ## Prerequisites
 
 - Proxmox 9.x with API token configured (see [Proxmox API Token Setup](#proxmox-api-token-setup) below)
+- SSH key access to the Proxmox host as `root` from the Ansible control machine (used to create the Fedora cloud image template via `qm` commands)
 - TrueNAS with NFS exports for media, usenet, and photos
 - Tailscale account with pre-generated auth key
-- Fedora cloud image template on Proxmox
 - Ansible 2.15+ with collections: `community.general`, `community.proxmox`, `ansible.posix`, `containers.podman`
 - `age` encryption key pair for backups (see [Backup Encryption with age](#backup-encryption-with-age) below)
 
