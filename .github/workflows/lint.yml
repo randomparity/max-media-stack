@@ -29,7 +29,7 @@ jobs:
         run: echo "dummy" > /tmp/vault_pass_mms
 
       - name: Run yamllint
-        run: yamllint .
+        run: yamllint -c .yamllint.yml .
         env:
           ANSIBLE_VAULT_PASSWORD_FILE: /tmp/vault_pass_mms
 

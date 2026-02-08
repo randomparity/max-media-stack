@@ -15,6 +15,7 @@
       ansible.builtin.add_host:
         name: "{{ source_host }}"
         groups: migration_sources
+        # LXC containers use root — Proxmox default
         ansible_user: root
       changed_when: false
 
