@@ -9,7 +9,7 @@ CHANGED=false
 {% for service, port in tailscale_serve_mappings.items() %}
 # Configure {{ service }} on HTTPS port {{ port }}
 if ! tailscale serve status 2>/dev/null | grep -q ":{{ port }}"; then
-    tailscale serve --https={{ port }} http://localhost:{{ tailscale_local_ports[service] | default(port) }}
+    tailscale serve --bg --https={{ port }} http://localhost:{{ tailscale_local_ports[service] | default(port) }}
     CHANGED=true
     echo "{{ service }} configured on https:{{ port }}"
 fi

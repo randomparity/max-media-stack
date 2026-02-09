@@ -6,17 +6,17 @@
     - name: Check config directory exists
       ansible.builtin.stat:
         path: /opt/mms/config/testapp
-      register: _config_dir
-      failed_when: not _config_dir.stat.exists
+      register: _quadlet_service_config_dir
+      failed_when: not _quadlet_service_config_dir.stat.exists
 
     - name: Check environment file exists
       ansible.builtin.stat:
         path: /opt/mms/config/testapp/testapp.env
-      register: _env_file
-      failed_when: not _env_file.stat.exists
+      register: _quadlet_service_env_file
+      failed_when: not _quadlet_service_env_file.stat.exists
 
     - name: Check container quadlet file exists
       ansible.builtin.stat:
         path: /home/mms/.config/containers/systemd/testapp.container
-      register: _quadlet_file
-      failed_when: not _quadlet_file.stat.exists
+      register: _quadlet_service_quadlet_file
+      failed_when: not _quadlet_service_quadlet_file.stat.exists

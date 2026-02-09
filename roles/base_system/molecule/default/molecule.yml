@@ -15,7 +15,7 @@ provisioner:
     host_vars:
       base-system-test:
         mms_user: mms
-        mms_uid: "1100"
-        mms_gid: "1100"
+        mms_uid: "3000"
+        mms_gid: "3000"
         mms_timezone: America/New_York
         mms_vm_name: test-host

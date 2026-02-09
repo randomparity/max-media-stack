@@ -5,8 +5,8 @@ migrate_source_user: root
 
 # Service user on target
 migrate_user: "{{ mms_user | default('mms') }}"
-migrate_uid: "{{ mms_uid | default(1100) }}"
-migrate_gid: "{{ mms_gid | default(1100) }}"
+migrate_uid: "{{ mms_uid | default(3000) }}"
+migrate_gid: "{{ mms_gid | default(3000) }}"
 
 # Paths on target
 migrate_config_dir: "{{ mms_config_dir | default('/home/mms/config') }}"

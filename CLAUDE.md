@@ -44,7 +44,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 
 ## Architecture
 
-- **Rootless Podman**: All containers run as `mms` user (1100:1100) with Quadlet files in `~mms/.config/containers/systemd/`
+- **Rootless Podman**: All containers run as `mms` user (3000:3000) with Quadlet files in `~mms/.config/containers/systemd/`
 - **Data-driven services**: Each service defined in `services/<name>.yml`; the generic `quadlet_service` role renders templates
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
@@ -62,5 +62,5 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Variables prefixed with `mms_` for global, `vault_` for secrets
 - Roles use `defaults/main.yml` for overridable defaults
 - Handlers used for service restarts and daemon-reload
-- SELinux: `:Z` for local config volumes, no labels for NFS (uses `container_use_nfs` boolean)
+- SELinux: `:Z` for local config volumes, no labels for NFS (uses `virt_use_nfs` boolean)
 - All services join the shared `mms.network` for inter-container DNS

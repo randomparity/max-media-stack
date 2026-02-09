@@ -33,7 +33,10 @@
 
 - name: Determine if secret needs update
   ansible.builtin.set_fact:
-    _immich_secret_needs_update: "{{ _immich_secret_inspect.rc != 0 or _immich_stored_hash is failed or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash }}"
+    _immich_secret_needs_update: >-
+      {{ (_immich_secret_inspect.rc != 0
+          or _immich_stored_hash is failed
+          or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash) | bool }}
 
 - name: Remove existing secret
   ansible.builtin.command:
@@ -41,17 +44,16 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
-  when: _immich_secret_needs_update and _immich_secret_inspect.rc == 0
+  when: (_immich_secret_needs_update | bool) and _immich_secret_inspect.rc == 0
   no_log: true
 
 - name: Create Immich DB password secret
-  ansible.builtin.command:
-    cmd: podman secret create immich-db-password -
-    stdin: "{{ vault_immich_db_password }}"
+  ansible.builtin.shell:
+    cmd: printf '%s' "$IMMICH_DB_PASSWORD" | podman secret create immich-db-password -
   become: true
   become_user: "{{ mms_user }}"
-  environment: "{{ mms_systemd_env }}"
-  when: _immich_secret_needs_update
+  environment: "{{ mms_systemd_env | combine({'IMMICH_DB_PASSWORD': vault_immich_db_password}) }}"
+  when: _immich_secret_needs_update | bool
   no_log: true
 
 - name: Store password hash
@@ -62,7 +64,7 @@
     group: "{{ mms_user }}"
     mode: "0600"
   become: true
-  when: _immich_secret_needs_update
+  when: _immich_secret_needs_update | bool
 
 - name: Deploy Immich environment file
   ansible.builtin.template:
@@ -144,6 +146,15 @@
     - Reload systemd user daemon
     - Restart immich-server
 
+- name: Deploy ML health check script
+  ansible.builtin.template:
+    src: healthcheck-ml.sh.j2
+    dest: "{{ mms_config_dir }}/immich/healthcheck-ml.sh"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
 - name: Deploy immich-ml container quadlet
   ansible.builtin.template:
     src: immich-ml.container.j2
@@ -174,8 +185,8 @@
 - name: Wait for PostgreSQL to be ready
   ansible.builtin.command:
     cmd: podman healthcheck run immich-postgres
-  register: pg_health
-  until: pg_health.rc == 0
+  register: _immich_pg_health
+  until: _immich_pg_health.rc == 0
   retries: 12
   delay: 10
   changed_when: false
@@ -197,8 +208,8 @@
 - name: Wait for Redis to be ready
   ansible.builtin.command:
     cmd: podman healthcheck run immich-redis
-  register: redis_health
-  until: redis_health.rc == 0
+  register: _immich_redis_health
+  until: _immich_redis_health.rc == 0
   retries: 12
   delay: 5
   changed_when: false
@@ -230,8 +241,8 @@
 - name: Wait for Immich server health check
   ansible.builtin.command:
     cmd: podman healthcheck run immich-server
-  register: server_health
-  until: server_health.rc == 0
+  register: _immich_server_health
+  until: _immich_server_health.rc == 0
   retries: 18
   delay: 10
   changed_when: false

@@ -36,6 +36,7 @@
       tailscale up
       --authkey={{ tailscale_auth_key }}
       --hostname={{ tailscale_hostname }}
+      --force-reauth
   changed_when: true
   when: _tailscale_needs_auth | bool
   no_log: true
@@ -51,5 +52,7 @@
   ansible.builtin.command:
     cmd: "{{ tailscale_serve_script }}"
   register: _tailscale_serve
-  changed_when: "'configured' in _tailscale_serve.stdout"
+  changed_when: "'configured' in (_tailscale_serve.stdout | default(''))"
+  failed_when: false
   when: _tailscale_serve_script.changed
+  timeout: 30

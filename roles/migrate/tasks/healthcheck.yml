@@ -1,18 +1,18 @@
 ---
-- name: "{{ _migrate_service }} - Load service definition"
+- name: "Load service definition for {{ _migrate_service }}"
   ansible.builtin.include_vars:
     file: "{{ playbook_dir }}/../services/{{ _migrate_service }}.yml"
     name: _svc_health
 
-- name: "{{ _migrate_service }} - Wait for service to become healthy"
+- name: "Wait for service to become healthy — {{ _migrate_service }}"
   ansible.builtin.command:
     cmd: >-
       podman exec {{ _migrate_service }}
       {{ _svc_health[_migrate_service].health_cmd }}
-  register: _health_result
+  register: _migrate_health_result
   retries: 30
   delay: 10
-  until: _health_result.rc == 0
+  until: _migrate_health_result.rc == 0
   changed_when: false
   become: true
   become_user: "{{ migrate_user }}"

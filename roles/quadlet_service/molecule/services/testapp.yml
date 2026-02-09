@@ -8,6 +8,6 @@ testapp:
   volumes:
     - "/opt/mms/config/testapp:/config:Z"
   environment:
-    - "PUID=1100"
-    - "PGID=1100"
+    - "PUID=3000"
+    - "PGID=3000"
     - "TZ=America/New_York"

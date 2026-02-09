@@ -11,9 +11,10 @@ Image={{ immich_ml_image }}
 Network={{ mms_network_name }}.network
 ContainerName=immich-ml
 Volume=immich-ml-cache.volume:/cache
+Volume={{ mms_config_dir }}/immich/healthcheck-ml.sh:/healthcheck.sh:Z,ro
 EnvironmentFile={{ mms_config_dir }}/immich/immich.env
 Secret=immich-db-password,type=env,target=DB_PASSWORD
-HealthCmd=curl -sf http://localhost:3003/ping || exit 1
+HealthCmd=/healthcheck.sh
 HealthInterval=60s
 NoNewPrivileges=true
 AutoUpdate=registry

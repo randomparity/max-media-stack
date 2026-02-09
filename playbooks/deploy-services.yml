@@ -6,7 +6,7 @@
   environment: "{{ mms_systemd_env }}"
 
   tasks:
-    - name: Deploy each service
+    - name: Deploy each service  # noqa: var-naming[no-role-prefix]
       ansible.builtin.include_role:
         name: quadlet_service
       vars:
