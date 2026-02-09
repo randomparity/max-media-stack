@@ -358,6 +358,137 @@ ansible-playbook playbooks/restore.yml \
 - If you lose the identity file, encrypted backups cannot be recovered
 - Test a restore after initial setup to confirm the key pair works end-to-end
 
+## Auto-Deploy
+
+MMS uses [Renovate](https://docs.renovatebot.com/) to discover container image updates and a systemd timer on the VM to automatically deploy changes merged to `main`. Renovate opens PRs for version bumps (auto-merging patch and minor), and the autodeploy timer polls the git repo every 30 minutes, running `ansible-playbook` when new commits are detected.
+
+### How it works
+
+1. Renovate scans `services/*.yml`, role defaults, and `requirements.yml` for pinned versions
+2. When updates are available, Renovate opens a PR (grouped by ecosystem: LinuxServer, Immich, Galaxy)
+3. Patch and minor updates auto-merge after CI passes; major updates require manual review
+4. The `mms-autodeploy.timer` on the VM detects the new commit and runs the deploy playbook
+
+### GitHub repository setup
+
+#### 1. Generate a deploy key
+
+On your workstation, generate an ed25519 SSH key pair for the VM to pull from GitHub:
+
+```bash
+ssh-keygen -t ed25519 -C "mms-autodeploy" -f mms_deploy_key -N ""
+```
+
+This creates `mms_deploy_key` (private) and `mms_deploy_key.pub` (public).
+
+#### 2. Add the deploy key to GitHub
+
+In your GitHub repository settings (**Settings > Deploy keys**):
+
+1. Click **Add deploy key**
+2. Title: `mms-autodeploy`
+3. Key: paste the contents of `mms_deploy_key.pub`
+4. Leave **Allow write access** unchecked (read-only is sufficient)
+5. Click **Add key**
+
+#### 3. Configure branch protection
+
+In **Settings > Branches**, add a rule for `main`:
+
+1. Check **Require a pull request before merging**
+2. Check **Require status checks to pass before merging** and add `lint` as a required check
+3. Check **Require branches to be up to date before merging**
+
+#### 4. Enable auto-merge
+
+In **Settings > General > Pull Requests**, check **Allow auto-merge**.
+
+#### 5. Install Renovate
+
+1. Go to the [Renovate GitHub App](https://github.com/apps/renovate) and install it for your repository
+2. Renovate will open an onboarding PR — review and merge it
+3. Subsequent PRs will follow the schedule and rules in `renovate.json5`
+
+### Vault variables
+
+The autodeploy role requires two vault-encrypted secrets. Add them to `inventory/group_vars/all/vault.yml`:
+
+```bash
+ansible-vault edit inventory/group_vars/all/vault.yml
+```
+
+Add:
+
+```yaml
+# Private deploy key for git clone/fetch (contents of mms_deploy_key)
+vault_autodeploy_ssh_key: |
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  ...
+  -----END OPENSSH PRIVATE KEY-----
+
+# Ansible vault password (so the VM can decrypt vault files during deploy)
+vault_mms_vault_password: "your-vault-password"
+```
+
+Alternatively, encrypt the deploy key inline:
+
+```bash
+ansible-vault encrypt_string --name vault_autodeploy_ssh_key < mms_deploy_key
+```
+
+After adding the vault variables, delete the local key files:
+
+```bash
+rm mms_deploy_key mms_deploy_key.pub
+```
+
+### Inventory variable
+
+The repo URL is already configured in `inventory/group_vars/mms/vars.yml`:
+
+```yaml
+mms_autodeploy_repo_url: "git@github.com:randomparity/max-media-stack.git"
+```
+
+Update this if your repository URL differs.
+
+### Deploy and verify
+
+Run the base setup playbook to deploy the autodeploy role:
+
+```bash
+ansible-playbook playbooks/setup-base.yml
+```
+
+Then verify on the VM:
+
+```bash
+# Check the timer is active
+systemctl --user status mms-autodeploy.timer
+systemctl --user list-timers
+
+# Trigger a manual deploy
+systemctl --user start mms-autodeploy.service
+
+# Check logs
+journalctl --user -u mms-autodeploy --since today
+
+# View deploy logs
+ls ~/logs/autodeploy/
+```
+
+### Configuration
+
+The autodeploy role accepts these defaults (override in inventory vars):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `autodeploy_schedule` | `*-*-* *:00/30:00` | Systemd timer schedule (every 30 min) |
+| `autodeploy_branch` | `main` | Git branch to track |
+| `autodeploy_playbook` | `playbooks/deploy-services.yml` | Playbook to run on changes |
+| `autodeploy_timeout` | `1800` | Max deploy duration in seconds |
+| `autodeploy_log_retention` | `30` | Number of log files to keep |
+
 ## Adding a New Service
 
 1. Create `services/<name>.yml` with the service definition (image, volumes, health check)
