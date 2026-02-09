@@ -3,8 +3,6 @@ sabnzbd:
   name: sabnzbd
   description: "SABnzbd - Usenet Downloader"
   image: "lscr.io/linuxserver/sabnzbd:4.5.5-ls243"
-  publish_ports:
-    - "8080:8080"
   volumes:
     - "{{ mms_config_dir }}/sabnzbd:/config:Z"
     - "{{ mms_data_dir }}:/data"

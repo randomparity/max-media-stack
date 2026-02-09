@@ -1,12 +1,5 @@
 ---
 tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
-tailscale_serve_mappings: "{{ mms_tailscale_serve }}"
 tailscale_hostname: "{{ mms_vm_name }}"
 
 tailscale_repo_url: https://pkgs.tailscale.com/stable/fedora/tailscale.repo
-tailscale_serve_script: /usr/local/bin/tailscale-serve.sh
-
-# Map of service name → local HTTP port (when different from the HTTPS port)
-# Jellyfin listens on 8096 locally but is exposed on HTTPS 443 via Tailscale
-tailscale_local_ports:
-  jellyfin: 8096

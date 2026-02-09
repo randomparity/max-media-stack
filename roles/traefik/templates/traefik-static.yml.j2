@@ -1,0 +1,15 @@
+{{ ansible_managed | comment }}
+
+entryPoints:
+  web:
+    address: ":{{ traefik_port }}"
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+ping:
+  entryPoint: web
+log:
+  level: "{{ traefik_log_level }}"
+api:
+  dashboard: false

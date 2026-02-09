@@ -27,12 +27,34 @@ mms_services:
   - sabnzbd
   - jellyfin
 
-# Tailscale serve mappings (service_name: port)
-mms_tailscale_serve:
-  prowlarr: 9696
-  radarr: 7878
-  sonarr: 8989
-  lidarr: 8686
-  sabnzbd: 8080
-  jellyfin: 443
-  immich: 2283
+# Traefik reverse proxy
+mms_traefik_domain: media.example.com
+mms_traefik_routes:
+  prowlarr:
+    subdomain: prowlarr
+    container: prowlarr
+    port: 9696
+  radarr:
+    subdomain: radarr
+    container: radarr
+    port: 7878
+  sonarr:
+    subdomain: sonarr
+    container: sonarr
+    port: 8989
+  lidarr:
+    subdomain: lidarr
+    container: lidarr
+    port: 8686
+  sabnzbd:
+    subdomain: sabnzbd
+    container: sabnzbd
+    port: 8080
+  jellyfin:
+    subdomain: jellyfin
+    container: jellyfin
+    port: 8096
+  immich:
+    subdomain: immich
+    container: immich-server
+    port: 2283

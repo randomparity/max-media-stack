@@ -13,9 +13,11 @@ After={{ dep }}
 ContainerName={{ quadlet_service_def.name }}
 Image={{ quadlet_service_def.image }}
 Network={{ mms_network_name }}.network
+{% if quadlet_service_def.publish_ports is defined %}
 {% for port in quadlet_service_def.publish_ports %}
 PublishPort={{ port }}
 {% endfor %}
+{% endif %}
 {% for vol in quadlet_service_def.volumes %}
 Volume={{ vol }}
 {% endfor %}
