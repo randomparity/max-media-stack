@@ -39,9 +39,11 @@
     vmid: "{{ proxmox_vm_id }}"
     cores: "{{ proxmox_vm_cores }}"
     memory: "{{ proxmox_vm_memory }}"
+    description: "{{ proxmox_vm_description }}"
     net:
       net0: "virtio,bridge={{ proxmox_vm_bridge }}{% if proxmox_vm_vlan is defined and proxmox_vm_vlan %},tag={{ proxmox_vm_vlan }}{% endif %}"
     update: true
+  changed_when: false
 
 - name: Configure cloud-init settings
   community.proxmox.proxmox_kvm:
@@ -53,12 +55,14 @@
     node: "{{ proxmox_vm_node }}"
     vmid: "{{ proxmox_vm_id }}"
     ciuser: "{{ proxmox_vm_ciuser }}"
+    cipassword: "{{ proxmox_vm_cipassword }}"
     sshkeys: "{{ proxmox_vm_ssh_pubkey }}"
     ipconfig:
       ipconfig0: "ip={{ proxmox_vm_ip }}/{{ proxmox_vm_cidr }},gw={{ proxmox_vm_gateway }}"
     nameservers:
       - "{{ proxmox_vm_nameserver }}"
     update: true
+  no_log: true
 
 - name: Resize VM disk
   community.proxmox.proxmox_disk:

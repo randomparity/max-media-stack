@@ -36,23 +36,25 @@
       tailscale up
       --authkey={{ tailscale_auth_key }}
       --hostname={{ tailscale_hostname }}
-      --force-reauth
   changed_when: true
   when: _tailscale_needs_auth | bool
   no_log: true
 
-- name: Deploy tailscale serve script
-  ansible.builtin.template:
-    src: tailscale-serve.sh.j2
-    dest: "{{ tailscale_serve_script }}"
-    mode: "0755"
-  register: _tailscale_serve_script
+- name: Remove legacy tailscale serve script
+  ansible.builtin.file:
+    path: /usr/local/bin/tailscale-serve.sh
+    state: absent
 
-- name: Run tailscale serve configuration  # noqa: no-handler
+- name: Check tailscale serve status
   ansible.builtin.command:
-    cmd: "{{ tailscale_serve_script }}"
-  register: _tailscale_serve
-  changed_when: "'configured' in (_tailscale_serve.stdout | default(''))"
+    cmd: tailscale serve status
+  register: _tailscale_serve_status
+  changed_when: false
   failed_when: false
-  when: _tailscale_serve_script.changed
-  timeout: 30
+  check_mode: false
+
+- name: Reset tailscale serve configuration
+  ansible.builtin.command:
+    cmd: tailscale serve reset
+  changed_when: true
+  when: _tailscale_serve_status.stdout | default('') | length > 0

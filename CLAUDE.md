@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Services:** Prowlarr, Radarr, Sonarr, Lidarr, SABnzbd, Jellyfin, Immich
 **Storage:** TrueNAS NFS exports mounted at `/data`
-**Access:** Tailscale only (no LAN exposure)
+**Access:** Traefik reverse proxy on port 80, Tailscale only (no LAN exposure)
 
 ## Key Commands
 
@@ -46,6 +46,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 
 - **Rootless Podman**: All containers run as `mms` user (3000:3000) with Quadlet files in `~mms/.config/containers/systemd/`
 - **Data-driven services**: Each service defined in `services/<name>.yml`; the generic `quadlet_service` role renders templates
+- **Traefik**: Reverse proxy with file provider; routes by `Host` header from `mms_traefik_routes`; only container that publishes a host port
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 
@@ -53,7 +54,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 
 - `inventory/` — Hosts and group variables
 - `playbooks/` — All playbooks (site, provision, setup, deploy, backup, migrate, etc.)
-- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, backup, migrate)
+- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, traefik, backup, migrate)
 - `services/` — Per-service variable definitions (YAML files loaded at deploy time)
 - `templates/quadlet/` — Jinja2 templates for Podman Quadlet files (.container, .network, .volume)
 
@@ -64,3 +65,4 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Handlers used for service restarts and daemon-reload
 - SELinux: `:Z` for local config volumes, no labels for NFS (uses `virt_use_nfs` boolean)
 - All services join the shared `mms.network` for inter-container DNS
+- Traefik routing: `mms_traefik_domain` and `mms_traefik_routes` in `inventory/group_vars/mms/vars.yml`

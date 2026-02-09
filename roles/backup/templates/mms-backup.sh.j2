@@ -64,6 +64,17 @@ backup_jellyfin() {
     log "jellyfin backup complete"
 }
 
+backup_traefik() {
+    log "Backing up traefik..."
+    local dest="${BACKUP_DIR}/traefik/traefik-${DATE}.tar.zst"
+    [[ -f "$dest" || -f "${dest}.age" ]] && { log "Backup already exists, skipping"; return 0; }
+
+    tar -cf - -C "${CONFIG_DIR}" traefik | zstd -T0 -o "$dest"
+
+    encrypt_file "$dest"
+    log "traefik backup complete"
+}
+
 backup_immich() {
     log "Backing up immich..."
     local db_dest="${BACKUP_DIR}/immich/immich-db-${DATE}.sql.zst"
@@ -158,7 +169,7 @@ apply_retention() {
 }
 
 # Ensure backup directories exist
-for svc in prowlarr radarr sonarr lidarr sabnzbd jellyfin immich; do
+for svc in prowlarr radarr sonarr lidarr sabnzbd jellyfin traefik immich; do
     mkdir -p "${BACKUP_DIR}/${svc}"
 done
 
@@ -175,10 +186,12 @@ backup_arr "{{ svc }}"
 {% endif %}
 {% endfor %}
 
+backup_traefik
+
 backup_immich
 
 # Apply retention
-{% for svc in mms_services + ['immich'] %}
+{% for svc in mms_services + ['immich', 'traefik'] %}
 apply_retention "{{ svc }}"
 {% endfor %}
 

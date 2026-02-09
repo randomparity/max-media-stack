@@ -1,0 +1,18 @@
+{{ ansible_managed | comment }}
+
+http:
+  routers:
+{% for name, route in traefik_routes.items() %}
+    {{ name }}:
+      rule: "Host(`{{ route.subdomain }}.{{ traefik_domain }}`)"
+      entryPoints:
+        - web
+      service: "{{ name }}"
+{% endfor %}
+  services:
+{% for name, route in traefik_routes.items() %}
+    {{ name }}:
+      loadBalancer:
+        servers:
+          - url: "http://{{ route.container }}:{{ route.port }}"
+{% endfor %}

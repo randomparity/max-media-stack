@@ -20,11 +20,15 @@ proxmox_vm_vlan: "{{ mms_vm_vlan | default(omit) }}"
 
 # Cloud-init
 proxmox_vm_ciuser: "{{ mms_ansible_user }}"
+proxmox_vm_cipassword: "{{ mms_vm_password }}"
 proxmox_vm_ssh_pubkey: "{{ mms_vm_ssh_pubkey }}"
 proxmox_vm_ip: "{{ mms_vm_ip }}"
 proxmox_vm_cidr: "{{ mms_vm_cidr }}"
 proxmox_vm_gateway: "{{ mms_vm_gateway }}"
 proxmox_vm_nameserver: "{{ mms_vm_nameserver }}"
+
+# VM description (shown as Notes in Proxmox UI, supports markdown)
+proxmox_vm_description: "{{ mms_vm_description | default('') }}"
 
 # Timeouts
 proxmox_vm_ssh_timeout: 300

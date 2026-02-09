@@ -10,7 +10,6 @@ After=immich-redis.service
 Image={{ immich_server_image }}
 Network={{ mms_network_name }}.network
 ContainerName=immich-server
-PublishPort={{ immich_port }}:2283
 Volume={{ immich_upload_dir }}:/upload
 EnvironmentFile={{ mms_config_dir }}/immich/immich.env
 Secret=immich-db-password,type=env,target=DB_PASSWORD

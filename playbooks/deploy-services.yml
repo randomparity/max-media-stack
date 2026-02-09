@@ -16,3 +16,7 @@
     - name: Deploy Immich stack
       ansible.builtin.include_role:
         name: immich
+
+    - name: Deploy Traefik reverse proxy
+      ansible.builtin.include_role:
+        name: traefik

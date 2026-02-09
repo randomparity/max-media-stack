@@ -2,13 +2,13 @@
 # MMS global variables
 
 # MMS VM specifications (in group_vars/all so both proxmox and mms groups can access)
-mms_vm_id: 202
+mms_vm_id: 2002
 mms_vm_name: mms
 mms_vm_ip: 192.168.20.2
 mms_vm_gateway: 192.168.20.1
 mms_vm_cidr: 24
 mms_vm_cores: 4
-mms_vm_memory: 8192
+mms_vm_memory: 16384
 mms_vm_disk_size: 256G
 mms_vm_bridge: vmbr0
 mms_vm_vlan: 20
@@ -42,6 +42,22 @@ mms_systemd_env:
 
 # Ansible user for initial SSH access
 mms_ansible_user: dave
+mms_vm_password: "{{ vault_vm_password }}"
+
+# Traefik domain (in group_vars/all so both proxmox and mms groups can access)
+mms_traefik_domain: media.drc.nz
+
+# VM description (rendered as Notes in Proxmox UI)
+mms_vm_description: |
+  ## Max Media Stack
+
+  - [Prowlarr](http://prowlarr.{{ mms_traefik_domain }})
+  - [Radarr](http://radarr.{{ mms_traefik_domain }})
+  - [Sonarr](http://sonarr.{{ mms_traefik_domain }})
+  - [Lidarr](http://lidarr.{{ mms_traefik_domain }})
+  - [SABnzbd](http://sabnzbd.{{ mms_traefik_domain }})
+  - [Jellyfin](http://jellyfin.{{ mms_traefik_domain }})
+  - [Immich](http://immich.{{ mms_traefik_domain }})
 
 # Backup encryption
-mms_backup_age_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfM/NNXzwgAWWSHDhrxCKDoAJaav+ovtr28YU0Ykxz"  # Set in vault or override
+# mms_backup_age_public_key: "age1xyq002lqfyspv9fn6vfurpljfcd7jd4vpzl2ayz3wqjfg6h4jvnq8zfndu"  # Set in vault or override

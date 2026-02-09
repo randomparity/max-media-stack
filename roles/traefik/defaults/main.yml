@@ -1,0 +1,7 @@
+---
+traefik_image: "{{ mms_traefik_image | default('docker.io/library/traefik:v3.3') }}"
+traefik_config_dir: "{{ mms_config_dir }}/traefik"
+traefik_port: 80
+traefik_domain: "{{ mms_traefik_domain }}"
+traefik_routes: "{{ mms_traefik_routes }}"
+traefik_log_level: INFO

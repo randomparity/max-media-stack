@@ -3,8 +3,6 @@ jellyfin:
   name: jellyfin
   description: "Jellyfin - Media Server"
   image: "lscr.io/linuxserver/jellyfin:10.11.6ubu2404-ls19"
-  publish_ports:
-    - "8096:8096"
   volumes:
     - "{{ mms_config_dir }}/jellyfin:/config:Z"
     - "{{ mms_data_dir }}/media:{{ mms_data_dir }}/media:ro"

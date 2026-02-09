@@ -6,4 +6,5 @@
 
 # Health check wait timeout (seconds)
 quadlet_service_health_timeout: 120
+quadlet_service_first_boot_health_timeout: 300
 quadlet_service_health_delay: 10
