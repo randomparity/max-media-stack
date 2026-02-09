@@ -48,6 +48,27 @@
     - Reload systemd user daemon
     - Restart traefik
 
+- name: Check if Traefik image is present
+  ansible.builtin.command:
+    cmd: "podman image exists {{ traefik_image }}"
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  register: _traefik_image_exists
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Pull Traefik image
+  ansible.builtin.command:
+    cmd: "podman pull {{ traefik_image }}"
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: _traefik_image_exists.rc != 0
+  changed_when: true
+  timeout: 600
+
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 

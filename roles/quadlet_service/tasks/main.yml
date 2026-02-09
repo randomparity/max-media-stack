@@ -45,9 +45,31 @@
     group: "{{ mms_user }}"
     mode: "0644"
   become: true
+  register: _quadlet_container_file
   notify:
     - Reload systemd user daemon
     - Restart quadlet service
+
+- name: Check if container image is present
+  ansible.builtin.command:
+    cmd: "podman image exists {{ quadlet_service_def.image }}"
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  register: _quadlet_image_exists
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Pull container image
+  ansible.builtin.command:
+    cmd: "podman pull {{ quadlet_service_def.image }}"
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: _quadlet_image_exists.rc != 0
+  changed_when: true
+  timeout: 600
 
 - name: Flush handlers before starting service
   ansible.builtin.meta: flush_handlers
@@ -62,13 +84,19 @@
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
 
+- name: Set health check timeout
+  ansible.builtin.set_fact:
+    _quadlet_health_timeout: >-
+      {{ (_quadlet_container_file is changed) |
+         ternary(quadlet_service_first_boot_health_timeout, quadlet_service_health_timeout) }}
+
 - name: Wait for service health check
   ansible.builtin.command:
     cmd: >-
       podman healthcheck run {{ quadlet_service_def.name }}
   register: quadlet_service_health_result
   until: quadlet_service_health_result.rc == 0
-  retries: "{{ (quadlet_service_health_timeout / quadlet_service_health_delay) | int }}"
+  retries: "{{ (_quadlet_health_timeout | int / quadlet_service_health_delay) | int }}"
   delay: "{{ quadlet_service_health_delay }}"
   changed_when: false
   become: true

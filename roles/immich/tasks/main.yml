@@ -167,6 +167,36 @@
     - Reload systemd user daemon
     - Restart immich-ml
 
+# Pull images before starting services to avoid systemd timeout on first boot
+- name: Check if Immich images are present
+  ansible.builtin.command:
+    cmd: "podman image exists {{ item }}"
+  loop:
+    - "{{ immich_postgres_image }}"
+    - "{{ immich_redis_image }}"
+    - "{{ immich_server_image }}"
+    - "{{ immich_ml_image }}"
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  register: _immich_images
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Pull missing Immich images
+  ansible.builtin.command:
+    cmd: "podman pull {{ item.item }}"
+  loop: "{{ _immich_images.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.rc != 0
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  changed_when: true
+  timeout: 600
+
 # Flush handlers to ensure daemon-reload happens before starting services
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
