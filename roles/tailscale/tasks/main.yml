@@ -45,8 +45,16 @@
     path: /usr/local/bin/tailscale-serve.sh
     state: absent
 
+- name: Check tailscale serve status
+  ansible.builtin.command:
+    cmd: tailscale serve status
+  register: _tailscale_serve_status
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
 - name: Reset tailscale serve configuration
   ansible.builtin.command:
     cmd: tailscale serve reset
-  changed_when: false
-  failed_when: false
+  changed_when: true
+  when: _tailscale_serve_status.stdout | default('') | length > 0

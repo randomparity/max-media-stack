@@ -61,6 +61,7 @@
     nameservers:
       - "{{ proxmox_vm_nameserver }}"
     update: true
+  no_log: true
 
 - name: Resize VM disk
   community.proxmox.proxmox_disk:

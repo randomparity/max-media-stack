@@ -14,7 +14,6 @@ Volume={{ traefik_config_dir }}/dynamic:/etc/traefik/dynamic:Z,ro
 HealthCmd=traefik healthcheck --ping
 HealthInterval=30s
 NoNewPrivileges=true
-AutoUpdate=registry
 
 [Service]
 Restart=on-failure
