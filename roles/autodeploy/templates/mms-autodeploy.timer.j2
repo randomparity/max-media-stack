@@ -1,9 +1,9 @@
 # {{ ansible_managed }}
 [Unit]
-Description=MMS Auto-Deploy Timer
+Description=MMS Auto-Deploy Timer ({{ autodeploy_group_name }})
 
 [Timer]
-OnCalendar={{ autodeploy_schedule }}
+OnCalendar={{ autodeploy_group_schedule }}
 Persistent=true
 RandomizedDelaySec=60
 

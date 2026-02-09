@@ -2,7 +2,6 @@
 autodeploy_repo_url: "{{ mms_autodeploy_repo_url | default('') }}"
 autodeploy_branch: main
 autodeploy_repo_dir: "{{ mms_home }}/mms"
-autodeploy_schedule: "*-*-* *:00/30:00"
 autodeploy_playbook: playbooks/deploy-services.yml
 autodeploy_lock_file: /tmp/mms-autodeploy.lock
 autodeploy_user: "{{ mms_user | default('mms') }}"
@@ -10,3 +9,9 @@ autodeploy_vault_password_file: "{{ mms_home }}/.vault_pass_mms"
 autodeploy_timeout: 1800
 autodeploy_log_retention: 30
 autodeploy_log_dir: "{{ mms_home }}/logs/autodeploy"
+autodeploy_state_dir: "{{ mms_home }}/.state/autodeploy"
+
+autodeploy_groups:
+  default:
+    schedule: "*-*-* *:00/30:00"
+    # services: omitted = deploy all

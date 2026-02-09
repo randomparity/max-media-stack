@@ -360,14 +360,16 @@ ansible-playbook playbooks/restore.yml \
 
 ## Auto-Deploy
 
-MMS uses [Renovate](https://docs.renovatebot.com/) to discover container image updates and a systemd timer on the VM to automatically deploy changes merged to `main`. Renovate opens PRs for version bumps (auto-merging patch and minor), and the autodeploy timer polls the git repo every 30 minutes, running `ansible-playbook` when new commits are detected.
+MMS uses [Renovate](https://docs.renovatebot.com/) to discover container image updates and systemd timers on the VM to automatically deploy changes merged to `main`. Renovate opens PRs for version bumps (auto-merging patch and minor), and per-group autodeploy timers poll the git repo on independent schedules, running `ansible-playbook` when new commits are detected.
+
+Deploy groups let you schedule non-interactive backend services (Prowlarr, Radarr, etc.) to deploy frequently while deferring interactive services (Jellyfin, Immich) to off-hours windows when restarts won't disrupt users.
 
 ### How it works
 
 1. Renovate scans `services/*.yml`, role defaults, and `requirements.yml` for pinned versions
 2. When updates are available, Renovate opens a PR (grouped by ecosystem: LinuxServer, Immich, Galaxy)
 3. Patch and minor updates auto-merge after CI passes; major updates require manual review
-4. The `mms-autodeploy.timer` on the VM detects the new commit and runs the deploy playbook
+4. Per-group `mms-autodeploy-{group}.timer` units detect new commits and deploy their service subset
 
 ### GitHub repository setup
 
@@ -463,18 +465,20 @@ ansible-playbook playbooks/setup-base.yml
 Then verify on the VM:
 
 ```bash
-# Check the timer is active
-systemctl --user status mms-autodeploy.timer
-systemctl --user list-timers
+# Check per-group timers are active
+systemctl --user list-timers 'mms-autodeploy-*'
 
-# Trigger a manual deploy
-systemctl --user start mms-autodeploy.service
+# Trigger a manual deploy for a specific group
+systemctl --user start mms-autodeploy-backend.service
+systemctl --user start mms-autodeploy-interactive.service
 
 # Check logs
-journalctl --user -u mms-autodeploy --since today
+journalctl --user -u mms-autodeploy-backend --since today
+journalctl --user -u mms-autodeploy-interactive --since today
 
-# View deploy logs
-ls ~/logs/autodeploy/
+# View deploy logs (per-group)
+ls ~/logs/autodeploy/deploy-backend-*.log
+ls ~/logs/autodeploy/deploy-interactive-*.log
 ```
 
 ### Configuration
@@ -483,11 +487,48 @@ The autodeploy role accepts these defaults (override in inventory vars):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `autodeploy_schedule` | `*-*-* *:00/30:00` | Systemd timer schedule (every 30 min) |
+| `autodeploy_groups` | `{default: {schedule: "*-*-* *:00/30:00"}}` | Per-group deploy schedules (see below) |
 | `autodeploy_branch` | `main` | Git branch to track |
 | `autodeploy_playbook` | `playbooks/deploy-services.yml` | Playbook to run on changes |
 | `autodeploy_timeout` | `1800` | Max deploy duration in seconds |
 | `autodeploy_log_retention` | `30` | Number of log files to keep |
+
+#### Deploy groups
+
+`autodeploy_groups` is a dict where each key is a group name with its own `schedule` and optional `services` list. Each group gets its own systemd timer+service pair (`mms-autodeploy-{group}.timer`).
+
+A shared lock file prevents concurrent deploys across groups. Each group tracks its own last-deployed SHA in a state file, so it only deploys when there are new commits it hasn't processed yet. Timers include a 60-second randomized delay to avoid thundering-herd effects when multiple groups share the same schedule.
+
+**Default config** (single group, deploys everything every 30 min):
+
+```yaml
+autodeploy_groups:
+  default:
+    schedule: "*-*-* *:00/30:00"
+    # services: omitted = deploy all
+```
+
+**Two-group config** (backend every 30 min, interactive at 2 AM):
+
+```yaml
+autodeploy_groups:
+  backend:
+    schedule: "*-*-* *:00/30:00"
+    services:
+      - prowlarr
+      - radarr
+      - sonarr
+      - lidarr
+      - sabnzbd
+      - traefik
+  interactive:
+    schedule: "*-*-* 02:00:00"
+    services:
+      - jellyfin
+      - immich
+```
+
+When `services` is omitted from a group, the playbook deploys everything. When specified, only the listed services are deployed when the group's timer fires.
 
 ## Adding a New Service
 

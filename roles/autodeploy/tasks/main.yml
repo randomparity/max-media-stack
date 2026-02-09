@@ -32,6 +32,14 @@
     group: "{{ autodeploy_user }}"
     mode: "0755"
 
+- name: Ensure autodeploy state directory exists
+  ansible.builtin.file:
+    path: "{{ autodeploy_state_dir }}"
+    state: directory
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0755"
+
 - name: Ensure SSH directory exists
   ansible.builtin.file:
     path: "/home/{{ autodeploy_user }}/.ssh"
@@ -109,24 +117,142 @@
     group: "{{ autodeploy_user }}"
     mode: "0755"
 
-- name: Deploy systemd autodeploy service
+# --- Legacy cleanup: remove old single-unit files from before per-group support ---
+
+- name: Stop and disable legacy autodeploy timer
+  ansible.builtin.systemd:
+    name: mms-autodeploy.timer
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  failed_when: false
+
+- name: Stop legacy autodeploy service
+  ansible.builtin.systemd:
+    name: mms-autodeploy.service
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  failed_when: false
+
+- name: Remove legacy autodeploy unit files
+  ansible.builtin.file:
+    path: "/home/{{ autodeploy_user }}/.config/systemd/user/{{ item }}"
+    state: absent
+  loop:
+    - mms-autodeploy.service
+    - mms-autodeploy.timer
+  notify: Reload systemd user daemon
+
+# --- Deploy per-group systemd units ---
+
+- name: Deploy per-group systemd service units  # noqa: var-naming[no-role-prefix]
   ansible.builtin.template:
     src: mms-autodeploy.service.j2
-    dest: "/home/{{ autodeploy_user }}/.config/systemd/user/mms-autodeploy.service"
+    dest: "/home/{{ autodeploy_user }}/.config/systemd/user/mms-autodeploy-{{ item.key }}.service"
     owner: "{{ autodeploy_user }}"
     group: "{{ autodeploy_user }}"
     mode: "0644"
+  vars:
+    autodeploy_group_name: "{{ item.key }}"
+  loop: "{{ autodeploy_groups | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
   notify:
     - Reload systemd user daemon
-    - Enable autodeploy timer
+    - Enable autodeploy timers
 
-- name: Deploy systemd autodeploy timer
+- name: Deploy per-group systemd timer units  # noqa: var-naming[no-role-prefix]
   ansible.builtin.template:
     src: mms-autodeploy.timer.j2
-    dest: "/home/{{ autodeploy_user }}/.config/systemd/user/mms-autodeploy.timer"
+    dest: "/home/{{ autodeploy_user }}/.config/systemd/user/mms-autodeploy-{{ item.key }}.timer"
     owner: "{{ autodeploy_user }}"
     group: "{{ autodeploy_user }}"
     mode: "0644"
+  vars:
+    autodeploy_group_name: "{{ item.key }}"
+    autodeploy_group_schedule: "{{ item.value.schedule }}"
+  loop: "{{ autodeploy_groups | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
   notify:
     - Reload systemd user daemon
-    - Enable autodeploy timer
+    - Enable autodeploy timers
+
+# --- Cleanup stale per-group units for removed groups ---
+
+- name: Find existing autodeploy timer files
+  ansible.builtin.find:
+    paths: "/home/{{ autodeploy_user }}/.config/systemd/user"
+    patterns: "mms-autodeploy-*.timer"
+  register: _existing_timers
+
+- name: Identify stale autodeploy timers  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    _stale_timers: >-
+      {{ _existing_timers.files | rejectattr('path', 'search', _expected_pattern) | list }}
+  vars:
+    _expected_pattern: "{{ autodeploy_groups.keys() | map('regex_replace', '^(.*)$', 'mms-autodeploy-\\1\\.timer$') | join('|') }}"
+
+- name: Stop and disable stale autodeploy timers
+  ansible.builtin.systemd:
+    name: "{{ item.path | basename }}"
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  loop: "{{ _stale_timers }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  failed_when: false
+
+- name: Remove stale autodeploy timer files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _stale_timers }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  notify: Reload systemd user daemon
+
+- name: Find existing autodeploy service files
+  ansible.builtin.find:
+    paths: "/home/{{ autodeploy_user }}/.config/systemd/user"
+    patterns: "mms-autodeploy-*.service"
+  register: _existing_services
+
+- name: Identify stale autodeploy services  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    _stale_services: >-
+      {{ _existing_services.files | rejectattr('path', 'search', _expected_pattern) | list }}
+  vars:
+    _expected_pattern: "{{ autodeploy_groups.keys() | map('regex_replace', '^(.*)$', 'mms-autodeploy-\\1\\.service$') | join('|') }}"
+
+- name: Stop stale autodeploy services
+  ansible.builtin.systemd:
+    name: "{{ item.path | basename }}"
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  loop: "{{ _stale_services }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  failed_when: false
+
+- name: Remove stale autodeploy service files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _stale_services }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  notify: Reload systemd user daemon
