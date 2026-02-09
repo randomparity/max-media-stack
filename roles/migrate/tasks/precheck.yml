@@ -1,16 +1,16 @@
 ---
-- name: "{{ _migrate_service }} - Load service definition"
+- name: "Load service definition for {{ _migrate_service }}"
   ansible.builtin.include_vars:
     file: "{{ playbook_dir }}/../services/{{ _migrate_service }}.yml"
     name: _svc_def
 
-- name: "{{ _migrate_service }} - Check SQLite integrity on source"
+- name: "Check SQLite integrity on source — {{ _migrate_service }}"
   ansible.builtin.command:
     cmd: >-
       sqlite3 {{ migrate_source_config_base }}/{{ _migrate_service }}/{{ item }}
       "PRAGMA integrity_check;"
-  register: _sqlite_check
-  failed_when: "'ok' not in _sqlite_check.stdout"
+  register: _migrate_sqlite_check
+  failed_when: "'ok' not in _migrate_sqlite_check.stdout"
   changed_when: false
   loop: "{{ _svc_def[_migrate_service].backup_db_files | default([]) }}"
   delegate_to: "{{ migrate_source_host }}"

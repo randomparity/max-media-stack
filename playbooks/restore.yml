@@ -39,7 +39,7 @@
         _restore_label: "{{ service_name }}"
         _restore_tmp_ext: tar.zst
         _restore_service: "{{ service_name }}"
-        _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
       when: service_name in ['prowlarr', 'radarr', 'sonarr', 'lidarr', 'jellyfin']
 
     - name: Restore sabnzbd  # noqa: no-relative-paths
@@ -49,7 +49,7 @@
         _restore_label: sabnzbd
         _restore_tmp_ext: tar.zst
         _restore_service: sabnzbd
-        _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}/sabnzbd"
+        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}/sabnzbd"
       when: service_name == 'sabnzbd'
 
     - name: Restore immich database  # noqa: no-relative-paths
@@ -60,7 +60,7 @@
         _restore_tmp_ext: sql.zst
         _restore_service: ""
         _restore_cmd: >-
-          zstd -d {{ _restore_file }} --stdout |
+          zstd -d {{ backup_restore_file }} --stdout |
           podman exec -i immich-postgres psql -U postgres
       when: service_name == 'immich' and 'db' in backup_file
 
@@ -71,7 +71,7 @@
         _restore_label: immich-config
         _restore_tmp_ext: tar.zst
         _restore_service: ""
-        _restore_cmd: "zstd -d {{ _restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
       when: service_name == 'immich' and 'config' in backup_file
 
     - name: Fix ownership after restore

@@ -1,5 +1,5 @@
 ---
-- name: "{{ _migrate_service }} - Stop service on target before sync"
+- name: "Stop service on target before sync — {{ _migrate_service }}"
   ansible.builtin.systemd:
     name: "{{ _migrate_service }}"
     state: stopped
@@ -8,16 +8,16 @@
   become_user: "{{ migrate_user }}"
   failed_when: false
 
-- name: "{{ _migrate_service }} - Rsync config from source LXC"
+- name: "Rsync config from source LXC — {{ _migrate_service }}"  # noqa: command-instead-of-module
   ansible.builtin.command:
     cmd: >-
       rsync {{ migrate_rsync_opts }}
       {{ migrate_source_user }}@{{ migrate_source_host }}:{{ migrate_source_config_base }}/{{ _migrate_service }}/
       {{ migrate_config_dir }}/{{ _migrate_service }}/
-  register: _rsync_result
-  changed_when: _rsync_result.rc == 0
+  register: _migrate_rsync_result
+  changed_when: _migrate_rsync_result.rc == 0
 
-- name: "{{ _migrate_service }} - Fix ownership"
+- name: "Fix ownership — {{ _migrate_service }}"
   ansible.builtin.file:
     path: "{{ migrate_config_dir }}/{{ _migrate_service }}"
     owner: "{{ migrate_uid }}"

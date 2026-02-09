@@ -33,7 +33,10 @@
 
 - name: Determine if secret needs update
   ansible.builtin.set_fact:
-    _immich_secret_needs_update: "{{ (_immich_secret_inspect.rc != 0 or _immich_stored_hash is failed or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash) | bool }}"
+    _immich_secret_needs_update: >-
+      {{ (_immich_secret_inspect.rc != 0
+          or _immich_stored_hash is failed
+          or (_immich_stored_hash.content | default('') | b64decode | trim) != _immich_db_password_hash) | bool }}
 
 - name: Remove existing secret
   ansible.builtin.command:
@@ -182,8 +185,8 @@
 - name: Wait for PostgreSQL to be ready
   ansible.builtin.command:
     cmd: podman healthcheck run immich-postgres
-  register: pg_health
-  until: pg_health.rc == 0
+  register: _immich_pg_health
+  until: _immich_pg_health.rc == 0
   retries: 12
   delay: 10
   changed_when: false
@@ -205,8 +208,8 @@
 - name: Wait for Redis to be ready
   ansible.builtin.command:
     cmd: podman healthcheck run immich-redis
-  register: redis_health
-  until: redis_health.rc == 0
+  register: _immich_redis_health
+  until: _immich_redis_health.rc == 0
   retries: 12
   delay: 5
   changed_when: false
@@ -238,8 +241,8 @@
 - name: Wait for Immich server health check
   ansible.builtin.command:
     cmd: podman healthcheck run immich-server
-  register: server_health
-  until: server_health.rc == 0
+  register: _immich_server_health
+  until: _immich_server_health.rc == 0
   retries: 18
   delay: 10
   changed_when: false

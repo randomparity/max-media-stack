@@ -1,5 +1,5 @@
 ---
-- name: "immich - Stop Immich services on target"
+- name: "Immich — Stop services on target"
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: stopped
@@ -11,22 +11,22 @@
   become_user: "{{ migrate_user }}"
   failed_when: false
 
-- name: "immich - Dump PostgreSQL from source LXC"
+- name: "Immich — Dump PostgreSQL from source LXC"
   ansible.builtin.command:
     cmd: >-
       podman exec {{ migrate_immich_source_db_container }}
       pg_dumpall -U postgres
-  register: _immich_source_dump
+  register: _migrate_immich_source_dump
   changed_when: false
   delegate_to: "{{ migrate_source_host }}"
 
-- name: "immich - Write source dump to temp file"
+- name: "Immich — Write source dump to temp file"
   ansible.builtin.copy:
-    content: "{{ _immich_source_dump.stdout }}"
+    content: "{{ _migrate_immich_source_dump.stdout }}"
     dest: /tmp/immich-migration-dump.sql
     mode: "0600"
 
-- name: "immich - Copy dump into target PostgreSQL container"
+- name: "Immich — Copy dump into target PostgreSQL container"
   ansible.builtin.command:
     cmd: >-
       podman cp /tmp/immich-migration-dump.sql
@@ -35,33 +35,33 @@
   become: true
   become_user: "{{ migrate_user }}"
 
-- name: "immich - Restore database on target"
+- name: "Immich — Restore database on target"
   ansible.builtin.command:
     cmd: >-
       podman exec {{ migrate_immich_target_db_container }}
       psql -U postgres -f /tmp/immich-migration-dump.sql
   become: true
   become_user: "{{ migrate_user }}"
-  register: _immich_restore
+  register: _migrate_immich_restore
   changed_when: true
 
-- name: "immich - Clean up dump files"
+- name: "Immich — Clean up dump files"
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:
     - /tmp/immich-migration-dump.sql
 
-- name: "immich - Rsync photos from source LXC"
+- name: "Immich — Rsync photos from source LXC"  # noqa: command-instead-of-module
   ansible.builtin.command:
     cmd: >-
       rsync {{ migrate_rsync_opts }}
       {{ migrate_source_user }}@{{ migrate_source_host }}:{{ migrate_immich_source_photos }}/
       {{ migrate_immich_target_photos }}/
-  register: _immich_photos_sync
-  changed_when: _immich_photos_sync.rc == 0
+  register: _migrate_immich_photos_sync
+  changed_when: _migrate_immich_photos_sync.rc == 0
 
-- name: "immich - Fix photos ownership"
+- name: "Immich — Fix photos ownership"
   ansible.builtin.file:
     path: "{{ migrate_immich_target_photos }}"
     owner: "{{ migrate_uid }}"
@@ -69,16 +69,16 @@
     recurse: true
   become: true
 
-- name: "immich - Rsync config from source LXC"
+- name: "Immich — Rsync config from source LXC"  # noqa: command-instead-of-module
   ansible.builtin.command:
     cmd: >-
       rsync {{ migrate_rsync_opts }}
       {{ migrate_source_user }}@{{ migrate_source_host }}:{{ migrate_source_config_base }}/immich/
       {{ migrate_config_dir }}/immich/
-  register: _immich_config_sync
-  changed_when: _immich_config_sync.rc == 0
+  register: _migrate_immich_config_sync
+  changed_when: _migrate_immich_config_sync.rc == 0
 
-- name: "immich - Fix config ownership"
+- name: "Immich — Fix config ownership"
   ansible.builtin.file:
     path: "{{ migrate_config_dir }}/immich"
     owner: "{{ migrate_uid }}"

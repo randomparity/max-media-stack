@@ -3,9 +3,9 @@
 #   _restore_label   — identifier for temp file naming (e.g. "radarr", "immich-db")
 #   _restore_tmp_ext — temp file extension: "tar.zst" or "sql.zst"
 #   _restore_service — systemd user service to stop/start (empty string to skip)
-#   _restore_cmd     — shell command for extract/restore (may reference {{ _restore_file }})
+#   _restore_cmd     — shell command for extract/restore (may reference {{ backup_restore_file }})
 
-- name: "Stop {{ _restore_label }} service"
+- name: "Stop service before restore — {{ _restore_label }}"
   ansible.builtin.systemd:
     name: "{{ _restore_service }}"
     state: stopped
@@ -13,23 +13,23 @@
   environment: "{{ mms_systemd_env }}"
   when: _restore_service | length > 0
 
-- name: "Decrypt {{ _restore_label }} backup"
+- name: "Decrypt backup — {{ _restore_label }}"
   ansible.builtin.command:
     cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-{{ _restore_label }}.{{ _restore_tmp_ext }} {{ backup_file }}"
   changed_when: true
   when: backup_file is match('.*\.age$') and not ansible_check_mode
 
-- name: "Set {{ _restore_label }} restore file path"
+- name: "Set restore file path — {{ _restore_label }}"
   ansible.builtin.set_fact:
-    _restore_file: "{{ '/tmp/restore-' + _restore_label + '.' + _restore_tmp_ext if backup_file is match('.*\\.age$') else backup_file }}"
+    backup_restore_file: "{{ '/tmp/restore-' + _restore_label + '.' + _restore_tmp_ext if backup_file is match('.*\\.age$') else backup_file }}"
 
-- name: "Restore {{ _restore_label }}"
+- name: "Restore data — {{ _restore_label }}"
   ansible.builtin.shell:  # noqa: command-instead-of-shell
     cmd: "{{ _restore_cmd }}"
   changed_when: true
   when: not ansible_check_mode
 
-- name: "Start {{ _restore_label }} service"
+- name: "Start service after restore — {{ _restore_label }}"
   ansible.builtin.systemd:
     name: "{{ _restore_service }}"
     state: started
@@ -37,7 +37,7 @@
   environment: "{{ mms_systemd_env }}"
   when: _restore_service | length > 0
 
-- name: "Clean up {{ _restore_label }} temp file"
+- name: "Clean up temp file — {{ _restore_label }}"
   ansible.builtin.file:
     path: "/tmp/restore-{{ _restore_label }}.{{ _restore_tmp_ext }}"
     state: absent
