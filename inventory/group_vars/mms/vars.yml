@@ -17,6 +17,9 @@ mms_nfs_mounts:
   - src: "{{ mms_nfs_server }}:/mnt/zpool0/photos"
     dest: /data/photos
     opts: "rw,hard,intr,_netdev,nfsvers=4"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0/media/recordings"
+    dest: /data/recordings
+    opts: "rw,hard,intr,_netdev,nfsvers=4"
 
 # Services to deploy (matches filenames in services/)
 mms_services:
@@ -26,6 +29,8 @@ mms_services:
   - lidarr
   - sabnzbd
   - jellyfin
+  - channels
+  - navidrome
 
 # Traefik reverse proxy (mms_traefik_domain is in group_vars/all)
 mms_traefik_routes:
@@ -57,6 +62,14 @@ mms_traefik_routes:
     subdomain: immich
     container: immich-server
     port: 2283
+  channels:
+    subdomain: channels
+    container: channels
+    port: 8089
+  navidrome:
+    subdomain: navidrome
+    container: navidrome
+    port: 4533
 
 # Auto-deploy repository URL
 mms_autodeploy_repo_url: "git@github.com:randomparity/max-media-stack.git"
@@ -77,3 +90,5 @@ autodeploy_groups:
     services:
       - jellyfin
       - immich
+      - channels
+      - navidrome
