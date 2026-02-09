@@ -2,7 +2,7 @@
 # MMS global variables
 
 # MMS VM specifications (in group_vars/all so both proxmox and mms groups can access)
-mms_vm_id: 202
+mms_vm_id: 2002
 mms_vm_name: mms
 mms_vm_ip: 192.168.20.2
 mms_vm_gateway: 192.168.20.1
@@ -60,4 +60,4 @@ mms_vm_description: |
   - [Immich](http://immich.{{ mms_traefik_domain }})
 
 # Backup encryption
-mms_backup_age_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfM/NNXzwgAWWSHDhrxCKDoAJaav+ovtr28YU0Ykxz"  # Set in vault or override
+# mms_backup_age_public_key: "age1xyq002lqfyspv9fn6vfurpljfcd7jd4vpzl2ayz3wqjfg6h4jvnq8zfndu"  # Set in vault or override
