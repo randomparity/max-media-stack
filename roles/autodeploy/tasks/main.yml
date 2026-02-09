@@ -1,7 +1,9 @@
 ---
-- name: Ensure git is installed
+- name: Ensure git and ansible are installed
   ansible.builtin.dnf:
-    name: git
+    name:
+      - git
+      - ansible-core
     state: present
   become: true
   become_user: root
