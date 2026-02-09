@@ -22,6 +22,7 @@
     path: "{{ storage_data_dir }}/media/{{ item }}"
     state: directory
   loop: "{{ storage_media_dirs }}"
+  become: true
   become_user: "{{ storage_user }}"
 
 - name: Create TRaSH-guide usenet directories
@@ -29,12 +30,14 @@
     path: "{{ storage_data_dir }}/usenet/{{ item }}"
     state: directory
   loop: "{{ storage_usenet_dirs }}"
+  become: true
   become_user: "{{ storage_user }}"
 
 - name: Create photos directory
   ansible.builtin.file:
     path: "{{ storage_data_dir }}/photos"
     state: directory
+  become: true
   become_user: "{{ storage_user }}"
 
 - name: Create config directories for each service
