@@ -35,7 +35,6 @@
     group: "{{ mms_user }}"
     mode: "0644"
   become: true
-  notify: Restart traefik
 
 - name: Deploy Traefik container quadlet
   ansible.builtin.template:

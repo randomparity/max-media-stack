@@ -7,7 +7,7 @@ http:
       rule: "Host(`{{ route.subdomain }}.{{ traefik_domain }}`)"
       entryPoints:
         - web
-      service: {{ name }}
+      service: "{{ name }}"
 {% endfor %}
   services:
 {% for name, route in traefik_routes.items() %}

@@ -19,6 +19,3 @@ immich_ml_image: "ghcr.io/immich-app/immich-machine-learning:{{ immich_version }
 
 # Upload directory (NFS mount)
 immich_upload_dir: /data/photos
-
-# Published port
-immich_port: 2283
