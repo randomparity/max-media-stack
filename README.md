@@ -4,40 +4,44 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 
 ## Services
 
-| Service   | Port | Description                    |
-|-----------|------|--------------------------------|
-| Prowlarr  | 9696 | Indexer manager                |
-| Radarr    | 7878 | Movie automation               |
-| Sonarr    | 8989 | TV show automation             |
-| Lidarr    | 8686 | Music automation               |
-| SABnzbd   | 8080 | Usenet downloader              |
-| Jellyfin  | 8096 | Media server                   |
-| Immich    | 2283 | Photo/video management         |
+| Service   | URL                              | Description                    |
+|-----------|----------------------------------|--------------------------------|
+| Prowlarr  | `prowlarr.media.example.com`     | Indexer manager                |
+| Radarr    | `radarr.media.example.com`       | Movie automation               |
+| Sonarr    | `sonarr.media.example.com`       | TV show automation             |
+| Lidarr    | `lidarr.media.example.com`       | Music automation               |
+| SABnzbd   | `sabnzbd.media.example.com`      | Usenet downloader              |
+| Jellyfin  | `jellyfin.media.example.com`     | Media server                   |
+| Immich    | `immich.media.example.com`       | Photo/video management         |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Proxmox 9.x Host                                   │
-│  ┌───────────────────────────────────────────────┐  │
-│  │  Fedora VM (mms)                              │  │
-│  │  ┌─────────────────────────────────────────┐  │  │
-│  │  │  Rootless Podman (mms user, 3000:3000)  │  │  │
-│  │  │                                         │  │  │
-│  │  │  prowlarr  radarr  sonarr  lidarr       │  │  │
-│  │  │  sabnzbd   jellyfin                     │  │  │
-│  │  │  immich-server  immich-ml               │  │  │
-│  │  │  immich-postgres immich-redis           │  │  │
-│  │  │          ┌─────────-─┐                  │  │  │
-│  │  │          │mms.network│                  │  │  │
-│  │  │          └──────────-┘                  │  │  │
-│  │  └─────────────────────────────────────────┘  │  │
-│  │                                               │  │
-│  │  Tailscale ──── HTTPS access (no LAN expose)  │  │
-│  │  NFS ────────── TrueNAS /data                 │  │
-│  └───────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  Proxmox 9.x Host                                        │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │  Fedora VM (mms)                                   │  │
+│  │  ┌──────────────────────────────────────────────┐  │  │
+│  │  │  Rootless Podman (mms user, 3000:3000)       │  │  │
+│  │  │                                              │  │  │
+│  │  │  traefik (:80) ─── Host header routing       │  │  │
+│  │  │      │                                       │  │  │
+│  │  │      ├── prowlarr  radarr  sonarr  lidarr    │  │  │
+│  │  │      ├── sabnzbd   jellyfin                  │  │  │
+│  │  │      └── immich-server  immich-ml            │  │  │
+│  │  │          immich-postgres immich-redis        │  │  │
+│  │  │            ┌───────────┐                     │  │  │
+│  │  │            │mms.network│                     │  │  │
+│  │  │            └───────────┘                     │  │  │
+│  │  └──────────────────────────────────────────────┘  │  │
+│  │                                                    │  │
+│  │  Tailscale ──── encrypted tunnel (no LAN expose)   │  │
+│  │  NFS ────────── TrueNAS /data                      │  │
+│  └────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────┘
 ```
+
+Traefik is the only container that publishes a host port (80). All backend services are reached via the shared `mms.network` bridge using container-name DNS. Traffic is HTTP only — the Tailscale WireGuard tunnel already encrypts everything end-to-end.
 
 ## Prerequisites
 
@@ -99,7 +103,6 @@ ansible-vault edit inventory/group_vars/all/vault.yml
 `inventory/group_vars/all/vault.yml` — Service credentials:
 - `vault_tailscale_auth_key` — Tailscale pre-auth key
 - `vault_immich_db_password` — Immich PostgreSQL password
-- `vault_backup_age_public_key` — Age public key for backup encryption
 
 ### 4. Deploy
 
@@ -363,14 +366,69 @@ ansible-playbook playbooks/restore.yml \
 
 ## Adding a New Service
 
-1. Create `services/<name>.yml` with the service definition (image, ports, volumes, health check)
+1. Create `services/<name>.yml` with the service definition (image, volumes, health check)
 2. Add the service name to `mms_services` list in `inventory/group_vars/mms/vars.yml`
-3. Add a Tailscale serve entry to `mms_tailscale_serve` if needed
-4. Deploy: `ansible-playbook playbooks/deploy-service.yml -e service_name=<name>`
+3. Add a Traefik route entry to `mms_traefik_routes` (see [Traefik Reverse Proxy](#traefik-reverse-proxy) below)
+4. Ensure DNS is configured for the new subdomain (see [DNS Setup](#dns-setup))
+5. Deploy: `ansible-playbook playbooks/deploy-services.yml`
+
+## Traefik Reverse Proxy
+
+Services are accessed via hostname-based routing through a Traefik reverse proxy instead of per-service port numbers. Traefik uses the **file provider** — Ansible generates the routing config from `mms_traefik_routes`, so no Docker/Podman socket is mounted.
+
+### DNS Setup
+
+Configure wildcard DNS so `*.media.example.com` resolves to your VM's Tailscale IP:
+
+1. Find your VM's Tailscale IP: `tailscale ip -4` on the VM
+2. Add a wildcard DNS record pointing to that IP. How you do this depends on your DNS setup:
+   - **Tailscale MagicDNS**: Not applicable — use a custom DNS server or `/etc/hosts`
+   - **Local DNS (Pi-hole, AdGuard, etc.)**: Add a wildcard record `*.media.example.com` → `<tailscale-ip>`
+   - **Public DNS**: Add a wildcard A record for `*.media.example.com` → `<tailscale-ip>` (safe since the IP is only reachable via Tailscale)
+   - **Hosts file** (quick test): Add entries for each service in `/etc/hosts` on your client
+
+### Configuration
+
+Set your domain in `inventory/group_vars/mms/vars.yml`:
+
+```yaml
+mms_traefik_domain: media.example.com   # Replace with your actual domain
+```
+
+Routes are defined in `mms_traefik_routes`. To add a route for a new service:
+
+```yaml
+mms_traefik_routes:
+  myservice:
+    subdomain: myservice          # → myservice.media.example.com
+    container: myservice          # Container name on mms.network
+    port: 8080                    # Container's internal HTTP port
+```
+
+After changing `mms_traefik_routes`, re-run the deploy playbook to apply:
+
+```bash
+ansible-playbook playbooks/deploy-services.yml
+```
+
+### Verifying
+
+After deployment, test from any Tailscale client (once DNS is configured):
+
+```bash
+# Quick check from the VM itself
+curl -H "Host: radarr.media.example.com" http://localhost
+
+# From a Tailscale client with DNS configured
+curl http://radarr.media.example.com
+```
 
 ## Security
 
 - **Tailscale only**: Default firewalld zone is `drop`; only `tailscale0` interface is in `trusted` zone
+- **No direct port exposure**: Only Traefik publishes a host port (80); all backend services are internal to the container network
+- **No socket mount**: Traefik uses the file provider, not the Podman socket
+- **HTTP only**: No TLS at Traefik — the Tailscale WireGuard tunnel provides end-to-end encryption
 - **Rootless Podman**: No containers run as root
 - **SELinux enforcing**: Config volumes use `:Z` for private labeling
 - **Secrets encrypted**: All sensitive values in ansible-vault encrypted files
