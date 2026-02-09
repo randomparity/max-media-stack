@@ -43,6 +43,7 @@
     net:
       net0: "virtio,bridge={{ proxmox_vm_bridge }}{% if proxmox_vm_vlan is defined and proxmox_vm_vlan %},tag={{ proxmox_vm_vlan }}{% endif %}"
     update: true
+  changed_when: false
 
 - name: Configure cloud-init settings
   community.proxmox.proxmox_kvm:

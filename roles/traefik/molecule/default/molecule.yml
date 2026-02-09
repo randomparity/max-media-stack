@@ -3,7 +3,7 @@ driver:
   name: docker
 
 platforms:
-  - name: quadlet-service-test
+  - name: traefik-test
     image: fedora:43
     command: /usr/sbin/init
     privileged: true
@@ -13,15 +13,19 @@ provisioner:
   name: ansible
   inventory:
     host_vars:
-      quadlet-service-test:
+      traefik-test:
         mms_user: mms
         mms_uid: "3000"
         mms_gid: "3000"
-        mms_timezone: America/New_York
         mms_config_dir: /opt/mms/config
         mms_quadlet_dir: /home/mms/.config/containers/systemd
         mms_systemd_env:
           XDG_RUNTIME_DIR: /run/user/3000
           DBUS_SESSION_BUS_ADDRESS: unix:path=/run/user/3000/bus
         mms_network_name: mms
-        service_name: testapp
+        mms_traefik_domain: test.local
+        mms_traefik_routes:
+          testapp:
+            subdomain: testapp
+            container: testapp
+            port: 8080

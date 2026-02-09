@@ -4,7 +4,7 @@ driver:
 
 platforms:
   - name: base-system-test
-    image: fedora:41
+    image: fedora:43
     command: /usr/sbin/init
     privileged: true
     pre_build_image: true

@@ -6,7 +6,7 @@ set -euo pipefail
 usage() {
     echo "Usage: $0 <service_name> <backup_file>"
     echo ""
-    echo "Services: prowlarr, radarr, sonarr, lidarr, sabnzbd, jellyfin, immich"
+    echo "Services: prowlarr, radarr, sonarr, lidarr, sabnzbd, jellyfin, traefik, immich"
     echo ""
     echo "Examples:"
     echo "  $0 radarr /home/{{ backup_user }}/backups/radarr/radarr-2025-01-15.tar.zst.age"
@@ -124,6 +124,9 @@ case "$SERVICE" in
         ;;
     jellyfin)
         restore_jellyfin
+        ;;
+    traefik)
+        restore_arr
         ;;
     immich)
         if [[ "$BACKUP_FILE" == *db* ]]; then

@@ -1,4 +1,17 @@
 ---
+- name: Validate traefik route entries
+  ansible.builtin.assert:
+    that:
+      - item.value.subdomain is defined
+      - item.value.container is defined
+      - item.value.port is defined
+    fail_msg: >-
+      Route '{{ item.key }}' is missing required keys.
+      Each route needs: subdomain, container, port.
+  loop: "{{ traefik_routes | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
 - name: Create Traefik config directory
   ansible.builtin.file:
     path: "{{ traefik_config_dir }}"

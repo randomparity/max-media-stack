@@ -1,0 +1,33 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Check Traefik static config exists
+      ansible.builtin.stat:
+        path: "{{ mms_config_dir }}/traefik/traefik.yml"
+      register: _traefik_static_config
+      failed_when: not _traefik_static_config.stat.exists
+
+    - name: Check Traefik dynamic config exists
+      ansible.builtin.stat:
+        path: "{{ mms_config_dir }}/traefik/dynamic/mms-routes.yml"
+      register: _traefik_dynamic_config
+      failed_when: not _traefik_dynamic_config.stat.exists
+
+    - name: Check Traefik container quadlet exists
+      ansible.builtin.stat:
+        path: "{{ mms_quadlet_dir }}/traefik.container"
+      register: _traefik_quadlet_file
+      failed_when: not _traefik_quadlet_file.stat.exists
+
+    - name: Read dynamic config content
+      ansible.builtin.slurp:
+        src: "{{ mms_config_dir }}/traefik/dynamic/mms-routes.yml"
+      register: _traefik_dynamic_content
+
+    - name: Verify dynamic config contains test route
+      ansible.builtin.assert:
+        that:
+          - "'testapp' in (_traefik_dynamic_content.content | b64decode)"
+        fail_msg: "Dynamic config does not contain the testapp route"
