@@ -1,0 +1,18 @@
+---
+- name: Reload systemd user daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Enable autodeploy timer
+  ansible.builtin.systemd:
+    name: mms-autodeploy.timer
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"

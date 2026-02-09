@@ -16,7 +16,6 @@ Secret=immich-db-password,type=env,target=DB_PASSWORD
 HealthCmd=curl -sf http://localhost:2283/api/server/ping || exit 1
 HealthInterval=60s
 NoNewPrivileges=true
-AutoUpdate=registry
 
 [Service]
 Restart=on-failure

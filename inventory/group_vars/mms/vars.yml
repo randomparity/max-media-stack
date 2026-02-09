@@ -57,3 +57,6 @@ mms_traefik_routes:
     subdomain: immich
     container: immich-server
     port: 2283
+
+# Auto-deploy repository URL
+mms_autodeploy_repo_url: "git@github.com:randomparity/max-media-stack.git"

@@ -29,9 +29,6 @@ ansible-playbook playbooks/site.yml
 # Deploy single service
 ansible-playbook playbooks/deploy-service.yml -e service_name=radarr
 
-# Update all services
-ansible-playbook playbooks/update-services.yml
-
 # Backup
 ansible-playbook playbooks/backup.yml
 

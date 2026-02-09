@@ -124,12 +124,6 @@ ansible-playbook playbooks/deploy-services.yml
 ansible-playbook playbooks/deploy-service.yml -e service_name=radarr
 ```
 
-### Update all services
-
-```bash
-ansible-playbook playbooks/update-services.yml
-```
-
 ### Backup
 
 ```bash

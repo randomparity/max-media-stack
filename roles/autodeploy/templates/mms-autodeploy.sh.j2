@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+# MMS Auto-Deploy — polls git and runs ansible-playbook on changes
+set -euo pipefail
+
+REPO_DIR="{{ autodeploy_repo_dir }}"
+BRANCH="{{ autodeploy_branch }}"
+PLAYBOOK="{{ autodeploy_playbook }}"
+VAULT_FILE="{{ autodeploy_vault_password_file }}"
+LOCK="{{ autodeploy_lock_file }}"
+LOG_DIR="{{ autodeploy_log_dir }}"
+LOG_RETENTION={{ autodeploy_log_retention }}
+TIMEOUT={{ autodeploy_timeout }}
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+cleanup() {
+    rmdir "$LOCK" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# Acquire lock (atomic via mkdir)
+if ! mkdir "$LOCK" 2>/dev/null; then
+    # Check for stale lock
+    if [[ -d "$LOCK" ]]; then
+        lock_age=$(( $(date +%s) - $(stat -c %Y "$LOCK") ))
+        if (( lock_age > TIMEOUT )); then
+            log "Stale lock detected (${lock_age}s old), removing"
+            rmdir "$LOCK" 2>/dev/null || true
+            mkdir "$LOCK"
+        else
+            log "Another deploy is running (lock age: ${lock_age}s), exiting"
+            trap - EXIT
+            exit 0
+        fi
+    fi
+fi
+
+cd "$REPO_DIR"
+
+# Fetch latest changes
+log "Fetching origin/${BRANCH}..."
+git fetch origin "$BRANCH" --quiet
+
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse "origin/${BRANCH}")
+
+if [[ "$LOCAL" == "$REMOTE" ]]; then
+    log "Already up to date (${LOCAL:0:8})"
+    exit 0
+fi
+
+log "Updates available: ${LOCAL:0:8} -> ${REMOTE:0:8}"
+
+# Check if requirements.yml changed
+REQS_CHANGED=false
+if ! git diff --quiet "$LOCAL" "$REMOTE" -- requirements.yml; then
+    REQS_CHANGED=true
+fi
+
+# Fast-forward to latest
+git reset --hard "origin/${BRANCH}"
+
+# Update Galaxy collections if requirements changed
+if [[ "$REQS_CHANGED" == "true" ]]; then
+    log "requirements.yml changed, updating Galaxy collections..."
+    ansible-galaxy collection install -r requirements.yml --force
+fi
+
+# Run the deploy playbook
+LOGFILE="${LOG_DIR}/deploy-$(date +%Y%m%d-%H%M%S).log"
+log "Running ${PLAYBOOK} (log: ${LOGFILE})..."
+
+ansible-playbook "${REPO_DIR}/${PLAYBOOK}" \
+    --vault-password-file "$VAULT_FILE" \
+    --connection=local \
+    --inventory "${REPO_DIR}/inventory" \
+    --limit "{{ inventory_hostname }}" \
+    2>&1 | tee "$LOGFILE"
+
+EXIT_CODE=${PIPESTATUS[0]}
+
+if [[ $EXIT_CODE -eq 0 ]]; then
+    log "Deploy completed successfully"
+else
+    log "Deploy failed with exit code ${EXIT_CODE}"
+fi
+
+# Prune old logs
+log "Pruning logs beyond ${LOG_RETENTION} most recent..."
+# shellcheck disable=SC2012
+ls -1t "${LOG_DIR}"/deploy-*.log 2>/dev/null | tail -n +$(( LOG_RETENTION + 1 )) | xargs -r rm -f
+
+exit $EXIT_CODE

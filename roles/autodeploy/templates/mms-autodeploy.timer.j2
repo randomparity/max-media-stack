@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Unit]
+Description=MMS Auto-Deploy Timer
+
+[Timer]
+OnCalendar={{ autodeploy_schedule }}
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target
