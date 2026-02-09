@@ -44,5 +44,20 @@ mms_systemd_env:
 mms_ansible_user: dave
 mms_vm_password: "{{ vault_vm_password }}"
 
+# Traefik domain (in group_vars/all so both proxmox and mms groups can access)
+mms_traefik_domain: media.drc.nz
+
+# VM description (rendered as Notes in Proxmox UI)
+mms_vm_description: |
+  ## Max Media Stack
+
+  - [Prowlarr](http://prowlarr.{{ mms_traefik_domain }})
+  - [Radarr](http://radarr.{{ mms_traefik_domain }})
+  - [Sonarr](http://sonarr.{{ mms_traefik_domain }})
+  - [Lidarr](http://lidarr.{{ mms_traefik_domain }})
+  - [SABnzbd](http://sabnzbd.{{ mms_traefik_domain }})
+  - [Jellyfin](http://jellyfin.{{ mms_traefik_domain }})
+  - [Immich](http://immich.{{ mms_traefik_domain }})
+
 # Backup encryption
 mms_backup_age_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfM/NNXzwgAWWSHDhrxCKDoAJaav+ovtr28YU0Ykxz"  # Set in vault or override

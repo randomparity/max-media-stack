@@ -39,6 +39,7 @@
     vmid: "{{ proxmox_vm_id }}"
     cores: "{{ proxmox_vm_cores }}"
     memory: "{{ proxmox_vm_memory }}"
+    description: "{{ proxmox_vm_description }}"
     net:
       net0: "virtio,bridge={{ proxmox_vm_bridge }}{% if proxmox_vm_vlan is defined and proxmox_vm_vlan %},tag={{ proxmox_vm_vlan }}{% endif %}"
     update: true
