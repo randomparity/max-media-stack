@@ -20,6 +20,7 @@ proxmox_vm_vlan: "{{ mms_vm_vlan | default(omit) }}"
 
 # Cloud-init
 proxmox_vm_ciuser: "{{ mms_ansible_user }}"
+proxmox_vm_cipassword: "{{ mms_vm_password }}"
 proxmox_vm_ssh_pubkey: "{{ mms_vm_ssh_pubkey }}"
 proxmox_vm_ip: "{{ mms_vm_ip }}"
 proxmox_vm_cidr: "{{ mms_vm_cidr }}"

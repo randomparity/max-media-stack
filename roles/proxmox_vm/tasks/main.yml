@@ -53,6 +53,7 @@
     node: "{{ proxmox_vm_node }}"
     vmid: "{{ proxmox_vm_id }}"
     ciuser: "{{ proxmox_vm_ciuser }}"
+    cipassword: "{{ proxmox_vm_cipassword }}"
     sshkeys: "{{ proxmox_vm_ssh_pubkey }}"
     ipconfig:
       ipconfig0: "ip={{ proxmox_vm_ip }}/{{ proxmox_vm_cidr }},gw={{ proxmox_vm_gateway }}"

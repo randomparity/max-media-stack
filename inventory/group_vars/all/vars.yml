@@ -42,6 +42,7 @@ mms_systemd_env:
 
 # Ansible user for initial SSH access
 mms_ansible_user: dave
+mms_vm_password: "{{ vault_vm_password }}"
 
 # Backup encryption
 mms_backup_age_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfM/NNXzwgAWWSHDhrxCKDoAJaav+ovtr28YU0Ykxz"  # Set in vault or override
