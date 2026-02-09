@@ -28,7 +28,7 @@ mms_services:
   - jellyfin
 
 # Traefik reverse proxy
-mms_traefik_domain: media.example.com
+mms_traefik_domain: media.drc.nz
 mms_traefik_routes:
   prowlarr:
     subdomain: prowlarr
