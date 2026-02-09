@@ -36,7 +36,6 @@
       tailscale up
       --authkey={{ tailscale_auth_key }}
       --hostname={{ tailscale_hostname }}
-      --force-reauth
   changed_when: true
   when: _tailscale_needs_auth | bool
   no_log: true
