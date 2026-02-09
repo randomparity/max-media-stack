@@ -195,7 +195,7 @@
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
   changed_when: true
-  timeout: 600
+  timeout: 1800
 
 # Flush handlers to ensure daemon-reload happens before starting services
 - name: Flush handlers

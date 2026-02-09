@@ -67,7 +67,7 @@
   environment: "{{ mms_systemd_env }}"
   when: _traefik_image_exists.rc != 0
   changed_when: true
-  timeout: 600
+  timeout: 900
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
