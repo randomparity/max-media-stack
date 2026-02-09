@@ -1,0 +1,258 @@
+---
+- name: Ensure git is installed
+  ansible.builtin.dnf:
+    name: git
+    state: present
+  become: true
+  become_user: root
+
+- name: Grant mms user passwordless sudo for autodeploy
+  ansible.builtin.copy:
+    # Ansible become requires sudo for arbitrary commands per-task
+    content: "{{ autodeploy_user }} ALL=(ALL) NOPASSWD: ALL\n"
+    dest: "/etc/sudoers.d/mms-autodeploy"
+    mode: "0440"
+    validate: "visudo -cf %s"
+  become: true
+  become_user: root
+
+- name: Ensure user bin directory exists
+  ansible.builtin.file:
+    path: "/home/{{ autodeploy_user }}/bin"
+    state: directory
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0755"
+
+- name: Ensure autodeploy log directory exists
+  ansible.builtin.file:
+    path: "{{ autodeploy_log_dir }}"
+    state: directory
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0755"
+
+- name: Ensure autodeploy state directory exists
+  ansible.builtin.file:
+    path: "{{ autodeploy_state_dir }}"
+    state: directory
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0755"
+
+- name: Ensure SSH directory exists
+  ansible.builtin.file:
+    path: "/home/{{ autodeploy_user }}/.ssh"
+    state: directory
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0700"
+
+- name: Deploy SSH deploy key
+  ansible.builtin.copy:
+    content: "{{ vault_autodeploy_ssh_key }}"
+    dest: "/home/{{ autodeploy_user }}/.ssh/mms_deploy_key"
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0600"
+  no_log: true
+  when: vault_autodeploy_ssh_key is defined
+
+- name: Configure SSH for GitHub deploy key
+  ansible.builtin.blockinfile:
+    path: "/home/{{ autodeploy_user }}/.ssh/config"
+    create: true
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0600"
+    marker: "# {mark} MMS AUTODEPLOY"
+    block: |
+      Host github.com
+        IdentityFile ~/.ssh/mms_deploy_key
+        StrictHostKeyChecking accept-new
+  when: vault_autodeploy_ssh_key is defined
+
+- name: Clone autodeploy repository
+  ansible.builtin.git:
+    repo: "{{ autodeploy_repo_url }}"
+    dest: "{{ autodeploy_repo_dir }}"
+    version: "{{ autodeploy_branch }}"
+    accept_hostkey: true
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  when: autodeploy_repo_url | length > 0
+
+- name: Install Galaxy collections into clone
+  ansible.builtin.command:
+    cmd: ansible-galaxy collection install -r requirements.yml --force
+    chdir: "{{ autodeploy_repo_dir }}"
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  when: autodeploy_repo_url | length > 0
+  changed_when: false
+
+- name: Deploy vault password file
+  ansible.builtin.copy:
+    content: "{{ vault_mms_vault_password }}"
+    dest: "{{ autodeploy_vault_password_file }}"
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0600"
+  no_log: true
+  when: vault_mms_vault_password is defined
+
+- name: Deploy autodeploy script
+  ansible.builtin.template:
+    src: mms-autodeploy.sh.j2
+    dest: "/home/{{ autodeploy_user }}/bin/mms-autodeploy.sh"
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0750"
+
+- name: Ensure systemd user directory exists
+  ansible.builtin.file:
+    path: "/home/{{ autodeploy_user }}/.config/systemd/user"
+    state: directory
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0755"
+
+# --- Legacy cleanup: remove old single-unit files from before per-group support ---
+
+- name: Stop and disable legacy autodeploy timer
+  ansible.builtin.systemd:
+    name: mms-autodeploy.timer
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  failed_when: false
+
+- name: Stop legacy autodeploy service
+  ansible.builtin.systemd:
+    name: mms-autodeploy.service
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  failed_when: false
+
+- name: Remove legacy autodeploy unit files
+  ansible.builtin.file:
+    path: "/home/{{ autodeploy_user }}/.config/systemd/user/{{ item }}"
+    state: absent
+  loop:
+    - mms-autodeploy.service
+    - mms-autodeploy.timer
+  notify: Reload systemd user daemon
+
+# --- Deploy per-group systemd units ---
+
+- name: Deploy per-group systemd service units  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.template:
+    src: mms-autodeploy.service.j2
+    dest: "/home/{{ autodeploy_user }}/.config/systemd/user/mms-autodeploy-{{ item.key }}.service"
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0644"
+  vars:
+    autodeploy_group_name: "{{ item.key }}"
+  loop: "{{ autodeploy_groups | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  notify:
+    - Reload systemd user daemon
+    - Enable autodeploy timers
+
+- name: Deploy per-group systemd timer units  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.template:
+    src: mms-autodeploy.timer.j2
+    dest: "/home/{{ autodeploy_user }}/.config/systemd/user/mms-autodeploy-{{ item.key }}.timer"
+    owner: "{{ autodeploy_user }}"
+    group: "{{ autodeploy_user }}"
+    mode: "0644"
+  vars:
+    autodeploy_group_name: "{{ item.key }}"
+    autodeploy_group_schedule: "{{ item.value.schedule }}"
+  loop: "{{ autodeploy_groups | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  notify:
+    - Reload systemd user daemon
+    - Enable autodeploy timers
+
+# --- Cleanup stale per-group units for removed groups ---
+
+- name: Find existing autodeploy timer files
+  ansible.builtin.find:
+    paths: "/home/{{ autodeploy_user }}/.config/systemd/user"
+    patterns: "mms-autodeploy-*.timer"
+  register: _existing_timers
+
+- name: Identify stale autodeploy timers  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    _stale_timers: >-
+      {{ _existing_timers.files | rejectattr('path', 'search', _expected_pattern) | list }}
+  vars:
+    _expected_pattern: "{{ autodeploy_groups.keys() | map('regex_replace', '^(.*)$', 'mms-autodeploy-\\1\\.timer$') | join('|') }}"
+
+- name: Stop and disable stale autodeploy timers
+  ansible.builtin.systemd:
+    name: "{{ item.path | basename }}"
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  loop: "{{ _stale_timers }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  failed_when: false
+
+- name: Remove stale autodeploy timer files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _stale_timers }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  notify: Reload systemd user daemon
+
+- name: Find existing autodeploy service files
+  ansible.builtin.find:
+    paths: "/home/{{ autodeploy_user }}/.config/systemd/user"
+    patterns: "mms-autodeploy-*.service"
+  register: _existing_services
+
+- name: Identify stale autodeploy services  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    _stale_services: >-
+      {{ _existing_services.files | rejectattr('path', 'search', _expected_pattern) | list }}
+  vars:
+    _expected_pattern: "{{ autodeploy_groups.keys() | map('regex_replace', '^(.*)$', 'mms-autodeploy-\\1\\.service$') | join('|') }}"
+
+- name: Stop stale autodeploy services
+  ansible.builtin.systemd:
+    name: "{{ item.path | basename }}"
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  loop: "{{ _stale_services }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  failed_when: false
+
+- name: Remove stale autodeploy service files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _stale_services }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  notify: Reload systemd user daemon

@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Unit]
+Description=MMS Auto-Deploy Service ({{ autodeploy_group_name }})
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/mms-autodeploy.sh {{ autodeploy_group_name }}
+Environment=HOME=%h
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec={{ autodeploy_timeout }}

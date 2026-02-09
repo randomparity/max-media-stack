@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+# MMS Auto-Deploy — polls git and runs ansible-playbook on changes
+# Usage: mms-autodeploy.sh <group-name>
+set -euo pipefail
+
+GROUP="${1:?Usage: mms-autodeploy.sh <group-name>}"
+
+REPO_DIR="{{ autodeploy_repo_dir }}"
+BRANCH="{{ autodeploy_branch }}"
+PLAYBOOK="{{ autodeploy_playbook }}"
+VAULT_FILE="{{ autodeploy_vault_password_file }}"
+LOCK="{{ autodeploy_lock_file }}"
+LOG_DIR="{{ autodeploy_log_dir }}"
+STATE_DIR="{{ autodeploy_state_dir }}"
+LOG_RETENTION={{ autodeploy_log_retention }}
+TIMEOUT={{ autodeploy_timeout }}
+
+STATE_FILE="${STATE_DIR}/last-deployed-${GROUP}"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] [${GROUP}] $*"; }
+
+cleanup() {
+    rmdir "$LOCK" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# Acquire lock (atomic via mkdir) — shared across all groups
+if ! mkdir "$LOCK" 2>/dev/null; then
+    # Check for stale lock
+    if [[ -d "$LOCK" ]]; then
+        lock_age=$(( $(date +%s) - $(stat -c %Y "$LOCK") ))
+        if (( lock_age > TIMEOUT )); then
+            log "Stale lock detected (${lock_age}s old), removing"
+            rmdir "$LOCK" 2>/dev/null || true
+            mkdir "$LOCK"
+        else
+            log "Another deploy is running (lock age: ${lock_age}s), exiting"
+            trap - EXIT
+            exit 0
+        fi
+    fi
+fi
+
+cd "$REPO_DIR"
+
+# Fetch latest changes
+log "Fetching origin/${BRANCH}..."
+git fetch origin "$BRANCH" --quiet
+
+REMOTE=$(git rev-parse "origin/${BRANCH}")
+LAST_DEPLOYED=""
+if [[ -f "$STATE_FILE" ]]; then
+    LAST_DEPLOYED=$(cat "$STATE_FILE")
+fi
+
+if [[ "$LAST_DEPLOYED" == "$REMOTE" ]]; then
+    log "Already deployed ${REMOTE:0:8} for group ${GROUP}"
+    exit 0
+fi
+
+LAST_SHORT="${LAST_DEPLOYED:0:8}"
+log "Updates available for group ${GROUP}: ${LAST_SHORT:-(none)} -> ${REMOTE:0:8}"
+
+# Fast-forward to latest
+git reset --hard "origin/${BRANCH}"
+
+# Update Galaxy collections if requirements changed (dedup across groups)
+REQS_MARKER="${STATE_DIR}/reqs-installed-${REMOTE}"
+if [[ ! -f "$REQS_MARKER" ]]; then
+    if [[ -z "$LAST_DEPLOYED" ]] || ! git diff --quiet "$LAST_DEPLOYED" "$REMOTE" -- requirements.yml 2>/dev/null; then
+        log "Updating Galaxy collections..."
+        ansible-galaxy collection install -r requirements.yml --force
+    fi
+    touch "$REQS_MARKER"
+    # Clean up old markers
+    find "$STATE_DIR" -name 'reqs-installed-*' ! -name "reqs-installed-${REMOTE}" -delete 2>/dev/null || true
+fi
+
+# Build deploy command
+DEPLOY_CMD=(
+    ansible-playbook "${REPO_DIR}/${PLAYBOOK}"
+    --vault-password-file "$VAULT_FILE"
+    --connection=local
+    --inventory "${REPO_DIR}/inventory"
+    --limit "{{ inventory_hostname }}"
+)
+
+# Per-group service filtering
+{% for group_name, group_cfg in autodeploy_groups.items() %}
+{% if group_cfg.services is defined %}
+if [[ "$GROUP" == "{{ group_name }}" ]]; then
+    DEPLOY_CMD+=(-e 'deploy_services={{ group_cfg.services | to_json }}')
+fi
+{% endif %}
+{% endfor %}
+
+# Run the deploy playbook
+LOGFILE="${LOG_DIR}/deploy-${GROUP}-$(date +%Y%m%d-%H%M%S).log"
+log "Running ${PLAYBOOK} (log: ${LOGFILE})..."
+
+"${DEPLOY_CMD[@]}" 2>&1 | tee "$LOGFILE"
+
+EXIT_CODE=${PIPESTATUS[0]}
+
+if [[ $EXIT_CODE -eq 0 ]]; then
+    log "Deploy completed successfully"
+    # Write state file only on success
+    echo "$REMOTE" > "$STATE_FILE"
+else
+    log "Deploy failed with exit code ${EXIT_CODE}"
+fi
+
+# Prune old logs for this group
+log "Pruning logs beyond ${LOG_RETENTION} most recent..."
+# shellcheck disable=SC2012
+ls -1t "${LOG_DIR}"/deploy-"${GROUP}"-*.log 2>/dev/null | tail -n +$(( LOG_RETENTION + 1 )) | xargs -r rm -f
+
+exit $EXIT_CODE

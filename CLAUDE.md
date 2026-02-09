@@ -29,9 +29,6 @@ ansible-playbook playbooks/site.yml
 # Deploy single service
 ansible-playbook playbooks/deploy-service.yml -e service_name=radarr
 
-# Update all services
-ansible-playbook playbooks/update-services.yml
-
 # Backup
 ansible-playbook playbooks/backup.yml
 
@@ -49,12 +46,13 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - **Traefik**: Reverse proxy with file provider; routes by `Host` header from `mms_traefik_routes`; only container that publishes a host port
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
+- **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits
 
 ## Repository Layout
 
 - `inventory/` — Hosts and group variables
 - `playbooks/` — All playbooks (site, provision, setup, deploy, backup, migrate, etc.)
-- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, traefik, backup, migrate)
+- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, traefik, backup, migrate, autodeploy)
 - `services/` — Per-service variable definitions (YAML files loaded at deploy time)
 - `templates/quadlet/` — Jinja2 templates for Podman Quadlet files (.container, .network, .volume)
 
