@@ -1,5 +1,5 @@
 ---
 tailscale_auth_key: "{{ vault_tailscale_auth_key }}"
-tailscale_hostname: "{{ mms_vm_name }}"
+tailscale_hostname: "{{ mms_vm_hostname }}"
 
 tailscale_repo_url: https://pkgs.tailscale.com/stable/fedora/tailscale.repo
