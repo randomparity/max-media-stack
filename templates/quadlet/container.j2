@@ -12,6 +12,7 @@ After={{ dep }}
 [Container]
 ContainerName={{ quadlet_service_def.name }}
 Image={{ quadlet_service_def.image }}
+UserNS=keep-id
 {% if quadlet_service_def.user is defined %}
 User={{ quadlet_service_def.user }}
 {% endif %}
