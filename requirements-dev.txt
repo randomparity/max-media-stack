@@ -1,4 +1,4 @@
-ansible>=13.3,<14
+ansible-core>=2.20.0
 ansible-lint>=24.0
 yamllint>=1.33
 molecule>=24.0
