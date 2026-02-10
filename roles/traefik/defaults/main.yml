@@ -1,5 +1,5 @@
 ---
-traefik_image: "docker.io/library/traefik:v3.3"
+traefik_image: "docker.io/library/traefik:v3.6"
 traefik_config_dir: "{{ mms_config_dir }}/traefik"
 traefik_port: 80
 traefik_domain: "{{ mms_traefik_domain }}"
