@@ -9,9 +9,9 @@
     - name: Set effective service list  # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         _effective_quadlet_services: >-
-          {{ (deploy_services is defined) | ternary(
-             mms_services | intersect(deploy_services),
-             mms_services) }}
+          {{ mms_services | intersect(deploy_services)
+             if deploy_services is defined
+             else mms_services }}
         _deploy_immich: "{{ (deploy_services is not defined) or ('immich' in deploy_services) }}"
         _deploy_traefik: "{{ (deploy_services is not defined) or ('traefik' in deploy_services) }}"
 
