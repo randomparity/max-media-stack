@@ -1,75 +1,111 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "schedule": ["before 6am on Monday"],
-  "timezone": "America/New_York",
-  "ignorePaths": ["roles/quadlet_service/molecule/**"],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Service image tags in services/*.yml",
-      "fileMatch": ["services/.+\\.yml$"],
-      "matchStrings": ["image:\\s*\"(?<depName>[^:]+):(?<currentValue>[^\"]+)\""],
-      "datasourceTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "description": "Role default _image variables",
-      "fileMatch": [
-        "roles/immich/defaults/main\\.yml$",
-        "roles/traefik/defaults/main\\.yml$"
-      ],
-      "matchStrings": ["_image:\\s*\"(?<depName>[^:]+):(?<currentValue>[^\"]+)\""],
-      "datasourceTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "description": "Immich version variable with renovate annotation",
-      "fileMatch": ["roles/immich/defaults/main\\.yml$"],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n[\\s\\S]*?:\\s*(?<currentValue>v[\\d.]+)"
-      ],
-      "matchStringsStrategy": "any"
-    },
-    {
-      "customType": "regex",
-      "description": "Ansible Galaxy collections in requirements.yml",
-      "fileMatch": ["^requirements\\.yml$"],
-      "matchStrings": [
-        "name:\\s*(?<depName>[\\w.]+)\\n\\s+version:\\s*\"?(?<currentValue>[\\d.]+)\"?"
-      ],
-      "datasourceTemplate": "galaxy-collection"
-    }
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
   ],
-  "packageRules": [
+  schedule: [
+    'before 6am on Monday',
+  ],
+  timezone: 'America/New_York',
+  ignorePaths: [
+    'roles/quadlet_service/molecule/**',
+  ],
+  customManagers: [
     {
-      "description": "Group LinuxServer images",
-      "matchDatasources": ["docker"],
-      "matchPackagePatterns": ["^lscr\\.io/linuxserver/"],
-      "groupName": "linuxserver images"
+      customType: 'regex',
+      description: 'Service image tags in services/*.yml',
+      managerFilePatterns: [
+        '/services/.+\\.yml$/',
+      ],
+      matchStrings: [
+        'image:\\s*"(?<depName>[^:]+):(?<currentValue>[^"]+)"',
+      ],
+      datasourceTemplate: 'docker',
     },
     {
-      "description": "Group Immich images",
-      "matchDatasources": ["docker"],
-      "matchPackagePatterns": ["^ghcr\\.io/immich-app/", "^docker\\.io/valkey/", "^docker\\.io/tensorchord/"],
-      "groupName": "immich stack"
+      customType: 'regex',
+      description: 'Role default _image variables',
+      managerFilePatterns: [
+        '/roles/immich/defaults/main\\.yml$/',
+        '/roles/traefik/defaults/main\\.yml$/',
+      ],
+      matchStrings: [
+        '_image:\\s*"(?<depName>[^:]+):(?<currentValue>[^"]+)"',
+      ],
+      datasourceTemplate: 'docker',
     },
     {
-      "description": "Group Galaxy collections",
-      "matchDatasources": ["galaxy-collection"],
-      "groupName": "ansible galaxy collections"
+      customType: 'regex',
+      description: 'Immich version variable with renovate annotation',
+      managerFilePatterns: [
+        '/roles/immich/defaults/main\\.yml$/',
+      ],
+      matchStrings: [
+        '#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)\\n[\\s\\S]*?:\\s*(?<currentValue>v[\\d.]+)',
+      ],
+      matchStringsStrategy: 'any',
     },
     {
-      "description": "Auto-merge patch and minor updates",
-      "matchUpdateTypes": ["minor", "patch", "digest"],
-      "automerge": true,
-      "platformAutomerge": true
+      customType: 'regex',
+      description: 'Ansible Galaxy collections in requirements.yml',
+      managerFilePatterns: [
+        '/^requirements\\.yml$/',
+      ],
+      matchStrings: [
+        'name:\\s*(?<depName>[\\w.]+)\\n\\s+version:\\s*"?(?<currentValue>[\\d.]+)"?',
+      ],
+      datasourceTemplate: 'galaxy-collection',
+    },
+  ],
+  packageRules: [
+    {
+      description: 'Group LinuxServer images',
+      matchDatasources: [
+        'docker',
+      ],
+      groupName: 'linuxserver images',
+      matchPackageNames: [
+        '/^lscr\\.io/linuxserver//',
+      ],
     },
     {
-      "description": "Do not auto-merge major updates",
-      "matchUpdateTypes": ["major"],
-      "automerge": false,
-      "labels": ["major-update"]
-    }
-  ]
+      description: 'Group Immich images',
+      matchDatasources: [
+        'docker',
+      ],
+      groupName: 'immich stack',
+      matchPackageNames: [
+        '/^ghcr\\.io/immich-app//',
+        '/^docker\\.io/valkey//',
+        '/^docker\\.io/tensorchord//',
+      ],
+    },
+    {
+      description: 'Group Galaxy collections',
+      matchDatasources: [
+        'galaxy-collection',
+      ],
+      groupName: 'ansible galaxy collections',
+    },
+    {
+      description: 'Auto-merge patch and minor updates',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+        'digest',
+      ],
+      automerge: true,
+      platformAutomerge: true,
+    },
+    {
+      description: 'Do not auto-merge major updates',
+      matchUpdateTypes: [
+        'major',
+      ],
+      automerge: false,
+      labels: [
+        'major-update',
+      ],
+    },
+  ],
 }
