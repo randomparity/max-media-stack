@@ -109,6 +109,42 @@
   environment: "{{ mms_systemd_env }}"
   when: quadlet_service_def.health_cmd is defined and not ansible_check_mode
 
+- name: "Check if INI settings need updating ({{ service_name }})"
+  community.general.ini_file:
+    path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ ini_setting.path }}"
+    section: "{{ ini_setting.section }}"
+    option: "{{ ini_setting.option }}"
+    value: "{{ ini_setting.value }}"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+    no_extra_spaces: true
+  become: true
+  check_mode: true
+  diff: false
+  loop: "{{ quadlet_service_def.ini_settings | default([]) }}"
+  loop_control:
+    loop_var: ini_setting
+    label: "[{{ ini_setting.section }}] {{ ini_setting.option }}"
+  register: _ini_check
+  when: quadlet_service_def.ini_settings is defined
+
+# SABnzbd (and similar apps) write their in-memory config to disk on
+# shutdown, which overwrites any INI changes we made while the service
+# was running.  To avoid this race we stop first (letting the app flush
+# its config), apply our changes on the now-quiet file, then start again.
+- name: "Stop service for INI update ({{ service_name }})"
+  ansible.builtin.systemd:
+    name: "{{ quadlet_service_def.name }}.service"
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when:
+    - quadlet_service_def.ini_settings is defined and _ini_check is changed
+    - not ansible_check_mode
+
 - name: "Apply INI file settings ({{ service_name }})"
   community.general.ini_file:
     path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ ini_setting.path }}"
@@ -124,5 +160,17 @@
   loop_control:
     loop_var: ini_setting
     label: "[{{ ini_setting.section }}] {{ ini_setting.option }}"
-  notify: "Restart quadlet service ({{ service_name }})"
-  when: quadlet_service_def.ini_settings is defined
+  when:
+    - quadlet_service_def.ini_settings is defined and _ini_check is changed
+
+- name: "Start service after INI update ({{ service_name }})"
+  ansible.builtin.systemd:
+    name: "{{ quadlet_service_def.name }}.service"
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when:
+    - quadlet_service_def.ini_settings is defined and _ini_check is changed
+    - not ansible_check_mode
