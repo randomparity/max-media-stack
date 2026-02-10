@@ -1,0 +1,15 @@
+---
+navidrome:
+  name: navidrome
+  description: "Navidrome - Music Streaming Server"
+  image: "deluan/navidrome:0.60.2"
+  user: "{{ mms_uid }}:{{ mms_gid }}"
+  volumes:
+    - "{{ mms_config_dir }}/navidrome:/data:Z"
+    - "{{ mms_data_dir }}/media/music:/music:ro"
+  environment:
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:4533/ping || exit 1"
+  health_interval: "60s"
+  backup_type: "navidrome"
+  backup_db_files: ["navidrome.db"]
