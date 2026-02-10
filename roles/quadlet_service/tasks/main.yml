@@ -103,3 +103,20 @@
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
   when: quadlet_service_def.health_cmd is defined and not ansible_check_mode
+
+- name: Apply INI file settings
+  community.general.ini_file:
+    path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ item.path }}"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+    no_extra_spaces: true
+  become: true
+  loop: "{{ quadlet_service_def.ini_settings | default([]) }}"
+  loop_control:
+    label: "[{{ item.section }}] {{ item.option }}"
+  notify: Restart quadlet service
+  when: quadlet_service_def.ini_settings is defined
