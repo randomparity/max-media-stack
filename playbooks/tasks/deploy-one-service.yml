@@ -1,0 +1,15 @@
+---
+- name: "Deploy service: {{ service_name }}"
+  block:
+    - name: Include quadlet_service role
+      ansible.builtin.include_role:
+        name: quadlet_service
+
+  rescue:
+    - name: Record service failure
+      ansible.builtin.set_fact:
+        _failed_services: "{{ _failed_services | default([]) + [service_name] }}"
+
+    - name: Warn about failed service
+      ansible.builtin.debug:
+        msg: "Service '{{ service_name }}' failed to deploy — continuing with remaining services"
