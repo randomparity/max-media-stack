@@ -67,9 +67,9 @@ ansible-galaxy collection install -r requirements.yml
 
 Edit the following files with your environment details:
 
-- `inventory/group_vars/proxmox/vars.yml` — Proxmox API host, node, storage
-- `inventory/group_vars/mms/vars.yml` — VM specs, NFS server IP, SSH public key
-- `inventory/group_vars/all/vars.yml` — Timezone, user settings
+- `inventory/group_vars/all/vars.yml` — VM specs, SSH public keys, timezone, user/path settings, Traefik domain
+- `inventory/group_vars/proxmox/vars.yml` — Proxmox API host, node, storage, VM display name
+- `inventory/group_vars/mms/vars.yml` — NFS mounts, services list, Traefik routes, autodeploy config
 
 ### 3. Configure secrets
 
