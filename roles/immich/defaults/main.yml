@@ -8,7 +8,7 @@ immich_db_user: immich
 # immich_db_password is set via vault_immich_db_password
 
 # Redis
-immich_redis_image: "docker.io/valkey/valkey:8.1.5"
+immich_redis_image: "docker.io/valkey/valkey:9.0.2"
 
 # PostgreSQL with pgvecto.rs
 immich_postgres_image: "docker.io/tensorchord/pgvecto-rs:pg16-v0.2.0"
