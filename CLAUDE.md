@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Max Media Stack (MMS)** — Ansible project to provision and manage a full homelab media stack on a Fedora VM (Proxmox 9.x), using rootless Podman with Quadlet systemd integration.
 
-**Services:** Prowlarr, Radarr, Sonarr, Lidarr, SABnzbd, Jellyfin, Immich
+**Services:** Prowlarr, Radarr, Sonarr, Lidarr, SABnzbd, Jellyfin, Immich, Channels DVR, Navidrome
 **Storage:** TrueNAS NFS exports mounted at `/data`
 **Access:** Traefik reverse proxy on port 80, Tailscale only (no LAN exposure)
 

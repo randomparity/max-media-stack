@@ -13,6 +13,8 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | SABnzbd   | `sabnzbd.media.example.com`      | Usenet downloader              |
 | Jellyfin  | `jellyfin.media.example.com`     | Media server                   |
 | Immich    | `immich.media.example.com`       | Photo/video management         |
+| Channels  | `channels.media.example.com`     | Live TV and DVR                |
+| Navidrome | `navidrome.media.example.com`    | Music streaming server         |
 
 ## Architecture
 
@@ -27,7 +29,8 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │  traefik (:80) ─── Host header routing       │  │  │
 │  │  │      │                                       │  │  │
 │  │  │      ├── prowlarr  radarr  sonarr  lidarr    │  │  │
-│  │  │      ├── sabnzbd   jellyfin                  │  │  │
+│  │  │      ├── sabnzbd  jellyfin  channels        │  │  │
+│  │  │      ├── navidrome                          │  │  │
 │  │  │      └── immich-server  immich-ml            │  │  │
 │  │  │          immich-postgres immich-redis        │  │  │
 │  │  │            ┌───────────┐                     │  │  │
@@ -170,7 +173,8 @@ This will:
 │       ├── movies/             # Completed movie downloads
 │       ├── series/              # Completed TV downloads
 │       └── music/              # Completed music downloads
-└── photos/                     # Immich uploads
+├── photos/                     # Immich uploads
+└── recordings/                 # Channels DVR recordings
 
 /home/mms/config/<service>/     # Local SSD, per-service config
 /home/mms/backups/              # Backup staging area
