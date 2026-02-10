@@ -23,3 +23,11 @@
       check_mode: true
       register: _base_system_packages
       failed_when: _base_system_packages.changed
+
+    - name: Check mms-services script is deployed and executable
+      ansible.builtin.stat:
+        path: /home/mms/bin/mms-services
+      register: _mms_services_script
+      failed_when: >-
+        not _mms_services_script.stat.exists or
+        not _mms_services_script.stat.executable

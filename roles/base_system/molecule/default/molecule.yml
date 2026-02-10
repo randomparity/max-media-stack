@@ -19,3 +19,5 @@ provisioner:
         mms_gid: "3000"
         mms_timezone: America/New_York
         mms_vm_name: test-host
+        mms_home: /home/mms
+        mms_quadlet_dir: /home/mms/.config/containers/systemd

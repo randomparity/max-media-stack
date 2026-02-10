@@ -14,6 +14,26 @@
     state: mounted
   loop: "{{ storage_nfs_mounts }}"
 
+# The data directory and its local subdirectories (NFS mount point parents)
+# have a default_t SELinux type that container_t cannot access. Set them to
+# container_file_t so containers can traverse to the NFS mounts underneath,
+# which are allowed separately via the virt_use_nfs boolean.
+- name: Set persistent SELinux context on local data directories
+  community.general.sefcontext:
+    target: "{{ item }}"
+    setype: container_file_t
+    state: present
+  loop:
+    - "{{ storage_data_dir }}"
+    - "{{ storage_data_dir }}/media"
+  register: _storage_sefcontext
+
+- name: Apply SELinux context to local data directories
+  ansible.builtin.command:
+    cmd: "restorecon -v {{ storage_data_dir }} {{ storage_data_dir }}/media"
+  when: _storage_sefcontext is changed
+  changed_when: true
+
 # NFS directories: use become_user instead of owner/group/mode because
 # NFS root_squash prevents root from setting file attributes.
 # The mms user creates directories with its default umask.

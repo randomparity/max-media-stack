@@ -15,9 +15,9 @@
         _deploy_immich: "{{ (deploy_services is not defined) or ('immich' in deploy_services) }}"
         _deploy_traefik: "{{ (deploy_services is not defined) or ('traefik' in deploy_services) }}"
 
-    - name: Deploy each service  # noqa: var-naming[no-role-prefix]
-      ansible.builtin.include_role:
-        name: quadlet_service
+    - name: Deploy each service
+      ansible.builtin.include_tasks:
+        file: tasks/deploy-one-service.yml
       vars:
         service_name: "{{ item }}"
       loop: "{{ _effective_quadlet_services }}"
@@ -31,3 +31,8 @@
       ansible.builtin.include_role:
         name: traefik
       when: _deploy_traefik | bool
+
+    - name: Fail if any services failed to deploy
+      ansible.builtin.fail:
+        msg: "The following services failed to deploy: {{ _failed_services | join(', ') }}"
+      when: _failed_services is defined and _failed_services | length > 0

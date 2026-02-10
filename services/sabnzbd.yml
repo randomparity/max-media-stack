@@ -14,3 +14,8 @@ sabnzbd:
   health_interval: "60s"
   backup_type: "sabnzbd"
   backup_db_files: ["sabnzbd.ini"]
+  ini_settings:
+    - path: sabnzbd.ini
+      section: misc
+      option: host_whitelist
+      value: "sabnzbd.{{ mms_traefik_domain }}"
