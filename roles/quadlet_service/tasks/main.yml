@@ -1,9 +1,9 @@
 ---
-- name: Load service definition
+- name: "Load service definition ({{ service_name }})"
   ansible.builtin.include_vars:
     file: "{{ playbook_dir }}/../services/{{ service_name }}.yml"
 
-- name: Validate service definition key matches service_name
+- name: "Validate service definition key matches service_name ({{ service_name }})"
   ansible.builtin.assert:
     that:
       - lookup('vars', service_name, default='__missing__') != '__missing__'
@@ -11,11 +11,11 @@
       Service definition file services/{{ service_name }}.yml does not contain
       a top-level key '{{ service_name }}'. Check the file contents.
 
-- name: Set service variable
+- name: "Set service variable ({{ service_name }})"
   ansible.builtin.set_fact:
     quadlet_service_def: "{{ lookup('vars', service_name) }}"
 
-- name: Create config directory
+- name: "Create config directory ({{ service_name }})"
   ansible.builtin.file:
     path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}"
     state: directory
@@ -24,7 +24,7 @@
     mode: "0755"
   become: true
 
-- name: Deploy environment file
+- name: "Deploy environment file ({{ service_name }})"
   ansible.builtin.copy:
     content: |
       {% for env in quadlet_service_def.environment %}
@@ -35,9 +35,9 @@
     group: "{{ mms_user }}"
     mode: "0600"
   become: true
-  notify: Restart quadlet service
+  notify: "Restart quadlet service ({{ service_name }})"
 
-- name: Deploy container quadlet
+- name: "Deploy container quadlet ({{ service_name }})"
   ansible.builtin.template:
     src: "{{ playbook_dir }}/../templates/quadlet/container.j2"
     dest: "{{ mms_quadlet_dir }}/{{ quadlet_service_def.name }}.container"
@@ -47,10 +47,10 @@
   become: true
   register: _quadlet_container_file
   notify:
-    - Reload systemd user daemon
-    - Restart quadlet service
+    - "Reload systemd user daemon ({{ service_name }})"
+    - "Restart quadlet service ({{ service_name }})"
 
-- name: Check if container image is present
+- name: "Check if container image is present ({{ service_name }})"
   ansible.builtin.command:
     cmd: "podman image exists {{ quadlet_service_def.image }}"
   become: true
@@ -61,7 +61,7 @@
   failed_when: false
   check_mode: false
 
-- name: Pull container image
+- name: "Pull container image ({{ service_name }})"
   ansible.builtin.command:
     cmd: "podman pull {{ quadlet_service_def.image }}"
   become: true
@@ -71,10 +71,10 @@
   changed_when: true
   timeout: 900
 
-- name: Flush handlers before starting service
+- name: "Flush handlers before starting service ({{ service_name }})"
   ansible.builtin.meta: flush_handlers
 
-- name: Enable and start service
+- name: "Enable and start service ({{ service_name }})"
   ansible.builtin.systemd:
     name: "{{ quadlet_service_def.name }}.service"
     enabled: true
@@ -84,13 +84,13 @@
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
 
-- name: Set health check timeout
+- name: "Set health check timeout ({{ service_name }})"
   ansible.builtin.set_fact:
     _quadlet_health_timeout: >-
       {{ (_quadlet_container_file is changed) |
          ternary(quadlet_service_first_boot_health_timeout, quadlet_service_health_timeout) }}
 
-- name: Wait for service health check
+- name: "Wait for service health check ({{ service_name }})"
   ansible.builtin.shell:
     cmd: |
       if ! podman ps -q --filter name=^{{ quadlet_service_def.name }}$ --filter status=running | grep -q .; then
@@ -109,7 +109,7 @@
   environment: "{{ mms_systemd_env }}"
   when: quadlet_service_def.health_cmd is defined and not ansible_check_mode
 
-- name: Apply INI file settings
+- name: "Apply INI file settings ({{ service_name }})"
   community.general.ini_file:
     path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ item.path }}"
     section: "{{ item.section }}"
@@ -123,5 +123,5 @@
   loop: "{{ quadlet_service_def.ini_settings | default([]) }}"
   loop_control:
     label: "[{{ item.section }}] {{ item.option }}"
-  notify: Restart quadlet service
+  notify: "Restart quadlet service ({{ service_name }})"
   when: quadlet_service_def.ini_settings is defined
