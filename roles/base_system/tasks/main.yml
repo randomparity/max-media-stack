@@ -21,7 +21,6 @@
     owner: "{{ base_system_user }}"
     group: "{{ base_system_user }}"
     mode: "0755"
-  become: true
 
 - name: Deploy mms-services maintenance script
   ansible.builtin.template:
@@ -30,7 +29,6 @@
     owner: "{{ base_system_user }}"
     group: "{{ base_system_user }}"
     mode: "0755"
-  become: true
 
 - name: Enable loginctl linger for mms user
   ansible.builtin.command:

@@ -5,6 +5,7 @@
 set -euo pipefail
 
 QUADLET_DIR="{{ mms_quadlet_dir }}"
+FAILURES=0
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -87,23 +88,33 @@ do_action() {
         return
     fi
 
+    local gerund
+    case "$action" in
+        start)   gerund="Starting" ;;
+        stop)    gerund="Stopping" ;;
+        restart) gerund="Restarting" ;;
+        *)       gerund="${action}ing" ;;
+    esac
+
     local tier
     tier=$(get_tier "${services[0]}")
     local label
     label=$(tier_label "$tier")
-    echo -e "${BLUE}${BOLD}[$label]${RESET} ${action}ing: ${services[*]}"
+    echo -e "${BLUE}${BOLD}[$label]${RESET} ${gerund}: ${services[*]}"
 
     for svc in "${services[@]}"; do
-        if systemctl --user "$action" "$svc.service" 2>/dev/null; then
+        if systemctl --user "$action" "$svc.service"; then
             echo -e "  ${GREEN}✓${RESET} $svc"
         else
             echo -e "  ${RED}✗${RESET} $svc"
+            ((FAILURES++)) || true
         fi
     done
 }
 
 cmd_start() {
     categorize_services
+    FAILURES=0
     echo -e "${BOLD}Starting all MMS services...${RESET}"
     echo
     do_action start "${TIER_0[@]}"
@@ -111,11 +122,16 @@ cmd_start() {
     do_action start "${TIER_2[@]}"
     do_action start "${TIER_3[@]}"
     echo
+    if [[ $FAILURES -gt 0 ]]; then
+        echo -e "${RED}${BOLD}Start completed with ${FAILURES} failure(s).${RESET}"
+        exit 1
+    fi
     echo -e "${GREEN}${BOLD}Start complete.${RESET}"
 }
 
 cmd_stop() {
     categorize_services
+    FAILURES=0
     echo -e "${BOLD}Stopping all MMS services...${RESET}"
     echo
     do_action stop "${TIER_3[@]}"
@@ -123,13 +139,40 @@ cmd_stop() {
     do_action stop "${TIER_1[@]}"
     do_action stop "${TIER_0[@]}"
     echo
+    if [[ $FAILURES -gt 0 ]]; then
+        echo -e "${RED}${BOLD}Stop completed with ${FAILURES} failure(s).${RESET}"
+        exit 1
+    fi
     echo -e "${GREEN}${BOLD}Stop complete.${RESET}"
 }
 
 cmd_restart() {
-    cmd_stop
+    local stop_failures=0 start_failures=0
+    categorize_services
+    FAILURES=0
+    echo -e "${BOLD}Stopping all MMS services...${RESET}"
     echo
-    cmd_start
+    do_action stop "${TIER_3[@]}"
+    do_action stop "${TIER_2[@]}"
+    do_action stop "${TIER_1[@]}"
+    do_action stop "${TIER_0[@]}"
+    stop_failures=$FAILURES
+    echo
+    FAILURES=0
+    echo -e "${BOLD}Starting all MMS services...${RESET}"
+    echo
+    do_action start "${TIER_0[@]}"
+    do_action start "${TIER_1[@]}"
+    do_action start "${TIER_2[@]}"
+    do_action start "${TIER_3[@]}"
+    start_failures=$FAILURES
+    echo
+    FAILURES=$((stop_failures + start_failures))
+    if [[ $FAILURES -gt 0 ]]; then
+        echo -e "${RED}${BOLD}Restart completed with ${FAILURES} failure(s).${RESET}"
+        exit 1
+    fi
+    echo -e "${GREEN}${BOLD}Restart complete.${RESET}"
 }
 
 cmd_status() {

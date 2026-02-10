@@ -2,6 +2,7 @@
 base_system_user: "{{ mms_user }}"
 base_system_uid: "{{ mms_uid }}"
 base_system_gid: "{{ mms_gid }}"
+base_system_home: "{{ mms_home }}"
 base_system_timezone: "{{ mms_timezone }}"
 base_system_hostname: "{{ mms_vm_name }}"
 
@@ -20,7 +21,5 @@ base_system_seboolean:
     state: true
   - name: container_manage_cgroup
     state: true
-
-base_system_home: "{{ mms_home }}"
 
 base_system_sysctl_unprivileged_port_start: 0
