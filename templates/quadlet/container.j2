@@ -36,7 +36,10 @@ Secret={{ secret }}
 {% endfor %}
 {% endif %}
 Tmpfs=/run:U
-NoNewPrivileges=true
+{% for tmpfs in quadlet_service_def.tmpfs | default([]) %}
+Tmpfs={{ tmpfs }}
+{% endfor %}
+NoNewPrivileges={{ quadlet_service_def.no_new_privileges | default(true) | lower }}
 {% if quadlet_service_def.auto_update | default(false) %}
 AutoUpdate=registry
 {% endif %}

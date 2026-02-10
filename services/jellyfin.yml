@@ -2,13 +2,13 @@
 jellyfin:
   name: jellyfin
   description: "Jellyfin - Media Server"
-  image: "lscr.io/linuxserver/jellyfin:10.11.6ubu2404-ls19"
+  image: "docker.io/jellyfin/jellyfin:10.11.6"
+  tmpfs:
+    - /cache
   volumes:
     - "{{ mms_config_dir }}/jellyfin:/config:Z"
     - "{{ mms_data_dir }}/media:{{ mms_data_dir }}/media:ro"
   environment:
-    - "PUID={{ mms_uid }}"
-    - "PGID={{ mms_gid }}"
     - "TZ={{ mms_timezone }}"
   health_cmd: "curl -sf http://localhost:8096/health || exit 1"
   health_interval: "60s"
