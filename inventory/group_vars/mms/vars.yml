@@ -1,24 +1,24 @@
 ---
 # NFS mounts from TrueNAS
-mms_nfs_server: 192.168.5.2
+mms_nfs_server: 192.168.5.3
 mms_nfs_mounts:
-  - src: "{{ mms_nfs_server }}:/mnt/zpool0/media/movies"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/movies"
     dest: /data/media/movies
     opts: "rw,hard,intr,_netdev,nfsvers=4"
-  - src: "{{ mms_nfs_server }}:/mnt/zpool0/media/series"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/series"
     dest: /data/media/series
     opts: "rw,hard,intr,_netdev,nfsvers=4"
-  - src: "{{ mms_nfs_server }}:/mnt/zpool0/media/music"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/music"
     dest: /data/media/music
     opts: "rw,hard,intr,_netdev,nfsvers=4"
-  - src: "{{ mms_nfs_server }}:/mnt/zpool0/download/usenet"
-    dest: /data/usenet
-    opts: "rw,hard,intr,_netdev,nfsvers=4"
-  - src: "{{ mms_nfs_server }}:/mnt/zpool0/photos"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/photos"
     dest: /data/photos
     opts: "rw,hard,intr,_netdev,nfsvers=4"
-  - src: "{{ mms_nfs_server }}:/mnt/zpool0/media/recordings"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/recordings"
     dest: /data/recordings
+    opts: "rw,hard,intr,_netdev,nfsvers=4"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/download/usenet"
+    dest: /data/usenet
     opts: "rw,hard,intr,_netdev,nfsvers=4"
 
 # Services to deploy (matches filenames in services/)
