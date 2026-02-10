@@ -1,10 +1,10 @@
 ---
 # Proxmox API connection
-proxmox_api_host: 192.168.5.20
+proxmox_api_host: 192.168.5.10
 proxmox_api_port: 8006
-proxmox_node: pve1
-proxmox_storage: cola-vm-store
-proxmox_iso_storage: cola-vm-iso
+proxmox_node: gamera
+proxmox_storage: zpool0-fast
+proxmox_iso_storage: local
 
 # VM template
 proxmox_template_name: fedora-cloud
@@ -13,3 +13,6 @@ proxmox_template_vmid: 9000
 # Fedora cloud image for template creation
 proxmox_cloud_image_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
 proxmox_cloud_image_filename: "Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
+
+# Proxmox VM display name (only needed by proxmox_vm role)
+mms_vm_name: mms

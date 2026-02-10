@@ -35,7 +35,11 @@ HealthInterval={{ quadlet_service_def.health_interval | default('60s') }}
 Secret={{ secret }}
 {% endfor %}
 {% endif %}
-NoNewPrivileges=true
+Tmpfs=/run:U
+{% for tmpfs in quadlet_service_def.tmpfs | default([]) %}
+Tmpfs={{ tmpfs }}
+{% endfor %}
+NoNewPrivileges={{ quadlet_service_def.no_new_privileges | default(true) | bool | lower }}
 {% if quadlet_service_def.auto_update | default(false) %}
 AutoUpdate=registry
 {% endif %}

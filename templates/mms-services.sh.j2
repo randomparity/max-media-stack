@@ -6,7 +6,7 @@ set -euo pipefail
 
 QUADLET_DIR="{{ mms_quadlet_dir }}"
 FAILURES=0
-
+{% raw %}
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -200,3 +200,4 @@ case "$1" in
     status)  cmd_status ;;
     *)       usage ;;
 esac
+{% endraw %}

@@ -64,3 +64,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - SELinux: `:Z` for local config volumes, no labels for NFS (uses `virt_use_nfs` boolean)
 - All services join the shared `mms.network` for inter-container DNS
 - Traefik routing: `mms_traefik_domain` and `mms_traefik_routes` in `inventory/group_vars/mms/vars.yml`
+- VM naming: `mms_vm_hostname` (group_vars/all) sets OS hostname and Tailscale node name; `mms_vm_name` (group_vars/proxmox) is the Proxmox display name only
+- SSH keys: `mms_vm_ssh_pubkeys` is a list of public keys for cloud-init (supports multiple keys)
+- Container template includes `Tmpfs=/run:U` for s6-overlay compatibility; services can declare additional `tmpfs` entries and set `no_new_privileges: false` to override the default
+- Jellyfin uses the official `jellyfin/jellyfin` image (no PUID/PGID); relies on `UserNS=keep-id` for file ownership

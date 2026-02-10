@@ -111,10 +111,10 @@
 
 - name: "Apply INI file settings ({{ service_name }})"
   community.general.ini_file:
-    path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ item.path }}"
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
+    path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ ini_setting.path }}"
+    section: "{{ ini_setting.section }}"
+    option: "{{ ini_setting.option }}"
+    value: "{{ ini_setting.value }}"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
     mode: "0600"
@@ -122,6 +122,7 @@
   become: true
   loop: "{{ quadlet_service_def.ini_settings | default([]) }}"
   loop_control:
-    label: "[{{ item.section }}] {{ item.option }}"
+    loop_var: ini_setting
+    label: "[{{ ini_setting.section }}] {{ ini_setting.option }}"
   notify: "Restart quadlet service ({{ service_name }})"
   when: quadlet_service_def.ini_settings is defined
