@@ -28,3 +28,6 @@ Thumbs.db
 
 # Collections installed locally
 collections/
+
+# Claude Code per-user settings
+.claude/settings.local.json
