@@ -213,7 +213,7 @@ pveum user token add ansible@pam mms --privsep 0
 
 ```bash
 pveum role add MMS-Provisioner --privs \
-  "VM.Allocate VM.Clone VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.Memory VM.Config.Network VM.Config.Options VM.Audit VM.PowerMgmt Datastore.AllocateSpace Datastore.Audit VM.Snapshot VM.Snapshot.Rollback"
+  "VM.Allocate VM.Clone VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.Memory VM.Config.Network VM.Config.Options VM.Audit VM.PowerMgmt Datastore.AllocateSpace Datastore.Audit VM.Snapshot VM.Snapshot.Rollback SDN.Use"
 ```
 
 Permission breakdown:
@@ -233,6 +233,7 @@ Permission breakdown:
 | `VM.Snapshot`, `VM.Snapshot.Rollback` | Pre-migration snapshots (migrate role) |
 | `Datastore.AllocateSpace` | Allocate disk on storage |
 | `Datastore.Audit` | Query storage info |
+| `SDN.Use` | Attach VM NIC to VLAN-tagged bridge |
 
 ### 3. Assign the role to the user
 
@@ -247,6 +248,14 @@ If the token needs access to clone from a template on a specific storage:
 ```bash
 pveum acl modify /storage/<STORAGE> --user ansible@pam --role MMS-Provisioner
 ```
+
+If the VM uses a VLAN tag on an SDN-managed bridge, grant `SDN.Use` on the zone:
+
+```bash
+pveum acl modify /sdn/zones/<ZONE>/<BRIDGE>/<VLAN> --user ansible@pam --role MMS-Provisioner
+```
+
+Replace `<ZONE>`, `<BRIDGE>`, and `<VLAN>` with your SDN zone name, bridge, and VLAN tag (e.g., `/sdn/zones/localnetwork/vmbr0/20`).
 
 ### 4. Store credentials in the vault
 
