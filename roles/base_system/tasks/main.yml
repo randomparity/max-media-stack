@@ -14,6 +14,24 @@
     create_home: true
     state: present
 
+- name: Create mms user bin directory
+  ansible.builtin.file:
+    path: "{{ base_system_home }}/bin"
+    state: directory
+    owner: "{{ base_system_user }}"
+    group: "{{ base_system_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy mms-services maintenance script
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/../templates/mms-services.sh.j2"
+    dest: "{{ base_system_home }}/bin/mms-services"
+    owner: "{{ base_system_user }}"
+    group: "{{ base_system_user }}"
+    mode: "0755"
+  become: true
+
 - name: Enable loginctl linger for mms user
   ansible.builtin.command:
     cmd: loginctl enable-linger {{ base_system_user }}

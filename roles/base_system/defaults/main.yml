@@ -21,4 +21,6 @@ base_system_seboolean:
   - name: container_manage_cgroup
     state: true
 
+base_system_home: "{{ mms_home }}"
+
 base_system_sysctl_unprivileged_port_start: 0
