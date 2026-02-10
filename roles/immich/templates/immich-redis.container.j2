@@ -11,6 +11,7 @@ ContainerName=immich-redis
 Volume=immich-redis.volume:/data
 HealthCmd=valkey-cli ping | grep -q PONG
 HealthInterval=30s
+Tmpfs=/run:U
 NoNewPrivileges=true
 
 [Service]

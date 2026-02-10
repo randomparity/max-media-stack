@@ -4,7 +4,7 @@ jellyfin:
   description: "Jellyfin - Media Server"
   image: "docker.io/jellyfin/jellyfin:10.11.6"
   tmpfs:
-    - /cache
+    - "/cache:U"
   volumes:
     - "{{ mms_config_dir }}/jellyfin:/config:Z"
     - "{{ mms_data_dir }}/media:{{ mms_data_dir }}/media:ro"

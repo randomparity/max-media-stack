@@ -15,6 +15,7 @@ Environment=POSTGRES_INITDB_ARGS="--data-checksums"
 Secret=immich-db-password,type=env,target=POSTGRES_PASSWORD
 HealthCmd=pg_isready -d {{ immich_db_name }} -U {{ immich_db_user }}
 HealthInterval=30s
+Tmpfs=/run:U
 NoNewPrivileges=true
 
 [Service]
