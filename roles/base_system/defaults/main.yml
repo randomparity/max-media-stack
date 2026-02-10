@@ -13,6 +13,7 @@ base_system_packages:
   - age
   - curl
   - sqlite
+  - systemd-container
 
 base_system_seboolean:
   - name: virt_use_nfs
