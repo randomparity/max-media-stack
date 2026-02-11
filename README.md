@@ -8,6 +8,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 |-----------|----------------------------------|--------------------------------|
 | Prowlarr  | `prowlarr.media.example.com`     | Indexer manager                |
 | Radarr    | `radarr.media.example.com`       | Movie automation               |
+| Radarr 4K | `radarr4k.media.example.com`     | 4K movie automation            |
 | Sonarr    | `sonarr.media.example.com`       | TV show automation             |
 | Lidarr    | `lidarr.media.example.com`       | Music automation               |
 | SABnzbd   | `sabnzbd.media.example.com`      | Usenet downloader              |
@@ -28,9 +29,10 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │                                              │  │  │
 │  │  │  traefik (:80) ─── Host header routing       │  │  │
 │  │  │      │                                       │  │  │
-│  │  │      ├── prowlarr  radarr  sonarr  lidarr    │  │  │
-│  │  │      ├── sabnzbd  jellyfin  channels        │  │  │
-│  │  │      ├── navidrome                          │  │  │
+│  │  │      ├── prowlarr  radarr  radarr4k          │  │  │
+│  │  │      ├── sonarr  lidarr  sabnzbd             │  │  │
+│  │  │      ├── jellyfin  channels                  │  │  │
+│  │  │      ├── navidrome                           │  │  │
 │  │  │      └── immich-server  immich-ml            │  │  │
 │  │  │          immich-postgres immich-redis        │  │  │
 │  │  │            ┌───────────┐                     │  │  │
@@ -54,6 +56,7 @@ All containers share the `mms.network` bridge and reach each other by container 
 |------------------|--------------------|-------|-------------------------------------|
 | Prowlarr         | `prowlarr`         | 9696  | `http://prowlarr:9696`              |
 | Radarr           | `radarr`           | 7878  | `http://radarr:7878`                |
+| Radarr 4K        | `radarr4k`         | 7878  | `http://radarr4k:7878`              |
 | Sonarr           | `sonarr`           | 8989  | `http://sonarr:8989`                |
 | Lidarr           | `lidarr`           | 8686  | `http://lidarr:8686`                |
 | SABnzbd          | `sabnzbd`          | 8080  | `http://sabnzbd:8080`               |
@@ -68,8 +71,8 @@ All containers share the `mms.network` bridge and reach each other by container 
 
 Common connections to configure:
 
-- **Radarr/Sonarr/Lidarr → SABnzbd**: Add as download client using `http://sabnzbd:8080`
-- **Radarr/Sonarr/Lidarr → Prowlarr**: Prowlarr pushes indexers to the \*arrs via their internal URLs
+- **Radarr/Radarr 4K/Sonarr/Lidarr → SABnzbd**: Add as download client using `http://sabnzbd:8080`
+- **Radarr/Radarr 4K/Sonarr/Lidarr → Prowlarr**: Prowlarr pushes indexers to the \*arrs via their internal URLs
 - **Prowlarr → \*arrs**: Add each app under Settings > Apps using its internal URL above
 
 ## Prerequisites
@@ -162,7 +165,7 @@ ansible-playbook playbooks/backup.yml
 
 Backups run automatically via systemd timers:
 - **Daily at 03:00** -- Config backups for all services (age-encrypted, stored locally in `/home/mms/backups/`)
-- **Daily at 04:30** -- API backups for *arr services (Prowlarr, Radarr, Sonarr, Lidarr) to NAS (`/data/backups/arr-api/`)
+- **Daily at 04:30** -- API backups for *arr services (Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr) to NAS (`/data/backups/arr-api/`)
 - **Weekly** -- Immich photo uploads (rsync)
 
 Retention:
@@ -211,20 +214,22 @@ This will:
 ```
 /data/                          # NFS from TrueNAS
 ├── media/
-│   ├── movies/                 # Radarr library
-│   ├── series/                  # Sonarr library
+│   ├── movies/                 # Radarr/Radarr4k Library
+│   ├── series/                 # Sonarr library
 │   └── music/                  # Lidarr library
 ├── usenet/
 │   ├── incomplete/             # SABnzbd in-progress
 │   └── complete/
 │       ├── movies/             # Completed movie downloads
-│       ├── series/              # Completed TV downloads
+│       ├── movies4k/           # Completed 4K movie downloads
+│       ├── series/             # Completed TV downloads
 │       ├── music/              # Completed music downloads
 │       └── manual/             # Manual import staging
 ├── backups/
 │   └── arr-api/                # *arr API backups (30-day retention)
 │       ├── prowlarr/
 │       ├── radarr/
+│       ├── radarr4k/
 │       ├── sonarr/
 │       └── lidarr/
 ├── photos/                     # Immich uploads
@@ -584,6 +589,7 @@ autodeploy_groups:
     services:
       - prowlarr
       - radarr
+      - radarr4k
       - sonarr
       - lidarr
       - sabnzbd

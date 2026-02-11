@@ -28,6 +28,7 @@ mms_nfs_mounts:
 mms_services:
   - prowlarr
   - radarr
+  - radarr4k
   - sonarr
   - lidarr
   - sabnzbd
@@ -44,6 +45,10 @@ mms_traefik_routes:
   radarr:
     subdomain: radarr
     container: radarr
+    port: 7878
+  radarr4k:
+    subdomain: radarr4k
+    container: radarr4k
     port: 7878
   sonarr:
     subdomain: sonarr
@@ -84,6 +89,7 @@ autodeploy_groups:
     services:
       - prowlarr
       - radarr
+      - radarr4k
       - sonarr
       - lidarr
       - sabnzbd

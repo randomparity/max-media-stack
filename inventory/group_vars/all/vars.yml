@@ -55,6 +55,7 @@ mms_vm_description: |
 
   - [Prowlarr](http://prowlarr.{{ mms_traefik_domain }})
   - [Radarr](http://radarr.{{ mms_traefik_domain }})
+  - [Radarr 4K](http://radarr4k.{{ mms_traefik_domain }})
   - [Sonarr](http://sonarr.{{ mms_traefik_domain }})
   - [Lidarr](http://lidarr.{{ mms_traefik_domain }})
   - [SABnzbd](http://sabnzbd.{{ mms_traefik_domain }})

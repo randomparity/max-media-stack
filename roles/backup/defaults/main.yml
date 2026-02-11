@@ -40,6 +40,8 @@ backup_api_services:
     subdomain: prowlarr
   - name: radarr
     subdomain: radarr
+  - name: radarr4k
+    subdomain: radarr4k
   - name: sonarr
     subdomain: sonarr
   - name: lidarr
