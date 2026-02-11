@@ -197,6 +197,29 @@
   changed_when: true
   timeout: 1800
 
+# Create media subdirectories and mount-check marker files
+# Immich verifies these on startup to detect unmounted volumes
+- name: Create Immich media subdirectories
+  ansible.builtin.file:
+    path: "{{ immich_upload_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+  loop: "{{ immich_media_dirs }}"
+
+- name: Create Immich mount-check marker files
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ immich_upload_dir }}/{{ item }}/.immich"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+    force: false
+  become: true
+  loop: "{{ immich_media_dirs }}"
+
 # Flush handlers to ensure daemon-reload happens before starting services
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers

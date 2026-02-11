@@ -19,3 +19,12 @@ immich_ml_image: "ghcr.io/immich-app/immich-machine-learning:{{ immich_version }
 
 # Upload directory (NFS mount)
 immich_upload_dir: /data/photos
+
+# Media subdirectories required by Immich (mount integrity checks)
+immich_media_dirs:
+  - encoded-video
+  - thumbs
+  - upload
+  - library
+  - profile
+  - backups
