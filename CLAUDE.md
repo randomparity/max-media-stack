@@ -72,3 +72,4 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - INI settings use a stop-then-apply pattern: check in check-mode, stop service if changes needed, apply to quiescent file, restart (avoids apps like SABnzbd overwriting changes on shutdown)
 - Inter-container `host_whitelist` must include the bare container hostname (e.g., `sabnzbd`) in addition to the Traefik subdomain FQDN
 - Backup role uses `backup_*` prefix for all variables; API backup variables use `backup_api_*`
+- Deploy resilience: `deploy-services.yml` wraps each service (including Immich and Traefik) in `block/rescue`; a single service failure is logged and skipped, and the playbook fails at the end with a summary of all failed services

@@ -1,5 +1,34 @@
 # Review Findings
 
+## fix/base-system-packages Review (2026-02-11, 6 commits)
+
+### Scope
+Replace btop package fix, import Tailscale GPG key, remove movies4k directories, wrap Immich/Traefik
+in block/rescue in deploy-services.yml, fix Immich volume mount /upload->/data, create Immich media
+subdirectories with .immich markers, fix ansible-lint key-order.
+
+### Findings
+- HIGH: Immich media subdir/marker tasks use become: true (root) with owner/group on NFS (root_squash will fail)
+- MEDIUM: New tasks placed after image pull; minor ordering preference to group with filesystem setup
+- MEDIUM: immich_upload_dir variable name now misleading (mounted at /data, not /upload)
+- LOW: immich_media_dirs name slightly misleading (includes non-media dirs like backups)
+- LOW: Tailscale GPG key import from remote URL (standard practice, defaults correct)
+- LOW: block/rescue pattern duplicated 3x (fine for now, extract if more special services added)
+
+### Positive patterns
+- /upload -> /data mount fix correctly tracks Immich upstream change
+- UPLOAD_LOCATION env var properly removed (Immich uses /data default)
+- block/rescue matches deploy-one-service.yml pattern exactly
+- force: false on .immich markers prevents unnecessary changed reports
+- Tailscale GPG key imported before dnf install (prevents interactive prompts)
+- movies4k removal clean: storage defaults + README updated together
+- ansible-lint key-order fix (when before block) is correct
+
+### Items resolved from prior reviews
+- README storage layout now has complete/manual directory (was #34)
+
+---
+
 ## fix/sabnzbd-ini-race-condition Review (2026-02-11, 6 commits)
 
 ### Scope

@@ -15,7 +15,7 @@ base_system_packages:
   - curl
   - sqlite
   - systemd-container
-  - bpytop
+  - btop
 
 base_system_seboolean:
   - name: virt_use_nfs

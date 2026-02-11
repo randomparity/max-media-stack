@@ -5,6 +5,11 @@
     dest: /etc/yum.repos.d/tailscale.repo
     mode: "0644"
 
+- name: Import Tailscale GPG key
+  ansible.builtin.rpm_key:
+    key: "{{ tailscale_gpg_key_url }}"
+    state: present
+
 - name: Install Tailscale
   ansible.builtin.dnf:
     name: tailscale
