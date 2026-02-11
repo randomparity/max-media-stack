@@ -29,10 +29,10 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │                                              │  │  │
 │  │  │  traefik (:80) ─── Host header routing       │  │  │
 │  │  │      │                                       │  │  │
-│  │  │      ├── prowlarr  radarr  radarr4k           │  │  │
+│  │  │      ├── prowlarr  radarr  radarr4k          │  │  │
 │  │  │      ├── sonarr  lidarr  sabnzbd             │  │  │
 │  │  │      ├── jellyfin  channels                  │  │  │
-│  │  │      ├── navidrome                          │  │  │
+│  │  │      ├── navidrome                           │  │  │
 │  │  │      └── immich-server  immich-ml            │  │  │
 │  │  │          immich-postgres immich-redis        │  │  │
 │  │  │            ┌───────────┐                     │  │  │
@@ -214,16 +214,15 @@ This will:
 ```
 /data/                          # NFS from TrueNAS
 ├── media/
-│   ├── movies/                 # Radarr library
-│   ├── movies4k/               # Radarr 4K library
-│   ├── series/                  # Sonarr library
+│   ├── movies/                 # Radarr/Radarr4k Library
+│   ├── series/                 # Sonarr library
 │   └── music/                  # Lidarr library
 ├── usenet/
 │   ├── incomplete/             # SABnzbd in-progress
 │   └── complete/
 │       ├── movies/             # Completed movie downloads
 │       ├── movies4k/           # Completed 4K movie downloads
-│       ├── series/              # Completed TV downloads
+│       ├── series/             # Completed TV downloads
 │       ├── music/              # Completed music downloads
 │       └── manual/             # Manual import staging
 ├── backups/
