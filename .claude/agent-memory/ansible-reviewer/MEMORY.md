@@ -39,6 +39,9 @@
 - Handlers pattern: daemon_reload + restart per role, all need XDG/DBUS env
 - Network quadlet deployed by both podman role and deploy-services playbook (duplication)
 - Immich DB secret: passed via env var + printf pipe to avoid /proc exposure
+- Immich server volume: /data (was /upload pre-v2.x), UPLOAD_LOCATION env var removed
+- Immich mount-check: .immich marker files in each data subdir (Immich verifies on startup)
+- Immich data subdirs: encoded-video, thumbs, upload, library, profile, backups
 - Traefik: file provider (no socket mount), Host-header routing, only container with PublishPort
 - Traefik dynamic config uses watch: true, so changes are picked up without restart (but Ansible still notifies restart)
 - Service definitions no longer have publish_ports; container.j2 wraps PublishPort in `is defined` guard
@@ -70,7 +73,7 @@
 ## Review History
 See review-findings.md for detailed findings from all reviews.
 
-## Known Issues (as of 2026-02-08)
+## Known Issues (as of 2026-02-11)
 ### Resolved
 - ~~Dead backup task files~~ removed
 - ~~Restore playbook duplication~~ extracted to restore_service.yml
@@ -119,5 +122,8 @@ See review-findings.md for detailed findings from all reviews.
 31. Backup role api_backup_* variables break naming convention (should be backup_api_*)
 32. Backup service units (mms-backup.service, mms-api-backup.service) missing After=network-online.target
 33. api_backup_services duplicates port data from mms_traefik_routes (port field unused in script)
-34. README storage layout missing complete/manual directory
+34. ~~README storage layout missing complete/manual directory~~ fixed: movies4k removed, manual present
 35. No Molecule test for backup role
+36. Immich media subdir tasks use become: true (root) with owner/group on NFS (root_squash will fail) -- needs become_user
+37. immich_upload_dir variable name is misleading after /upload->/data change (should be immich_data_dir)
+38. No Molecule test for immich role
