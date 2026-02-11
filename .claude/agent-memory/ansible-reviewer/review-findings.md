@@ -1,5 +1,37 @@
 # Review Findings
 
+## Immich NFS/Local Split Review (2026-02-11, uncommitted changes)
+
+### Scope
+Split Immich volume mounts: NFS for user content (upload/, library/), local SSD for generated
+content (thumbs/, encoded-video/, profile/, backups/). Container template uses three-mount overlay.
+One-time migration block moves generated dirs from NFS to local. Backup excludes local media.
+Migrate role rsync excludes regenerable dirs.
+
+### Findings
+- MEDIUM: Migration stops immich-server but not immich-ml (ML may access data dirs during mv)
+- MEDIUM: Block-level when only checks thumbs -- partial migration failure skips remaining dirs
+- MEDIUM: NFS overlay mounts on :Z-labeled base path need SELinux validation (should work with virt_use_nfs)
+- MEDIUM: Migrate rsync excludes hardcode dir list instead of referencing immich_local_dirs variable
+- LOW: immich_upload_dir name increasingly confusing alongside immich_media_dir (rename to immich_nfs_dir)
+- LOW: Local subdir tasks use become: true (root) while NFS tasks use become_user: mms (inconsistent)
+- LOW: Backup --exclude='immich/media' assumes specific path layout (fragile coupling between roles)
+
+### Positive patterns
+- Three-volume overlay is correct approach: local base at /data:Z, NFS overlaid for upload + library
+- Variable naming improved: immich_nfs_dirs + immich_local_dirs replaces ambiguous immich_media_dirs
+- Marker files correctly created in both NFS and local subdirectories
+- Migration mv command has proper creates/removes idempotence guards
+- Backup correctly excludes local generated content from config tar
+- Backup rsync of /data/photos now naturally only includes user content (correct by design)
+- Migrate rsync excludes align with new architecture (skip regenerable content)
+
+### Items addressed from prior reviews
+- #36 partially addressed: NFS subdir tasks now use become_user: mms
+- #14 (immich_media_dirs misleading name) replaced with clearer immich_nfs_dirs + immich_local_dirs
+
+---
+
 ## fix/base-system-packages Review (2026-02-11, 6 commits)
 
 ### Scope

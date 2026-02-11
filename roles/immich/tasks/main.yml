@@ -197,9 +197,59 @@
   changed_when: true
   timeout: 1800
 
+# One-time migration: move generated content from NFS to local SSD
+- name: Check for legacy NFS layout (generated dirs still on NFS)
+  ansible.builtin.stat:
+    path: "{{ immich_upload_dir }}/{{ item }}"
+  loop: "{{ immich_local_dirs }}"
+  register: _immich_legacy_dirs
+
+- name: Migrate generated content from NFS to local SSD
+  when: _immich_legacy_dirs.results | selectattr('stat.exists', 'defined') | selectattr('stat.exists') | list | length > 0
+  block:
+    - name: Stop Immich services for migration
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        scope: user
+      loop:
+        - immich-ml.service
+        - immich-server.service
+      become: true
+      become_user: "{{ mms_user }}"
+      environment: "{{ mms_systemd_env }}"
+      failed_when: false
+
+    - name: Ensure local media directory exists for migration
+      ansible.builtin.file:
+        path: "{{ immich_media_dir }}"
+        state: directory
+        owner: "{{ mms_user }}"
+        group: "{{ mms_user }}"
+        mode: "0755"
+      become: true
+
+    - name: Move generated directories from NFS to local SSD
+      ansible.builtin.command:
+        cmd: "mv {{ immich_upload_dir }}/{{ item }} {{ immich_media_dir }}/{{ item }}"
+        removes: "{{ immich_upload_dir }}/{{ item }}"
+        creates: "{{ immich_media_dir }}/{{ item }}"
+      loop: "{{ immich_local_dirs }}"
+      become: true
+      become_user: "{{ mms_user }}"
+
 # Create media subdirectories and mount-check marker files
 # Immich verifies these on startup to detect unmounted volumes
-- name: Create Immich media subdirectories
+- name: Create local media base directory
+  ansible.builtin.file:
+    path: "{{ immich_media_dir }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Create NFS media subdirectories
   ansible.builtin.file:
     path: "{{ immich_upload_dir }}/{{ item }}"
     state: directory
@@ -208,9 +258,19 @@
     mode: "0755"
   become: true
   become_user: "{{ mms_user }}"
-  loop: "{{ immich_media_dirs }}"
+  loop: "{{ immich_nfs_dirs }}"
 
-- name: Create Immich mount-check marker files
+- name: Create local media subdirectories
+  ansible.builtin.file:
+    path: "{{ immich_media_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+  loop: "{{ immich_local_dirs }}"
+
+- name: Create NFS mount-check marker files
   ansible.builtin.copy:
     content: ""
     dest: "{{ immich_upload_dir }}/{{ item }}/.immich"
@@ -220,7 +280,18 @@
     force: false
   become: true
   become_user: "{{ mms_user }}"
-  loop: "{{ immich_media_dirs }}"
+  loop: "{{ immich_nfs_dirs }}"
+
+- name: Create local mount-check marker files
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ immich_media_dir }}/{{ item }}/.immich"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+    force: false
+  become: true
+  loop: "{{ immich_local_dirs }}"
 
 # Flush handlers to ensure daemon-reload happens before starting services
 - name: Flush handlers

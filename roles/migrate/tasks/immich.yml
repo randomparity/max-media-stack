@@ -56,6 +56,10 @@
   ansible.builtin.command:
     cmd: >-
       rsync {{ migrate_rsync_opts }}
+      --exclude='thumbs/'
+      --exclude='encoded-video/'
+      --exclude='profile/'
+      --exclude='backups/'
       {{ migrate_source_user }}@{{ migrate_source_host }}:{{ migrate_immich_source_photos }}/
       {{ migrate_immich_target_photos }}/
   register: _migrate_immich_photos_sync

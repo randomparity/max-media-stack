@@ -17,14 +17,20 @@ immich_postgres_image: "docker.io/tensorchord/pgvecto-rs:pg16-v0.2.0"
 immich_server_image: "ghcr.io/immich-app/immich-server:{{ immich_version }}"
 immich_ml_image: "ghcr.io/immich-app/immich-machine-learning:{{ immich_version }}"
 
-# Upload directory (NFS mount)
+# NFS mount point for user photos
 immich_upload_dir: /data/photos
 
-# Media subdirectories required by Immich (mount integrity checks)
-immich_media_dirs:
-  - encoded-video
-  - thumbs
+# Local SSD directory for generated/regenerable content
+immich_media_dir: "{{ mms_config_dir }}/immich/media"
+
+# NFS subdirectories (user content)
+immich_nfs_dirs:
   - upload
   - library
+
+# Local subdirectories (generated content — regenerable)
+immich_local_dirs:
+  - encoded-video
+  - thumbs
   - profile
   - backups
