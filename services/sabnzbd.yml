@@ -18,4 +18,4 @@ sabnzbd:
     - path: sabnzbd.ini
       section: misc
       option: host_whitelist
-      value: "sabnzbd.{{ mms_traefik_domain }}"
+      value: "sabnzbd.{{ mms_traefik_domain }},sabnzbd"
