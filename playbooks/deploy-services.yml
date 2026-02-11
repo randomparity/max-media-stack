@@ -23,13 +23,31 @@
       loop: "{{ _effective_quadlet_services }}"
 
     - name: Deploy Immich stack
-      ansible.builtin.include_role:
-        name: immich
+      block:
+        - name: Include immich role
+          ansible.builtin.include_role:
+            name: immich
+      rescue:
+        - name: Record Immich failure
+          ansible.builtin.set_fact:
+            _failed_services: "{{ _failed_services | default([]) + ['immich'] }}"
+        - name: Warn about Immich failure
+          ansible.builtin.debug:
+            msg: "Immich stack failed to deploy — continuing with remaining services"
       when: _deploy_immich | bool
 
     - name: Deploy Traefik reverse proxy
-      ansible.builtin.include_role:
-        name: traefik
+      block:
+        - name: Include traefik role
+          ansible.builtin.include_role:
+            name: traefik
+      rescue:
+        - name: Record Traefik failure
+          ansible.builtin.set_fact:
+            _failed_services: "{{ _failed_services | default([]) + ['traefik'] }}"
+        - name: Warn about Traefik failure
+          ansible.builtin.debug:
+            msg: "Traefik failed to deploy — continuing with remaining tasks"
       when: _deploy_traefik | bool
 
     - name: Fail if any services failed to deploy
