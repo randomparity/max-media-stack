@@ -21,3 +21,4 @@ storage_usenet_dirs:
   - complete/movies
   - complete/series
   - complete/music
+  - complete/manual
