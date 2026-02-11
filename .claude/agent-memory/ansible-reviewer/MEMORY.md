@@ -56,6 +56,10 @@
 - Galaxy collections pinned to exact versions in requirements.yml (Renovate manages updates via galaxy datasource)
 - Project-level templates at templates/ referenced via {{ playbook_dir }}/../templates/ (established convention)
 - mms-services script: tier-based start/stop ordering (infra -> immich-app -> app -> proxy)
+- quadlet_service INI race fix: check-mode detect -> stop -> apply -> start (avoids config overwrite on shutdown)
+- Backup role: two systems -- config backups (mms-backup.*) + API backups (mms-api-backup.*) for *arr services to NAS
+- API backup uses Host-header routing through Traefik on localhost:80 (no direct container ports)
+- API backup reads API keys from config.xml at runtime (no secrets in Ansible vars)
 
 ## Recurring Anti-pattern: String-as-Boolean Facts
 - set_fact with Jinja2 comparison produces strings "True"/"False", NOT booleans
@@ -112,3 +116,8 @@ See review-findings.md for detailed findings from all reviews.
 28. ~~container.j2 NoNewPrivileges uses `| lower` without `| bool`~~ fixed: added `| bool` filter
 29. ~~Jellyfin tmpfs /cache may need :U flag~~ fixed: changed to `/cache:U`
 30. ~~sshkeys join('\n') in proxmox_vm~~ fixed: replaced with YAML block scalar for reliable newlines
+31. Backup role api_backup_* variables break naming convention (should be backup_api_*)
+32. Backup service units (mms-backup.service, mms-api-backup.service) missing After=network-online.target
+33. api_backup_services duplicates port data from mms_traefik_routes (port field unused in script)
+34. README storage layout missing complete/manual directory
+35. No Molecule test for backup role

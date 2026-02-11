@@ -47,6 +47,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 - **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits
+- **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik)
 
 ## Repository Layout
 
@@ -68,3 +69,6 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - SSH keys: `mms_vm_ssh_pubkeys` is a list of public keys for cloud-init (supports multiple keys)
 - Container template includes `Tmpfs=/run:U` for s6-overlay compatibility; services can declare additional `tmpfs` entries and set `no_new_privileges: false` to override the default
 - Jellyfin uses the official `jellyfin/jellyfin` image (no PUID/PGID); relies on `UserNS=keep-id` for file ownership
+- INI settings use a stop-then-apply pattern: check in check-mode, stop service if changes needed, apply to quiescent file, restart (avoids apps like SABnzbd overwriting changes on shutdown)
+- Inter-container `host_whitelist` must include the bare container hostname (e.g., `sabnzbd`) in addition to the Traefik subdomain FQDN
+- Backup role uses `backup_*` prefix for all variables; API backup variables use `backup_api_*`

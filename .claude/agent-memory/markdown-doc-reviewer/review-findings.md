@@ -1,5 +1,54 @@
 # Review Findings
 
+## fix/sabnzbd-ini-race-condition Branch Review (2026-02-11)
+
+### Scope
+All .md files on fix/sabnzbd-ini-race-condition branch (7 commits over main). Key changes: INI race condition fix (stop-then-apply), API-based *arr backup to NAS, SABnzbd host_whitelist for inter-container access, usenet complete/manual directory, bpytop package, inter-container access table in README.
+
+### Files Reviewed
+- CLAUDE.md (71 lines)
+- README.md (642 lines)
+- .claude/agents/supply-chain-hygiene-reviewer.md (185 lines)
+- .claude/agents/ansible-reviewer.md (185 lines)
+- roles/backup/defaults/main.yml (46 lines)
+- roles/backup/tasks/main.yml (127 lines)
+- roles/backup/templates/mms-api-backup.sh.j2 (231 lines)
+- roles/backup/templates/mms-api-backup.service.j2 (15 lines)
+- roles/backup/templates/mms-api-backup.timer.j2 (11 lines)
+- roles/backup/templates/mms-backup.service.j2 (15 lines)
+- roles/backup/handlers/main.yml (28 lines)
+- roles/quadlet_service/tasks/main.yml (183 lines)
+- roles/storage/defaults/main.yml (24 lines)
+- roles/base_system/defaults/main.yml (27 lines)
+- services/sabnzbd.yml (21 lines)
+- inventory/group_vars/mms/vars.yml (98 lines)
+
+### Findings
+- HIGH: README Backup section (lines 157-167) missing API backup system entirely (04:30, *arr to NAS, 30-day retention)
+- HIGH: README Storage Layout (lines 190-208) missing /data/backups/ NFS mount
+- HIGH: README Prerequisites (line 79) missing "backups" in NFS exports list
+- MEDIUM: CLAUDE.md Architecture (lines 44-49) missing backup subsystem bullet
+- MEDIUM: CLAUDE.md Conventions (lines 59-70) missing INI race pattern, host_whitelist pattern, backup_api_* prefix
+- MEDIUM: README Backup section retention line (167) conflates config and API backup retention policies
+- LOW: No manual trigger/log commands for API backup in README (Auto-Deploy section has this pattern)
+- LOW: supply-chain-hygiene-reviewer.md services list still missing Channels DVR and Navidrome (pre-existing)
+
+### Verified Accurate
+- Variable rename api_backup_* -> backup_api_* fully applied in code (defaults, script template); no stale doc refs
+- After=network-online.target present in both mms-backup.service.j2 and mms-api-backup.service.j2
+- Inter-container access table (README lines 49-73): all hostnames, ports, and URLs match service definitions and mms_traefik_routes
+- Storage layout diagram correctly includes complete/manual (line 202)
+- SABnzbd host_whitelist in services/sabnzbd.yml correctly has both FQDN and bare hostname
+- backup_api_services in defaults match the four *arr services in mms_services
+- backup_api_schedule default "04:30" does not conflict with backup_schedule "03:00"
+- NFS mount for /data/backups added in inventory/group_vars/mms/vars.yml lines 23-25
+- bpytop correctly added to base_system_packages (line 18); no doc change needed for utility package
+- CLAUDE.md Key Commands still accurate; no new playbooks introduced
+- CLAUDE.md roles list still accurate (backup role already listed)
+- README.md Services table unchanged and correct
+
+---
+
 ## feat/multi-ssh-keys Branch Review (2026-02-10)
 
 ### Scope

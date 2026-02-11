@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Unit]
+Description=MMS Daily API Backup Timer (*arr to NAS)
+
+[Timer]
+OnCalendar={{ backup_api_schedule }}
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

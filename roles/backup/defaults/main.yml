@@ -28,3 +28,19 @@ backup_immich_db_container: immich-postgres
 
 # Immich photos source directory
 backup_immich_photos_dir: "{{ mms_data_dir | default('/data') }}/photos"
+
+# API backup settings (*arr services to NAS)
+backup_api_dir: /data/backups/arr-api
+backup_api_mount_point: /data/backups
+backup_api_schedule: "*-*-* 04:30:00"
+backup_api_retention_days: 30
+backup_api_timeout: 600
+backup_api_services:
+  - name: prowlarr
+    subdomain: prowlarr
+  - name: radarr
+    subdomain: radarr
+  - name: sonarr
+    subdomain: sonarr
+  - name: lidarr
+    subdomain: lidarr

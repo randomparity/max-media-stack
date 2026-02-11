@@ -20,6 +20,9 @@ mms_nfs_mounts:
   - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/download/usenet"
     dest: /data/usenet
     opts: "rw,hard,intr,_netdev,nfsvers=4"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/backups"
+    dest: /data/backups
+    opts: "rw,hard,intr,_netdev,nfsvers=4"
 
 # Services to deploy (matches filenames in services/)
 mms_services:

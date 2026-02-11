@@ -1,5 +1,32 @@
 # Review Findings
 
+## fix/sabnzbd-ini-race-condition Review (2026-02-11, 6 commits)
+
+### Scope
+INI race condition fix (stop-then-apply pattern), API-based *arr backup to NAS, SABnzbd host_whitelist
+fix for inter-container access, usenet complete/manual directory, bpytop package, inter-container
+access documentation in README.
+
+### Findings
+- MEDIUM: _ini_check variable undefined when ini_settings not defined (short-circuit saves it but fragile)
+- MEDIUM: api_backup_* variable prefix breaks backup role's backup_* naming convention
+- MEDIUM: API keys visible in process table via curl -H arguments (low risk for homelab)
+- LOW: api_backup_timeout (600s) vs hardcoded poll timeout (300s) are disconnected
+- LOW: README storage layout missing complete/manual directory
+- LOW: api_backup_services port field is dead data (script routes through Traefik on :80)
+- LOW: Backup service units missing After=network-online.target (has Wants but not After)
+
+### Positive patterns
+- INI race fix is well-designed: check-mode detect -> stop -> apply -> start
+- Comment block clearly explains WHY the stop-then-start is needed
+- API backup script: NAS mount check, health checks, daily idempotent skip, temp-then-rename, dry-run, error counting
+- API backup reads keys from config.xml at runtime (no secrets in Ansible vars)
+- Handler and template patterns match existing backup role exactly
+- SABnzbd host_whitelist correctly adds container hostname for inter-container DNS
+- README inter-container access table is useful operational documentation
+
+---
+
 ## feat/multi-ssh-keys Review (2026-02-10, 7 commits)
 
 ### Scope
