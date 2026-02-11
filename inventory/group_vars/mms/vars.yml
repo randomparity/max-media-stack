@@ -5,9 +5,6 @@ mms_nfs_mounts:
   - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/movies"
     dest: /data/media/movies
     opts: "rw,hard,intr,_netdev,nfsvers=4"
-  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/movies4k"
-    dest: /data/media/movies4k
-    opts: "rw,hard,intr,_netdev,nfsvers=4"
   - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/series"
     dest: /data/media/series
     opts: "rw,hard,intr,_netdev,nfsvers=4"
