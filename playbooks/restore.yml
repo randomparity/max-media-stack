@@ -40,7 +40,7 @@
         _restore_tmp_ext: tar.zst
         _restore_service: "{{ service_name }}"
         _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
-      when: service_name in ['prowlarr', 'radarr', 'sonarr', 'lidarr', 'jellyfin']
+      when: service_name in ['prowlarr', 'radarr', 'radarr4k', 'sonarr', 'lidarr', 'jellyfin']
 
     - name: Restore sabnzbd  # noqa: no-relative-paths
       ansible.builtin.include_tasks:

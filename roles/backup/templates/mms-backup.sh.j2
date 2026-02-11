@@ -169,9 +169,9 @@ apply_retention() {
 }
 
 # Ensure backup directories exist
-for svc in prowlarr radarr sonarr lidarr sabnzbd jellyfin traefik immich; do
-    mkdir -p "${BACKUP_DIR}/${svc}"
-done
+{% for svc in mms_services + ['traefik', 'immich'] %}
+mkdir -p "${BACKUP_DIR}/{{ svc }}"
+{% endfor %}
 
 # Run backups
 log "=== MMS Backup Starting ==="

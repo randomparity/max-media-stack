@@ -6,7 +6,7 @@ set -euo pipefail
 usage() {
     echo "Usage: $0 <service_name> <backup_file>"
     echo ""
-    echo "Services: prowlarr, radarr, sonarr, lidarr, sabnzbd, jellyfin, traefik, immich"
+    echo "Services: {% for svc in mms_services %}{{ svc }}, {% endfor %}traefik, immich"
     echo ""
     echo "Examples:"
     echo "  $0 radarr /home/{{ backup_user }}/backups/radarr/radarr-2025-01-15.tar.zst.age"
@@ -116,7 +116,7 @@ restore_immich_config() {
 }
 
 case "$SERVICE" in
-    prowlarr|radarr|sonarr|lidarr)
+    prowlarr|radarr|radarr4k|sonarr|lidarr)
         restore_arr
         ;;
     sabnzbd)
