@@ -1,0 +1,16 @@
+---
+radarr4k:
+  name: radarr4k
+  description: "Radarr 4K - 4K Movie Manager"
+  image: "lscr.io/linuxserver/radarr:6.0.4.10291-ls291"
+  volumes:
+    - "{{ mms_config_dir }}/radarr4k:/config:Z"
+    - "{{ mms_data_dir }}:/data"
+  environment:
+    - "PUID={{ mms_uid }}"
+    - "PGID={{ mms_gid }}"
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:7878/ping || exit 1"
+  health_interval: "60s"
+  backup_type: "arr"
+  backup_db_files: ["radarr.db"]

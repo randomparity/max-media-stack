@@ -5,6 +5,9 @@ mms_nfs_mounts:
   - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/movies"
     dest: /data/media/movies
     opts: "rw,hard,intr,_netdev,nfsvers=4"
+  - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/movies4k"
+    dest: /data/media/movies4k
+    opts: "rw,hard,intr,_netdev,nfsvers=4"
   - src: "{{ mms_nfs_server }}:/mnt/zpool0-slow/media/series"
     dest: /data/media/series
     opts: "rw,hard,intr,_netdev,nfsvers=4"
@@ -28,6 +31,7 @@ mms_nfs_mounts:
 mms_services:
   - prowlarr
   - radarr
+  - radarr4k
   - sonarr
   - lidarr
   - sabnzbd
@@ -44,6 +48,10 @@ mms_traefik_routes:
   radarr:
     subdomain: radarr
     container: radarr
+    port: 7878
+  radarr4k:
+    subdomain: radarr4k
+    container: radarr4k
     port: 7878
   sonarr:
     subdomain: sonarr
@@ -84,6 +92,7 @@ autodeploy_groups:
     services:
       - prowlarr
       - radarr
+      - radarr4k
       - sonarr
       - lidarr
       - sabnzbd

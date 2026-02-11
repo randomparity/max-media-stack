@@ -13,12 +13,14 @@ storage_services: "{{ mms_services }}"
 # TRaSH-guide-compatible directory structure
 storage_media_dirs:
   - movies
+  - movies4k
   - series
   - music
 
 storage_usenet_dirs:
   - incomplete
   - complete/movies
+  - complete/movies4k
   - complete/series
   - complete/music
   - complete/manual
