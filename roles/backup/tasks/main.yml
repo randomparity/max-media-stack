@@ -77,3 +77,50 @@
   notify:
     - Reload systemd user daemon
     - Enable backup timer
+
+# API backup (*arr services to NAS)
+- name: Install jq for API backup JSON parsing
+  ansible.builtin.dnf:
+    name: jq
+    state: present
+  become: true
+  become_user: root
+
+- name: Ensure API backup directories exist on NAS
+  ansible.builtin.file:
+    path: "{{ api_backup_dir }}/{{ item.name }}"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0750"
+  loop: "{{ api_backup_services }}"
+
+- name: Deploy API backup script
+  ansible.builtin.template:
+    src: mms-api-backup.sh.j2
+    dest: "/home/{{ backup_user }}/bin/mms-api-backup.sh"
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0750"
+
+- name: Deploy systemd API backup service
+  ansible.builtin.template:
+    src: mms-api-backup.service.j2
+    dest: "/home/{{ backup_user }}/.config/systemd/user/mms-api-backup.service"
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0644"
+  notify:
+    - Reload systemd user daemon
+    - Enable API backup timer
+
+- name: Deploy systemd API backup timer
+  ansible.builtin.template:
+    src: mms-api-backup.timer.j2
+    dest: "/home/{{ backup_user }}/.config/systemd/user/mms-api-backup.timer"
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: "0644"
+  notify:
+    - Reload systemd user daemon
+    - Enable API backup timer

@@ -1,0 +1,231 @@
+#!/usr/bin/env bash
+# {{ ansible_managed }}
+# MMS API Backup Script - Downloads *arr application backups via API to NAS
+set -euo pipefail
+
+BACKUP_DIR="{{ api_backup_dir }}"
+MOUNT_POINT="{{ api_backup_mount_point }}"
+CONFIG_DIR="{{ backup_config_dir }}"
+TRAEFIK_DOMAIN="{{ mms_traefik_domain }}"
+RETENTION_DAYS="{{ api_backup_retention_days }}"
+TIMEOUT="{{ api_backup_timeout }}"
+DATE=$(date +%Y-%m-%d)
+DRY_RUN="${DRY_RUN:-false}"
+ERRORS=0
+
+# Parse CLI flags
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run) DRY_RUN=true ;;
+    esac
+done
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+# Verify NAS is mounted
+if ! mountpoint -q "$MOUNT_POINT"; then
+    log "ERROR: NAS not mounted at ${MOUNT_POINT}, aborting"
+    exit 1
+fi
+
+get_api_key() {
+    local service="$1"
+    local config_xml="${CONFIG_DIR}/${service}/config.xml"
+    if [[ ! -f "$config_xml" ]]; then
+        log "ERROR: ${config_xml} not found"
+        return 1
+    fi
+    local key
+    key=$(grep -oP '<ApiKey>\K[^<]+' "$config_xml")
+    if [[ -z "$key" ]]; then
+        log "ERROR: ApiKey not found in ${config_xml}"
+        return 1
+    fi
+    echo "$key"
+}
+
+health_check() {
+    local subdomain="$1"
+    local api_key="$2"
+    curl -sf --max-time 10 \
+        -H "Host: ${subdomain}.${TRAEFIK_DOMAIN}" \
+        -H "X-Api-Key: ${api_key}" \
+        "http://localhost:80/api/v3/health" > /dev/null 2>&1
+}
+
+backup_service() {
+    local service="$1"
+    local subdomain="$2"
+    local dest_dir="${BACKUP_DIR}/${service}"
+
+    log "--- ${service} ---"
+
+    # Get API key
+    local api_key
+    if ! api_key=$(get_api_key "$service"); then
+        log "ERROR: Cannot get API key for ${service}, skipping"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+
+    local host_header="${subdomain}.${TRAEFIK_DOMAIN}"
+    local base_url="http://localhost:80"
+
+    # Health check
+    if ! health_check "$subdomain" "$api_key"; then
+        log "ERROR: ${service} health check failed, skipping"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+    log "${service} is healthy"
+
+    # Check for existing backup today
+    if compgen -G "${dest_dir}/${service}-${DATE}-*.zip" > /dev/null 2>&1; then
+        log "Backup already exists for ${service} today, skipping"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log "[dry-run] Would trigger backup for ${service}"
+        return 0
+    fi
+
+    # Trigger backup via API
+    log "Triggering backup for ${service}..."
+    local trigger_response
+    if ! trigger_response=$(curl -sf --max-time "$TIMEOUT" \
+        -X POST \
+        -H "Host: ${host_header}" \
+        -H "X-Api-Key: ${api_key}" \
+        "${base_url}/api/v3/command" \
+        -H "Content-Type: application/json" \
+        -d '{"name":"Backup"}'); then
+        log "ERROR: Failed to trigger backup for ${service}"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+
+    # Wait for the backup command to complete
+    local command_id
+    command_id=$(echo "$trigger_response" | jq -r '.id // empty')
+    if [[ -z "$command_id" ]]; then
+        log "ERROR: No command ID returned for ${service}"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+
+    log "Waiting for backup command ${command_id} to complete..."
+    local attempts=0
+    local max_attempts=60
+    while (( attempts < max_attempts )); do
+        sleep 5
+        local cmd_status
+        cmd_status=$(curl -sf --max-time 10 \
+            -H "Host: ${host_header}" \
+            -H "X-Api-Key: ${api_key}" \
+            "${base_url}/api/v3/command/${command_id}" | jq -r '.status // empty')
+        if [[ "$cmd_status" == "completed" ]]; then
+            log "Backup command completed for ${service}"
+            break
+        elif [[ "$cmd_status" == "failed" ]]; then
+            log "ERROR: Backup command failed for ${service}"
+            ERRORS=$((ERRORS + 1))
+            return 0
+        fi
+        attempts=$((attempts + 1))
+    done
+
+    if (( attempts >= max_attempts )); then
+        log "ERROR: Timed out waiting for backup command for ${service}"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+
+    # List backups and find the latest
+    log "Fetching backup list for ${service}..."
+    local backup_list
+    if ! backup_list=$(curl -sf --max-time 30 \
+        -H "Host: ${host_header}" \
+        -H "X-Api-Key: ${api_key}" \
+        "${base_url}/api/v3/system/backup"); then
+        log "ERROR: Failed to list backups for ${service}"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+
+    local backup_id backup_name
+    backup_id=$(echo "$backup_list" | jq -r '.[0].id // empty')
+    backup_name=$(echo "$backup_list" | jq -r '.[0].name // empty')
+
+    if [[ -z "$backup_id" || -z "$backup_name" ]]; then
+        log "ERROR: No backups found for ${service}"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+
+    # Download the backup
+    local dest_file="${dest_dir}/${service}-${DATE}-${backup_name}"
+    local tmp_file="${dest_file}.tmp"
+    log "Downloading backup: ${backup_name} (id: ${backup_id})..."
+    if ! curl -sf --max-time "$TIMEOUT" \
+        -H "Host: ${host_header}" \
+        -H "X-Api-Key: ${api_key}" \
+        -o "$tmp_file" \
+        "${base_url}/api/v3/system/backup/${backup_id}"; then
+        log "ERROR: Failed to download backup for ${service}"
+        rm -f "$tmp_file"
+        ERRORS=$((ERRORS + 1))
+        return 0
+    fi
+
+    mv "$tmp_file" "$dest_file"
+    local size
+    size=$(du -h "$dest_file" | cut -f1)
+    log "${service} backup saved: ${dest_file} (${size})"
+}
+
+prune_old_backups() {
+    local service="$1"
+    local dir="${BACKUP_DIR}/${service}"
+    [[ -d "$dir" ]] || return 0
+
+    log "Pruning ${service} backups older than ${RETENTION_DAYS} days..."
+    local count=0
+    while IFS= read -r f; do
+        if [[ "$DRY_RUN" == "true" ]]; then
+            log "  [dry-run] Would remove: ${f}"
+        else
+            log "  Removing: ${f}"
+            rm -f "$f"
+        fi
+        count=$((count + 1))
+    done < <(find "$dir" -maxdepth 1 -type f -name '*.zip' -mtime "+${RETENTION_DAYS}")
+
+    if (( count == 0 )); then
+        log "  No old backups to prune"
+    fi
+}
+
+log "=== MMS API Backup Starting ==="
+
+# Ensure per-service directories exist
+{% for svc in api_backup_services %}
+mkdir -p "${BACKUP_DIR}/{{ svc.name }}"
+{% endfor %}
+
+# Run backups
+{% for svc in api_backup_services %}
+backup_service "{{ svc.name }}" "{{ svc.subdomain }}"
+{% endfor %}
+
+# Apply retention
+{% for svc in api_backup_services %}
+prune_old_backups "{{ svc.name }}"
+{% endfor %}
+
+if (( ERRORS > 0 )); then
+    log "=== MMS API Backup Finished with ${ERRORS} error(s) ==="
+    exit 1
+fi
+
+log "=== MMS API Backup Complete ==="

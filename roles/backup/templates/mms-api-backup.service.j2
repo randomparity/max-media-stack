@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Unit]
+Description=MMS API Backup Service (*arr to NAS)
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/{{ backup_user }}/bin/mms-api-backup.sh
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
