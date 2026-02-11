@@ -207,6 +207,7 @@
     group: "{{ mms_user }}"
     mode: "0755"
   become: true
+  become_user: "{{ mms_user }}"
   loop: "{{ immich_media_dirs }}"
 
 - name: Create Immich mount-check marker files
@@ -218,6 +219,7 @@
     mode: "0644"
     force: false
   become: true
+  become_user: "{{ mms_user }}"
   loop: "{{ immich_media_dirs }}"
 
 # Flush handlers to ensure daemon-reload happens before starting services
