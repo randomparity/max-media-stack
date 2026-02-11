@@ -31,6 +31,7 @@
 - README Prerequisites missing: "backups" in NFS exports list
 - README Quick Start step 2 file descriptions stale (VM specs/SSH keys moved to group_vars/all)
 - supply-chain-hygiene-reviewer.md services list missing Channels DVR and Navidrome
+- CLAUDE.md Conventions missing: deploy resilience pattern (block/rescue in deploy-services.yml)
 
 ## Source of Truth for Key Values
 - UID/GID: `inventory/group_vars/all/vars.yml` lines 23-25 (currently 3000:3000)
@@ -51,7 +52,7 @@
 - Backup role defaults: `roles/backup/defaults/main.yml` (config backup + API backup vars)
 - Backup API services: `roles/backup/defaults/main.yml` lines 32-46 (`backup_api_*` prefix)
 - NFS backups mount: `inventory/group_vars/mms/vars.yml` lines 23-25 (`/data/backups`)
-- Base system packages: `roles/base_system/defaults/main.yml` lines 9-18 (includes bpytop, jq via backup role)
+- Base system packages: `roles/base_system/defaults/main.yml` lines 9-18 (includes btop, jq via backup role)
 
 ## Review History
 - 2026-02-08: Full review of all .md files on fix/dry-run-issues branch (15 commits over main)
@@ -95,4 +96,12 @@
   - Variable rename api_backup_* -> backup_api_* already correct in code, no stale doc refs
   - After=network-online.target fix correctly applied in both service templates
   - Inter-container access table is well-structured addition
+  - See review-findings.md for details
+- 2026-02-11: Review of all .md files on fix/base-system-packages branch (6 commits over main)
+  - bpytop->btop: no public doc references; only agent memory files were stale
+  - movies4k removal: README diagram complete/movies4k line correctly removed by branch
+  - Immich /upload->/data mount: no doc references to container-internal mount path
+  - Immich media subdirs + .immich markers: internal detail, no doc impact
+  - Deploy resilience (block/rescue for Immich/Traefik): undocumented behavioral change
+  - CLAUDE.md Conventions should note deploy resilience pattern
   - See review-findings.md for details

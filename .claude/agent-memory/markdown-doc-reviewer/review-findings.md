@@ -1,9 +1,56 @@
 # Review Findings
 
+## fix/base-system-packages Branch Review (2026-02-11)
+
+### Scope
+All .md files on fix/base-system-packages branch (6 commits over main). Key changes: btop replaces bpytop, movies4k directories removed, Immich/Traefik block/rescue deploy resilience, Immich volume /upload->/data, Immich media subdirectories + .immich markers, ansible-lint key-order fix, Tailscale GPG key import.
+
+### Files Reviewed
+- CLAUDE.md (75 lines)
+- README.md (673 lines)
+- .claude/agents/ansible-reviewer.md (185 lines)
+- .claude/agents/supply-chain-hygiene-reviewer.md (185 lines)
+- .claude/agent-memory/ansible-reviewer/MEMORY.md (125 lines)
+- .claude/agent-memory/ansible-reviewer/review-findings.md (255 lines)
+- .claude/agent-memory/markdown-doc-reviewer/MEMORY.md (107 lines)
+- .claude/agent-memory/markdown-doc-reviewer/review-findings.md (220 lines)
+- roles/base_system/defaults/main.yml (27 lines)
+- roles/immich/defaults/main.yml (30 lines)
+- roles/immich/tasks/main.yml (229 lines)
+- roles/immich/templates/immich-server.container.j2 (27 lines)
+- roles/immich/templates/immich.env.j2 (10 lines)
+- roles/storage/defaults/main.yml (22 lines)
+- playbooks/deploy-services.yml (55 lines)
+- roles/migrate/defaults/main.yml (34 lines)
+
+### Findings
+- MEDIUM: CLAUDE.md Conventions missing deploy resilience pattern (block/rescue for all services including Immich/Traefik)
+- LOW: Agent memory files (4 occurrences) reference stale "bpytop" instead of "btop"
+
+### Not Affected (Verified Clean)
+- No Markdown file references bpytop by name -- only agent memory files
+- No Markdown file references movies4k -- README diagram correctly removes complete/movies4k on this branch
+- No Markdown file references /upload container mount path or UPLOAD_LOCATION env var
+- No Markdown file references Immich media subdirectories or .immich marker files
+- migrate role /opt/immich/upload is the LXC source path (correct, not affected by container mount change)
+- README Storage Layout /data/photos comment ("Immich uploads") remains accurate -- the NFS mount path didn't change
+- Tailscale GPG key import is internal to role, not documented
+
+### Verified Accurate
+- CLAUDE.md Key Commands: all playbook paths match filesystem
+- CLAUDE.md Repository Layout: all directories and roles match
+- CLAUDE.md Architecture: all bullets accurate
+- README Services table: unchanged and correct
+- README Architecture diagram: accurate
+- README Storage Layout: correctly updated (movies4k removed from complete/ tree)
+- README Backup section: unchanged and accurate for this branch's scope
+
+---
+
 ## fix/sabnzbd-ini-race-condition Branch Review (2026-02-11)
 
 ### Scope
-All .md files on fix/sabnzbd-ini-race-condition branch (7 commits over main). Key changes: INI race condition fix (stop-then-apply), API-based *arr backup to NAS, SABnzbd host_whitelist for inter-container access, usenet complete/manual directory, bpytop package, inter-container access table in README.
+All .md files on fix/sabnzbd-ini-race-condition branch (7 commits over main). Key changes: INI race condition fix (stop-then-apply), API-based *arr backup to NAS, SABnzbd host_whitelist for inter-container access, usenet complete/manual directory, btop package, inter-container access table in README.
 
 ### Files Reviewed
 - CLAUDE.md (71 lines)
@@ -42,7 +89,7 @@ All .md files on fix/sabnzbd-ini-race-condition branch (7 commits over main). Ke
 - backup_api_services in defaults match the four *arr services in mms_services
 - backup_api_schedule default "04:30" does not conflict with backup_schedule "03:00"
 - NFS mount for /data/backups added in inventory/group_vars/mms/vars.yml lines 23-25
-- bpytop correctly added to base_system_packages (line 18); no doc change needed for utility package
+- btop correctly added to base_system_packages (line 18); no doc change needed for utility package
 - CLAUDE.md Key Commands still accurate; no new playbooks introduced
 - CLAUDE.md roles list still accurate (backup role already listed)
 - README.md Services table unchanged and correct
