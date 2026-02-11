@@ -198,7 +198,8 @@ This will:
 │   └── complete/
 │       ├── movies/             # Completed movie downloads
 │       ├── series/              # Completed TV downloads
-│       └── music/              # Completed music downloads
+│       ├── music/              # Completed music downloads
+│       └── manual/             # Manual import staging
 ├── photos/                     # Immich uploads
 └── recordings/                 # Channels DVR recordings
 

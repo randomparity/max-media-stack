@@ -2,6 +2,7 @@
 [Unit]
 Description=MMS API Backup Service (*arr to NAS)
 Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=oneshot

@@ -109,6 +109,12 @@
   environment: "{{ mms_systemd_env }}"
   when: quadlet_service_def.health_cmd is defined and not ansible_check_mode
 
+- name: "Initialize INI check result ({{ service_name }})"
+  ansible.builtin.set_fact:
+    _ini_check:
+      changed: false
+      results: []
+
 - name: "Check if INI settings need updating ({{ service_name }})"
   community.general.ini_file:
     path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ ini_setting.path }}"

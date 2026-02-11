@@ -88,12 +88,12 @@
 
 - name: Ensure API backup directories exist on NAS
   ansible.builtin.file:
-    path: "{{ api_backup_dir }}/{{ item.name }}"
+    path: "{{ backup_api_dir }}/{{ item.name }}"
     state: directory
     owner: "{{ backup_user }}"
     group: "{{ backup_user }}"
     mode: "0750"
-  loop: "{{ api_backup_services }}"
+  loop: "{{ backup_api_services }}"
 
 - name: Deploy API backup script
   ansible.builtin.template:

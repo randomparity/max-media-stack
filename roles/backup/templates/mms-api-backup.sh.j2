@@ -3,12 +3,12 @@
 # MMS API Backup Script - Downloads *arr application backups via API to NAS
 set -euo pipefail
 
-BACKUP_DIR="{{ api_backup_dir }}"
-MOUNT_POINT="{{ api_backup_mount_point }}"
+BACKUP_DIR="{{ backup_api_dir }}"
+MOUNT_POINT="{{ backup_api_mount_point }}"
 CONFIG_DIR="{{ backup_config_dir }}"
 TRAEFIK_DOMAIN="{{ mms_traefik_domain }}"
-RETENTION_DAYS="{{ api_backup_retention_days }}"
-TIMEOUT="{{ api_backup_timeout }}"
+RETENTION_DAYS="{{ backup_api_retention_days }}"
+TIMEOUT="{{ backup_api_timeout }}"
 DATE=$(date +%Y-%m-%d)
 DRY_RUN="${DRY_RUN:-false}"
 ERRORS=0
@@ -116,7 +116,7 @@ backup_service() {
 
     log "Waiting for backup command ${command_id} to complete..."
     local attempts=0
-    local max_attempts=60
+    local max_attempts=$(( TIMEOUT / 5 ))
     while (( attempts < max_attempts )); do
         sleep 5
         local cmd_status
@@ -209,17 +209,17 @@ prune_old_backups() {
 log "=== MMS API Backup Starting ==="
 
 # Ensure per-service directories exist
-{% for svc in api_backup_services %}
+{% for svc in backup_api_services %}
 mkdir -p "${BACKUP_DIR}/{{ svc.name }}"
 {% endfor %}
 
 # Run backups
-{% for svc in api_backup_services %}
+{% for svc in backup_api_services %}
 backup_service "{{ svc.name }}" "{{ svc.subdomain }}"
 {% endfor %}
 
 # Apply retention
-{% for svc in api_backup_services %}
+{% for svc in backup_api_services %}
 prune_old_backups "{{ svc.name }}"
 {% endfor %}
 
