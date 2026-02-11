@@ -214,14 +214,13 @@ This will:
 ```
 /data/                          # NFS from TrueNAS
 ├── media/
-│   ├── movies/                 # Radarr/Radarr4k Library
+│   ├── movies/                 # Radarr / Radarr 4K library
 │   ├── series/                 # Sonarr library
 │   └── music/                  # Lidarr library
 ├── usenet/
 │   ├── incomplete/             # SABnzbd in-progress
 │   └── complete/
 │       ├── movies/             # Completed movie downloads
-│       ├── movies4k/           # Completed 4K movie downloads
 │       ├── series/             # Completed TV downloads
 │       ├── music/              # Completed music downloads
 │       └── manual/             # Manual import staging
