@@ -76,7 +76,7 @@ Common connections to configure:
 
 - Proxmox 9.x with API token configured (see [Proxmox API Token Setup](#proxmox-api-token-setup) below)
 - SSH key access to the Proxmox host as `root` from the Ansible control machine (used to create the Fedora cloud image template via `qm` commands)
-- TrueNAS with NFS exports for media, usenet, and photos
+- TrueNAS with NFS exports for media, usenet, photos, and backups
 - Tailscale account with pre-generated auth key
 - Ansible 2.15+ with collections: `community.general`, `community.proxmox`, `ansible.posix`, `containers.podman`
 - `age` encryption key pair for backups (see [Backup Encryption with age](#backup-encryption-with-age) below)
@@ -161,10 +161,31 @@ ansible-playbook playbooks/backup.yml
 ```
 
 Backups run automatically via systemd timers:
-- **Daily at 03:00** — Config backups for all services
-- **Weekly** — Immich photo uploads (rsync)
+- **Daily at 03:00** -- Config backups for all services (age-encrypted, stored locally in `/home/mms/backups/`)
+- **Daily at 04:30** -- API backups for *arr services (Prowlarr, Radarr, Sonarr, Lidarr) to NAS (`/data/backups/arr-api/`)
+- **Weekly** -- Immich photo uploads (rsync)
 
-Retention: 7 daily, 4 weekly, 6 monthly. All backups encrypted with `age`.
+Retention:
+- **Config backups**: 7 daily, 4 weekly, 6 monthly
+- **API backups**: 30 days
+
+Config backups are encrypted with `age`. API backups are native *arr `.zip` files triggered via each service's API and downloaded through Traefik on localhost.
+
+To manually trigger or inspect API backups on the VM:
+
+```bash
+# Check API backup timer status
+systemctl --user list-timers mms-api-backup.timer
+
+# Trigger a manual API backup
+systemctl --user start mms-api-backup.service
+
+# View API backup logs
+journalctl --user -u mms-api-backup --since today
+
+# Dry-run (logs what would happen without making changes)
+DRY_RUN=true /home/mms/bin/mms-api-backup.sh
+```
 
 ### Restore
 
@@ -200,11 +221,17 @@ This will:
 │       ├── series/              # Completed TV downloads
 │       ├── music/              # Completed music downloads
 │       └── manual/             # Manual import staging
+├── backups/
+│   └── arr-api/                # *arr API backups (30-day retention)
+│       ├── prowlarr/
+│       ├── radarr/
+│       ├── sonarr/
+│       └── lidarr/
 ├── photos/                     # Immich uploads
 └── recordings/                 # Channels DVR recordings
 
 /home/mms/config/<service>/     # Local SSD, per-service config
-/home/mms/backups/              # Backup staging area
+/home/mms/backups/              # Config backup staging area (age-encrypted)
 ```
 
 This follows the [TRaSH Guides](https://trash-guides.info/) recommended folder structure, enabling hardlinks between download and library directories.

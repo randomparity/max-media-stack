@@ -17,16 +17,18 @@
 - List markers: `-` consistently
 - Code blocks: `bash` for shell, `yaml` for YAML, bare fence for ASCII art
 
-## Known Documentation Gaps (as of 2026-02-10)
+## Known Documentation Gaps (as of 2026-02-11)
 - No CHANGELOG documenting the UID/GID change from 1100 to 3000
 - No migration guide for existing deployments
 - Fedora version (43) not mentioned in prose of CLAUDE.md or README.md (only in inventory)
 - No LICENSE or CONTRIBUTING files (acceptable for personal homelab)
-- ~~README line 106 lists `vault_backup_age_public_key`~~ RESOLVED: now correctly uses `mms_backup_age_public_key`
 - Dead variable `immich_port` in roles/immich/defaults/main.yml (no longer published)
-- ~~CLAUDE.md roles list missing `autodeploy` role~~ RESOLVED: autodeploy now listed
-- ~~CLAUDE.md Architecture section missing auto-deploy/Renovate bullet~~ RESOLVED: auto-deploy bullet present
 - CLAUDE.md Conventions missing: `mms_vm_hostname`/`mms_vm_name` split, `mms_vm_ssh_pubkeys` list, `Tmpfs=/run:U`, per-service `tmpfs`, `NoNewPrivileges`, Jellyfin official image
+- CLAUDE.md Conventions missing: INI race condition pattern, `host_whitelist` inter-container DNS, `backup_api_*` variable prefix
+- CLAUDE.md Architecture missing: backup subsystem bullet (config + API backups)
+- README Backup section missing: API backup at 04:30 (*arr to NAS), retention split, verification commands
+- README Storage Layout missing: `/data/backups/` NFS mount and `arr-api/` subdirs
+- README Prerequisites missing: "backups" in NFS exports list
 - README Quick Start step 2 file descriptions stale (VM specs/SSH keys moved to group_vars/all)
 - supply-chain-hygiene-reviewer.md services list missing Channels DVR and Navidrome
 
@@ -46,6 +48,10 @@
 - Jellyfin image: `services/jellyfin.yml` (`docker.io/jellyfin/jellyfin`, no PUID/PGID)
 - Container template: `templates/quadlet/container.j2` (Tmpfs=/run:U, per-service tmpfs, NoNewPrivileges)
 - Playbook names: `playbooks/` directory
+- Backup role defaults: `roles/backup/defaults/main.yml` (config backup + API backup vars)
+- Backup API services: `roles/backup/defaults/main.yml` lines 32-46 (`backup_api_*` prefix)
+- NFS backups mount: `inventory/group_vars/mms/vars.yml` lines 23-25 (`/data/backups`)
+- Base system packages: `roles/base_system/defaults/main.yml` lines 9-18 (includes bpytop, jq via backup role)
 
 ## Review History
 - 2026-02-08: Full review of all .md files on fix/dry-run-issues branch (15 commits over main)
@@ -80,4 +86,13 @@
   - CLAUDE.md roles list now correctly includes autodeploy (prior gap resolved)
   - README backup variable name now correct (`mms_backup_age_public_key`, prior gap resolved)
   - Immich templates all have Tmpfs=/run:U (prior ansible-reviewer item #27 resolved)
+  - See review-findings.md for details
+- 2026-02-11: Review of all .md files on fix/sabnzbd-ini-race-condition branch (7 commits over main)
+  - API backup system (mms-api-backup timer/service/script) entirely undocumented in README
+  - `/data/backups/` NFS mount missing from storage layout diagram
+  - Prerequisites missing "backups" in NFS exports list
+  - CLAUDE.md missing backup architecture bullet and INI race/whitelist/backup_api conventions
+  - Variable rename api_backup_* -> backup_api_* already correct in code, no stale doc refs
+  - After=network-online.target fix correctly applied in both service templates
+  - Inter-container access table is well-structured addition
   - See review-findings.md for details
