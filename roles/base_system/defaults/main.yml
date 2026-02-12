@@ -7,6 +7,7 @@ base_system_timezone: "{{ mms_timezone }}"
 base_system_hostname: "{{ mms_vm_hostname }}"
 
 base_system_packages:
+  - acl
   - qemu-guest-agent
   - container-selinux
   - nfs-utils
