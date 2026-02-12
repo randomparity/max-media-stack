@@ -9,6 +9,9 @@ navidrome:
     - "{{ mms_data_dir }}/media/music:/music:ro"
   environment:
     - "TZ={{ mms_timezone }}"
+    - "ND_LOGLEVEL=info"
+    - "ND_ENABLEINSIGHTSCOLLECTOR=false"
+    - "ND_ENABLEEXTERNALSERVICES=false"
   health_cmd: "curl -sf http://localhost:4533/ping || exit 1"
   health_interval: "60s"
   backup_type: "navidrome"
