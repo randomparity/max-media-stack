@@ -23,8 +23,9 @@ backup_user: "{{ mms_user | default('mms') }}"
 # Must be provided via -e when restoring encrypted backups
 backup_age_identity_file: ""
 
-# Immich PostgreSQL container name
+# Immich PostgreSQL container name and superuser
 backup_immich_db_container: immich-postgres
+backup_immich_db_user: "{{ immich_db_user | default('immich') }}"
 
 # Immich generated media directory (relative to backup_config_dir, excluded from config backup)
 backup_immich_media_exclude: immich/media

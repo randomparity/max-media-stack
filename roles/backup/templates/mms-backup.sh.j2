@@ -83,7 +83,7 @@ backup_immich() {
     # Hot database dump (no downtime)
     if [[ ! -f "$db_dest" && ! -f "${db_dest}.age" ]]; then
         log "Dumping immich PostgreSQL database..."
-        podman exec {{ backup_immich_db_container }} pg_dumpall -U postgres | zstd -T0 -o "$db_dest"
+        podman exec {{ backup_immich_db_container }} pg_dumpall -U {{ backup_immich_db_user }} | zstd -T0 -o "$db_dest"
         encrypt_file "$db_dest"
     fi
 
@@ -114,7 +114,7 @@ prune_tier() {
     local keep="$2"
     shift 2
     local files=("$@")
-    local count=${#files[@]}
+    local count={% raw %}${#files[@]}{% endraw %}
 
     if (( count <= keep )); then
         log "  ${tier}: ${count} backups, keeping all (limit: ${keep})"
@@ -163,9 +163,9 @@ apply_retention() {
         fi
     done < <(find "$dir" -maxdepth 1 -type f \( -name '*.tar.zst' -o -name '*.tar.zst.age' -o -name '*.sql.zst' -o -name '*.sql.zst.age' \) | sort -r)
 
-    [[ ${#daily[@]} -gt 0 ]] && prune_tier "daily" {{ backup_retention_daily }} "${daily[@]}"
-    [[ ${#weekly[@]} -gt 0 ]] && prune_tier "weekly" {{ backup_retention_weekly }} "${weekly[@]}"
-    [[ ${#monthly[@]} -gt 0 ]] && prune_tier "monthly" {{ backup_retention_monthly }} "${monthly[@]}"
+    [[ {% raw %}${#daily[@]}{% endraw %} -gt 0 ]] && prune_tier "daily" {{ backup_retention_daily }} "${daily[@]}"
+    [[ {% raw %}${#weekly[@]}{% endraw %} -gt 0 ]] && prune_tier "weekly" {{ backup_retention_weekly }} "${weekly[@]}"
+    [[ {% raw %}${#monthly[@]}{% endraw %} -gt 0 ]] && prune_tier "monthly" {{ backup_retention_monthly }} "${monthly[@]}"
 }
 
 # Ensure backup directories exist

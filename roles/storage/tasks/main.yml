@@ -73,6 +73,5 @@
   ansible.builtin.file:
     path: "{{ storage_backup_dir }}"
     state: directory
-    owner: "{{ storage_uid }}"
-    group: "{{ storage_gid }}"
-    mode: "0750"
+  become: true
+  become_user: "{{ storage_user }}"

@@ -100,7 +100,7 @@ restore_immich_db() {
     zstd -d "$archive" -o "$WORK_DIR/backup.sql"
 
     log "Restoring PostgreSQL database..."
-    podman exec -i {{ backup_immich_db_container }} psql -U postgres < "$WORK_DIR/backup.sql"
+    podman exec -i {{ backup_immich_db_container }} psql -U {{ backup_immich_db_user }} < "$WORK_DIR/backup.sql"
 
     log "immich database restore complete"
 }
