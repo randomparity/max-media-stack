@@ -92,6 +92,24 @@ restore_jellyfin() {
     log "jellyfin restore complete"
 }
 
+restore_plex() {
+    local archive="$WORK_DIR/backup.tar.zst"
+    decrypt_file "$BACKUP_FILE" "$archive"
+
+    log "Stopping plex..."
+    systemctl --user stop plex || true
+
+    log "Removing existing config (keeping cache)..."
+    find "${CONFIG_DIR}/plex/Library/Application Support/Plex Media Server" -mindepth 1 -maxdepth 1 ! -name Cache -exec rm -rf {} +
+
+    log "Extracting backup..."
+    zstd -d "$archive" --stdout | tar -xf - -C "${CONFIG_DIR}"
+
+    log "Starting plex..."
+    systemctl --user start plex
+    log "plex restore complete"
+}
+
 restore_immich_db() {
     local archive="$WORK_DIR/backup.sql.zst"
     decrypt_file "$BACKUP_FILE" "$archive"
@@ -116,7 +134,7 @@ restore_immich_config() {
 }
 
 case "$SERVICE" in
-    prowlarr|radarr|radarr4k|sonarr|lidarr)
+    prowlarr|radarr|radarr4k|sonarr|lidarr|tautulli|kometa)
         restore_arr
         ;;
     sabnzbd)
@@ -124,6 +142,9 @@ case "$SERVICE" in
         ;;
     jellyfin)
         restore_jellyfin
+        ;;
+    plex)
+        restore_plex
         ;;
     traefik)
         restore_arr

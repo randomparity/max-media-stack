@@ -13,6 +13,9 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Lidarr    | `lidarr.media.example.com`       | Music automation               |
 | SABnzbd   | `sabnzbd.media.example.com`      | Usenet downloader              |
 | Jellyfin  | `jellyfin.media.example.com`     | Media server                   |
+| Plex      | `plex.media.example.com`         | Media server                   |
+| Tautulli  | `tautulli.media.example.com`     | Plex analytics/monitoring      |
+| Kometa    | —                                | Plex metadata manager (no UI)  |
 | Immich    | `immich.media.example.com`       | Photo/video management         |
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
@@ -31,8 +34,8 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      │                                       │  │  │
 │  │  │      ├── prowlarr  radarr  radarr4k          │  │  │
 │  │  │      ├── sonarr  lidarr  sabnzbd             │  │  │
-│  │  │      ├── jellyfin  channels                  │  │  │
-│  │  │      ├── navidrome                           │  │  │
+│  │  │      ├── jellyfin  plex  channels             │  │  │
+│  │  │      ├── tautulli  kometa  navidrome         │  │  │
 │  │  │      └── immich-server  immich-ml            │  │  │
 │  │  │          immich-postgres immich-redis        │  │  │
 │  │  │            ┌───────────┐                     │  │  │
@@ -61,6 +64,8 @@ All containers share the `mms.network` bridge and reach each other by container 
 | Lidarr           | `lidarr`           | 8686  | `http://lidarr:8686`                |
 | SABnzbd          | `sabnzbd`          | 8080  | `http://sabnzbd:8080`               |
 | Jellyfin         | `jellyfin`         | 8096  | `http://jellyfin:8096`              |
+| Plex             | `plex`             | 32400 | `http://plex:32400`                 |
+| Tautulli         | `tautulli`         | 8181  | `http://tautulli:8181`              |
 | Channels DVR     | `channels`         | 8089  | `http://channels:8089`              |
 | Navidrome        | `navidrome`        | 4533  | `http://navidrome:4533`             |
 | Immich Server    | `immich-server`    | 2283  | `http://immich-server:2283`         |
@@ -74,6 +79,7 @@ Common connections to configure:
 - **Radarr/Radarr 4K/Sonarr/Lidarr → SABnzbd**: Add as download client using `http://sabnzbd:8080`
 - **Radarr/Radarr 4K/Sonarr/Lidarr → Prowlarr**: Prowlarr pushes indexers to the \*arrs via their internal URLs
 - **Prowlarr → \*arrs**: Add each app under Settings > Apps using its internal URL above
+- **Tautulli → Plex**: Configure Plex Media Server using `http://plex:32400`; Plex logs are already mounted via volume
 
 ## Prerequisites
 
@@ -135,6 +141,7 @@ ansible-vault edit inventory/group_vars/all/vault.yml
 `inventory/group_vars/all/vault.yml` — Service credentials:
 - `vault_tailscale_auth_key` — Tailscale pre-auth key
 - `vault_immich_db_password` — Immich PostgreSQL password
+- `vault_plex_claim_token` — Plex claim token for initial setup (get from https://plex.tv/claim, clear after first run)
 
 ### 4. Deploy
 
@@ -172,7 +179,7 @@ Retention:
 - **Config backups**: 7 daily, 4 weekly, 6 monthly
 - **API backups**: 30 days
 
-Config backups are encrypted with `age`. API backups are native *arr `.zip` files triggered via each service's API and downloaded through Traefik on localhost. Immich config backups exclude locally-generated content (thumbnails, transcoded video, profile images) stored in `/home/mms/config/immich/media/` — this content is regenerable and will be recreated automatically by Immich when needed.
+Config backups are encrypted with `age`. API backups are native *arr `.zip` files triggered via each service's API and downloaded through Traefik on localhost. Immich config backups exclude locally-generated content (thumbnails, transcoded video, profile images) stored in `/home/mms/config/immich/media/` — this content is regenerable and will be recreated automatically by Immich when needed. Plex config backups exclude the Cache, Crash Reports, Updates, and Codecs directories — all regenerable content that Plex recreates automatically.
 
 To manually trigger or inspect API backups on the VM:
 
@@ -440,7 +447,7 @@ ansible-playbook playbooks/restore.yml \
 
 MMS uses [Renovate](https://docs.renovatebot.com/) to discover container image updates and systemd timers on the VM to automatically deploy changes merged to `main`. Renovate opens PRs for version bumps (auto-merging patch and minor), and per-group autodeploy timers poll the git repo on independent schedules, running `ansible-playbook` when new commits are detected.
 
-Deploy groups let you schedule non-interactive backend services (Prowlarr, Radarr, etc.) to deploy frequently while deferring interactive services (Jellyfin, Immich) to off-hours windows when restarts won't disrupt users.
+Deploy groups let you schedule non-interactive backend services (Prowlarr, Radarr, etc.) to deploy frequently while deferring interactive services (Jellyfin, Plex, Immich) to off-hours windows when restarts won't disrupt users.
 
 ### How it works
 
@@ -604,6 +611,9 @@ autodeploy_groups:
     schedule: "*-*-* 02:00:00"
     services:
       - jellyfin
+      - plex
+      - tautulli
+      - kometa
       - immich
 ```
 

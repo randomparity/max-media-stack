@@ -33,6 +33,14 @@
 - autodeploy: Git-based auto-deploy with systemd timer, polls repo and runs deploy-services.yml
 - migrate: LXC-to-VM migration with rsync, DB dump, healthchecks
 
+## Services (12 as of 2026-02-12)
+- *arr stack: prowlarr, radarr, radarr4k, sonarr, lidarr (all LSIO images, arr backup type)
+- Downloads: sabnzbd (LSIO, custom backup with ini subset)
+- Media servers: jellyfin (official), plex (LSIO), channels (fancybits)
+- Media tools: tautulli (LSIO, Plex analytics), kometa (LSIO, Plex metadata), navidrome (music)
+- Photos: immich (special multi-container role)
+- Reverse proxy: traefik (official, file provider)
+
 ## Key Patterns
 - Data-driven services: services/*.yml loaded by include_vars, rendered by quadlet templates
 - Rootless systemd: XDG_RUNTIME_DIR + DBUS_SESSION_BUS_ADDRESS environment vars required

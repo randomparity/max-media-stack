@@ -37,6 +37,17 @@
   become: true
   notify: "Restart quadlet service ({{ service_name }})"
 
+- name: "Deploy Plex run script override ({{ service_name }})"
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/../templates/plex-run.sh.j2"
+    dest: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/plex-run.sh"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+  notify: "Restart quadlet service ({{ service_name }})"
+  when: service_name == 'plex'
+
 - name: "Deploy container quadlet ({{ service_name }})"
   ansible.builtin.template:
     src: "{{ playbook_dir }}/../templates/quadlet/container.j2"

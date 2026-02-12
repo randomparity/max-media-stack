@@ -1,0 +1,16 @@
+---
+kometa:
+  name: kometa
+  description: "Kometa - Plex Metadata Manager"
+  image: "lscr.io/linuxserver/kometa:2.3.0"
+  after:
+    - plex.service
+  volumes:
+    - "{{ mms_config_dir }}/kometa:/config:Z"
+  environment:
+    - "PUID={{ mms_uid }}"
+    - "PGID={{ mms_gid }}"
+    - "TZ={{ mms_timezone }}"
+    - "KOMETA_TIME=06:00"
+  backup_type: "arr"
+  backup_db_files: []

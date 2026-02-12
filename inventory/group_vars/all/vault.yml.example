@@ -1,0 +1,26 @@
+---
+# Encrypt this file with: ansible-vault encrypt inventory/group_vars/all/vault.yml
+#
+# Tailscale auth key (generate at https://login.tailscale.com/admin/settings/keys)
+vault_tailscale_auth_key: "tskey-auth-XXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+# Immich PostgreSQL password (generate with: openssl rand -base64 16)
+vault_immich_db_password: "CHANGE_ME_random_base64"
+
+# age public key for encrypting config backups (generate with: age-keygen)
+vault_backup_age_public_key: "age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# VM user password for the mms account
+vault_vm_password: "CHANGE_ME"
+
+# Private deploy key for git clone/fetch (generate with: ssh-keygen -t ed25519 -C mms-autodeploy -f mms_deploy_key)
+vault_autodeploy_ssh_key: |
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  PASTE_YOUR_ED25519_PRIVATE_KEY_HERE
+  -----END OPENSSH PRIVATE KEY-----
+
+# Plex claim token (get from https://plex.tv/claim — set for first run, then clear)
+vault_plex_claim_token: ""
+
+# Ansible vault password (so the VM can decrypt vault files during autodeploy)
+vault_mms_vault_password: "CHANGE_ME_random_base64"

@@ -1,0 +1,27 @@
+---
+plex:
+  name: plex
+  description: "Plex - Media Server"
+  image: "docker.io/plexinc/pms-docker:1.43.0.10492-121068a07"
+  userns: "keep-id:uid=0,gid=0"
+  group_add:
+    - keep-groups
+  tmpfs:
+    - "/transcode:U"
+  volumes:
+    - "{{ mms_config_dir }}/plex:/config:Z"
+    - "{{ mms_config_dir }}/plex/plex-run.sh:/etc/services.d/plex/run"
+    - "{{ mms_data_dir }}/media/movies:{{ mms_data_dir }}/media/movies:ro"
+    - "{{ mms_data_dir }}/media/series:{{ mms_data_dir }}/media/series:ro"
+    - "{{ mms_data_dir }}/media/music:{{ mms_data_dir }}/media/music:ro"
+  environment:
+    - "TZ={{ mms_timezone }}"
+    - "PLEX_CLAIM={{ vault_plex_claim_token }}"
+    - "PLEX_UID=0"
+    - "PLEX_GID=0"
+    - "CHANGE_CONFIG_DIR_OWNERSHIP=false"
+  health_cmd: "curl -sf http://localhost:32400/identity || exit 1"
+  health_interval: "60s"
+  backup_type: "plex"
+  backup_db_files:
+    - "Plug-in Support/Databases/com.plexapp.plugins.library.db"
