@@ -292,19 +292,28 @@
   loop: "{{ immich_local_dirs }}"
 
 - name: Create NFS mount-check marker files
-  ansible.builtin.command:
-    cmd: "touch {{ immich_upload_dir }}/{{ item }}/.immich"
-    creates: "{{ immich_upload_dir }}/{{ item }}/.immich"
+  ansible.builtin.file:
+    path: "{{ immich_upload_dir }}/{{ item }}/.immich"
+    state: touch
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+    access_time: preserve
+    modification_time: preserve
   become: true
   become_user: "{{ mms_user }}"
   loop: "{{ immich_nfs_dirs }}"
 
 - name: Create local mount-check marker files
-  ansible.builtin.command:
-    cmd: "touch {{ immich_media_dir }}/{{ item }}/.immich"
-    creates: "{{ immich_media_dir }}/{{ item }}/.immich"
+  ansible.builtin.file:
+    path: "{{ immich_media_dir }}/{{ item }}/.immich"
+    state: touch
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+    access_time: preserve
+    modification_time: preserve
   become: true
-  become_user: "{{ mms_user }}"
   loop: "{{ immich_local_dirs }}"
 
 # Flush handlers to ensure daemon-reload happens before starting services
