@@ -44,7 +44,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - **Rootless Podman**: All containers run as `mms` user (3000:3000) with Quadlet files in `~mms/.config/containers/systemd/`
 - **Data-driven services**: Each service defined in `services/<name>.yml`; the generic `quadlet_service` role renders templates
 - **Traefik**: Reverse proxy with file provider; routes by `Host` header from `mms_traefik_routes`; only container that publishes a host port
-- **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role
+- **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role; volume mounts split NFS (user content: upload, library) from local SSD (generated content: thumbs, encoded-video, profile, backups)
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 - **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits
 - **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik)
@@ -63,6 +63,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Roles use `defaults/main.yml` for overridable defaults
 - Handlers used for service restarts and daemon-reload
 - SELinux: `:Z` for local config volumes, no labels for NFS (uses `virt_use_nfs` boolean)
+- Immich volume split: local SSD base (`immich_media_dir`) at `/data:Z`, NFS overlays for `upload/` and `library/` (`immich_upload_dir`); generated content (`immich_local_dirs`) on local SSD, user content (`immich_nfs_dirs`) on NFS
 - All services join the shared `mms.network` for inter-container DNS
 - Traefik routing: `mms_traefik_domain` and `mms_traefik_routes` in `inventory/group_vars/mms/vars.yml`
 - VM naming: `mms_vm_hostname` (group_vars/all) sets OS hostname and Tailscale node name; `mms_vm_name` (group_vars/proxmox) is the Proxmox display name only

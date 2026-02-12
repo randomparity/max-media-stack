@@ -26,8 +26,14 @@
 - CLAUDE.md Conventions missing: `mms_vm_hostname`/`mms_vm_name` split, `mms_vm_ssh_pubkeys` list, `Tmpfs=/run:U`, per-service `tmpfs`, `NoNewPrivileges`, Jellyfin official image
 - CLAUDE.md Conventions missing: INI race condition pattern, `host_whitelist` inter-container DNS, `backup_api_*` variable prefix
 - CLAUDE.md Architecture missing: backup subsystem bullet (config + API backups)
+- CLAUDE.md Architecture missing: Immich volume split (NFS user content vs local SSD generated content)
+- CLAUDE.md Conventions missing: Immich three-mount overlay pattern (`:Z` local base + NFS overlays)
 - README Backup section missing: API backup at 04:30 (*arr to NAS), retention split, verification commands
+- README Backup section missing: note that Immich config backup excludes regenerable content
 - README Storage Layout missing: `/data/backups/` NFS mount and `arr-api/` subdirs
+- README Storage Layout missing: `/home/mms/config/immich/media/` local SSD path for Immich generated content
+- README Storage Layout: `/data/photos/` comment should say "user content" not just "uploads"
+- README Migrate section missing: note about rsync skipping regenerable Immich content
 - README Prerequisites missing: "backups" in NFS exports list
 - README Quick Start step 2 file descriptions stale (VM specs/SSH keys moved to group_vars/all)
 - supply-chain-hygiene-reviewer.md services list missing Channels DVR and Navidrome
@@ -53,6 +59,10 @@
 - Backup API services: `roles/backup/defaults/main.yml` lines 32-46 (`backup_api_*` prefix)
 - NFS backups mount: `inventory/group_vars/mms/vars.yml` lines 23-25 (`/data/backups`)
 - Base system packages: `roles/base_system/defaults/main.yml` lines 9-18 (includes btop, jq via backup role)
+- Immich NFS dirs: `roles/immich/defaults/main.yml` lines 27-29 (`immich_nfs_dirs`: upload, library)
+- Immich local dirs: `roles/immich/defaults/main.yml` lines 32-36 (`immich_local_dirs`: encoded-video, thumbs, profile, backups)
+- Immich media dir: `roles/immich/defaults/main.yml` line 24 (`immich_media_dir`: `{{ mms_config_dir }}/immich/media`)
+- Immich upload dir: `roles/immich/defaults/main.yml` line 21 (`immich_upload_dir`: /data/photos)
 
 ## Review History
 - 2026-02-08: Full review of all .md files on fix/dry-run-issues branch (15 commits over main)
@@ -104,4 +114,15 @@
   - Immich media subdirs + .immich markers: internal detail, no doc impact
   - Deploy resilience (block/rescue for Immich/Traefik): undocumented behavioral change
   - CLAUDE.md Conventions should note deploy resilience pattern
+  - See review-findings.md for details
+- 2026-02-11: Review of all .md files on feat/immich-split-volumes branch (1 commit over main)
+  - Immich three-mount overlay: local SSD base at /data:Z, NFS overlays for upload/ and library/
+  - README Storage Layout missing /home/mms/config/immich/media/ and NFS/local distinction
+  - README Storage Layout /data/photos/ comment stale ("uploads" should be "user content")
+  - CLAUDE.md Architecture Immich bullet missing volume split
+  - CLAUDE.md Conventions missing Immich three-mount overlay pattern
+  - README Backup section missing note about excluding regenerable content
+  - README Migrate section missing note about rsync skipping regenerable content
+  - Backup script --exclude='immich/media' correctly excludes local generated content
+  - Migrate rsync excludes match immich_local_dirs (thumbs, encoded-video, profile, backups)
   - See review-findings.md for details

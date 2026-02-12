@@ -1,6 +1,6 @@
 # Review Findings
 
-## Immich NFS/Local Split Review (2026-02-11, uncommitted changes)
+## Immich NFS/Local Split Review (2026-02-11, commit adc4f6c)
 
 ### Scope
 Split Immich volume mounts: NFS for user content (upload/, library/), local SSD for generated
@@ -9,17 +9,19 @@ One-time migration block moves generated dirs from NFS to local. Backup excludes
 Migrate role rsync excludes regenerable dirs.
 
 ### Findings
-- MEDIUM: Migration stops immich-server but not immich-ml (ML may access data dirs during mv)
-- MEDIUM: Block-level when only checks thumbs -- partial migration failure skips remaining dirs
-- MEDIUM: NFS overlay mounts on :Z-labeled base path need SELinux validation (should work with virt_use_nfs)
+- HIGH: Cross-filesystem mv (NFS->local) is not atomic; interrupted move leaves inconsistent state. Recommend rsync --remove-source-files + rescue block
+- MEDIUM: NFS overlay mounts on :Z-labeled base path need SELinux runtime validation (virt_use_nfs should handle it)
 - MEDIUM: Migrate rsync excludes hardcode dir list instead of referencing immich_local_dirs variable
+- MEDIUM: Backup --exclude='immich/media' hardcodes path instead of deriving from variable
 - LOW: immich_upload_dir name increasingly confusing alongside immich_media_dir (rename to immich_nfs_dir)
 - LOW: Local subdir tasks use become: true (root) while NFS tasks use become_user: mms (inconsistent)
-- LOW: Backup --exclude='immich/media' assumes specific path layout (fragile coupling between roles)
+- LOW: selectattr('stat.exists', 'defined') in block when is redundant (stat always returns exists key)
 
 ### Positive patterns
 - Three-volume overlay is correct approach: local base at /data:Z, NFS overlaid for upload + library
 - Variable naming improved: immich_nfs_dirs + immich_local_dirs replaces ambiguous immich_media_dirs
+- Both immich-ml and immich-server stopped before migration (fixes prior #39)
+- Migration stat loop checks all immich_local_dirs, not just one (fixes prior #40)
 - Marker files correctly created in both NFS and local subdirectories
 - Migration mv command has proper creates/removes idempotence guards
 - Backup correctly excludes local generated content from config tar
@@ -29,6 +31,8 @@ Migrate role rsync excludes regenerable dirs.
 ### Items addressed from prior reviews
 - #36 partially addressed: NFS subdir tasks now use become_user: mms
 - #14 (immich_media_dirs misleading name) replaced with clearer immich_nfs_dirs + immich_local_dirs
+- #39 fixed: Both immich-ml and immich-server stopped in migration block
+- #40 fixed: Block-level when checks all immich_local_dirs via stat loop
 
 ---
 

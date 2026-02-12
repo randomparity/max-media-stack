@@ -130,8 +130,11 @@ See review-findings.md for detailed findings from all reviews.
 36. ~~Immich media subdir tasks use become: true (root) with owner/group on NFS (root_squash will fail)~~ partially fixed: NFS tasks now use become_user, local tasks still root
 37. immich_upload_dir variable name is misleading (now only used for NFS paths, sits alongside immich_media_dir)
 38. No Molecule test for immich role
-39. Migration block stops immich-server but not immich-ml (ML may access data dirs during mv)
-40. Migration block-level when only checks thumbs dir -- partial failure won't re-trigger for other dirs
+39. ~~Migration block stops immich-server but not immich-ml~~ fixed: both stopped in commit adc4f6c
+40. ~~Migration block-level when only checks thumbs dir~~ fixed: checks all immich_local_dirs via stat loop
 41. Migrate role rsync excludes hardcode dir list instead of referencing immich_local_dirs variable
 42. Backup --exclude='immich/media' assumes immich_media_dir is under mms_config_dir/immich/media (fragile coupling)
 43. Local generated content (thumbs, transcodes) not backed up -- intentional but undocumented tradeoff
+44. Migration mv across filesystems (NFS->local) is not atomic; rsync --remove-source-files is safer
+45. NFS overlay on :Z-labeled base volume needs SELinux runtime validation (virt_use_nfs should handle it)
+46. Inconsistent become/become_user between NFS and local dir creation tasks in immich role

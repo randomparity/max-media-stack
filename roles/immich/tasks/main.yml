@@ -205,7 +205,7 @@
   register: _immich_legacy_dirs
 
 - name: Migrate generated content from NFS to local SSD
-  when: _immich_legacy_dirs.results | selectattr('stat.exists', 'defined') | selectattr('stat.exists') | list | length > 0
+  when: _immich_legacy_dirs.results | selectattr('stat.exists') | list | length > 0
   block:
     - name: Stop Immich services for migration
       ansible.builtin.systemd:
@@ -229,14 +229,35 @@
         mode: "0755"
       become: true
 
-    - name: Move generated directories from NFS to local SSD
+    - name: Rsync generated directories from NFS to local SSD  # noqa: command-instead-of-module
       ansible.builtin.command:
-        cmd: "mv {{ immich_upload_dir }}/{{ item }} {{ immich_media_dir }}/{{ item }}"
-        removes: "{{ immich_upload_dir }}/{{ item }}"
-        creates: "{{ immich_media_dir }}/{{ item }}"
+        cmd: >-
+          rsync -a --remove-source-files
+          {{ immich_upload_dir }}/{{ item }}/
+          {{ immich_media_dir }}/{{ item }}/
+        creates: "{{ immich_media_dir }}/{{ item }}/.immich"
       loop: "{{ immich_local_dirs }}"
       become: true
       become_user: "{{ mms_user }}"
+
+    - name: Remove empty source directories after migration
+      ansible.builtin.file:
+        path: "{{ immich_upload_dir }}/{{ item }}"
+        state: absent
+      loop: "{{ immich_local_dirs }}"
+      become: true
+      become_user: "{{ mms_user }}"
+  rescue:
+    - name: Log migration failure
+      ansible.builtin.debug:
+        msg: >-
+          Migration of generated content from NFS to local SSD failed.
+          Immich services were stopped and may need manual restart.
+          Check {{ immich_upload_dir }} and {{ immich_media_dir }} for partial state.
+
+    - name: Fail with migration error
+      ansible.builtin.fail:
+        msg: "Immich NFS-to-local migration failed — manual intervention required"
 
 # Create media subdirectories and mount-check marker files
 # Immich verifies these on startup to detect unmounted volumes
