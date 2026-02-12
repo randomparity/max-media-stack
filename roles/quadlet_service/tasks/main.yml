@@ -82,7 +82,7 @@
   changed_when: true
   timeout: 900
 
-- name: "Flush handlers before starting service ({{ service_name }})"
+- name: Flush handlers before starting service
   ansible.builtin.meta: flush_handlers
 
 - name: "Enable and start service ({{ service_name }})"
