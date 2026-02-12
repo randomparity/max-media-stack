@@ -2,7 +2,7 @@
 channels:
   name: channels
   description: "Channels DVR - Live TV and DVR"
-  image: "fancybits/channels-dvr:latest"
+  image: "fancybits/channels-dvr:latest@sha256:284fed6f4ee5150d41d9a7f247a63e190f6f1c3a4e4bc740f029df6d36955d29"
   volumes:
     - "{{ mms_config_dir }}/channels:/channels-dvr:Z"
     - "/data/recordings:/shares/DVR"
