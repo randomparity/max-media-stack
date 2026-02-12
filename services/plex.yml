@@ -3,6 +3,8 @@ plex:
   name: plex
   description: "Plex - Media Server"
   image: "docker.io/plexinc/pms-docker:1.43.0.10492-121068a07"
+  publish_ports:
+    - "32400:32400"
   userns: "keep-id:uid=0,gid=0"
   group_add:
     - keep-groups
@@ -20,6 +22,7 @@ plex:
     - "PLEX_UID=0"
     - "PLEX_GID=0"
     - "CHANGE_CONFIG_DIR_OWNERSHIP=false"
+    - "ADVERTISE_IP=http://{{ ansible_tailscale0.ipv4.address }}:32400"
   health_cmd: "curl -sf http://localhost:32400/identity || exit 1"
   health_interval: "60s"
   backup_type: "plex"
