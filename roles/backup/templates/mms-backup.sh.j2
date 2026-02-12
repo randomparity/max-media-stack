@@ -83,7 +83,7 @@ backup_immich() {
     # Hot database dump (no downtime)
     if [[ ! -f "$db_dest" && ! -f "${db_dest}.age" ]]; then
         log "Dumping immich PostgreSQL database..."
-        podman exec {{ backup_immich_db_container }} pg_dumpall -U postgres | zstd -T0 -o "$db_dest"
+        podman exec {{ backup_immich_db_container }} pg_dumpall -U {{ backup_immich_db_user }} | zstd -T0 -o "$db_dest"
         encrypt_file "$db_dest"
     fi
 
