@@ -20,6 +20,9 @@ immich_ml_image: "ghcr.io/immich-app/immich-machine-learning:{{ immich_version }
 # NFS mount point for user photos
 immich_upload_dir: /data/photos
 
+# External library path (NFS, for read-only import into Immich)
+immich_external_library_dir: /data/photos
+
 # Local SSD directory for generated/regenerable content
 immich_media_dir: "{{ mms_config_dir }}/immich/media"
 

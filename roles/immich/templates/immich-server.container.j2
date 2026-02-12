@@ -13,6 +13,7 @@ ContainerName=immich-server
 Volume={{ immich_media_dir }}:/data:Z
 Volume={{ immich_upload_dir }}/upload:/data/upload
 Volume={{ immich_upload_dir }}/library:/data/library
+Volume={{ immich_external_library_dir }}:/external
 EnvironmentFile={{ mms_config_dir }}/immich/immich.env
 Secret=immich-db-password,type=env,target=DB_PASSWORD
 HealthCmd=curl -sf http://localhost:2283/api/server/ping || exit 1
