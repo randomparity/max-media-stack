@@ -1,5 +1,55 @@
 # Review Findings
 
+## 2026-02-12: Plex/Tautulli/Kometa Services Review (fix/various-changes)
+
+Branch adds three new media services: Plex (media server), Tautulli (Plex analytics), and Kometa (Plex metadata manager).
+
+### Files Changed
+- services/plex.yml (new)
+- services/tautulli.yml (new)
+- services/kometa.yml (new)
+- inventory/group_vars/mms/vars.yml (added to mms_services, mms_traefik_routes, autodeploy_groups)
+- inventory/group_vars/all/vault.yml (added vault_plex_claim_token)
+- inventory/group_vars/all/vault.yml.example (new, comprehensive example file)
+- inventory/group_vars/proxmox/vault.yml.example (new, proxmox-specific example)
+- roles/backup/templates/mms-backup.sh.j2 (added backup_plex function)
+- roles/backup/templates/mms-restore.sh.j2 (added restore_plex function, case entries for tautulli/kometa)
+
+### Findings Summary
+Overall: **Good implementation following established patterns**. Service definitions are clean and consistent with existing conventions. Backup/restore logic is correct. A few issues around volume mounts, media directory exposure, and missing operational considerations.
+
+### Critical Issues
+None.
+
+### High Priority
+1. **Plex media volume exposes entire /data/media tree** — breaks least-privilege principle, exposes all movies/series/music instead of just what Plex needs
+2. **Missing host_whitelist INI settings** for Plex/Tautulli (may cause API access failures through Traefik when accessed via subdomain)
+
+### Medium Priority
+3. **Tautulli cross-container volume mount** (plex logs) is fragile and bypasses container isolation
+4. **No tmpfs for Plex transcoding** (will use config dir, impacts SSD wear and performance)
+5. **Kometa missing media volume mount** (can't scan library metadata without access to media files)
+6. **No health check for Kometa** (deployment will skip health wait, may proceed before ready)
+7. **Plex backup excludes only Cache directory** (Crash Reports, Updates, Codecs could bloat backups)
+8. **No Kometa dependencies declared** (should depend on plex.service to ensure startup order)
+
+### Low Priority
+9. **Plex health check uses generic /identity endpoint** (doesn't verify library accessibility)
+10. **No mms-services tier for media server services** (all default to tier 2, but Plex/Jellyfin could be separate tier)
+11. **vault_plex_claim_token has no usage documentation** (users won't know it's one-time-use and should be cleared)
+12. **Tautulli database not in backup_db_files** (tautulli.db present but might warrant DB-level dumps for integrity)
+
+### Positive Patterns
+- Tautulli dependency `after: plex.service` is correct and follows established pattern
+- backup_type assignments are appropriate (plex=custom, tautulli/kometa=arr pattern)
+- Service ordering in autodeploy groups is logical (plex/tautulli/kometa together in interactive group)
+- New vault.yml.example files are excellent additions for project forks and first-time setup
+- Plex restore correctly preserves Cache dir (find with ! -name Cache is correct)
+- Health checks use sensible intervals (60s) and appropriate endpoints
+- Traefik routes follow established pattern with subdomain/container/port mapping
+
+---
+
 ## Immich NFS/Local Split Review (2026-02-11, commit adc4f6c)
 
 ### Scope

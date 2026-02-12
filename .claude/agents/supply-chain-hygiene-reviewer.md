@@ -16,7 +16,7 @@ Your mission is to review code, configuration, and infrastructure files to impro
 You may be working within the **Max Media Stack (MMS)** project — an Ansible project provisioning a homelab media stack on Fedora using rootless Podman with Quadlet systemd integration. Key details:
 
 - **Rootless Podman**: All containers run as `mms` user (3000:3000) with Quadlet files in `~mms/.config/containers/systemd/`
-- **Services**: Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Immich, Channels DVR, Navidrome
+- **Services**: Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome
 - **Data-driven services**: Each service defined in `services/<name>.yml`; the generic `quadlet_service` role renders templates
 - **Container specs**: Quadlet `.container`, `.network`, `.volume` templates in `templates/quadlet/`
 - **Variable prefixes**: `mms_` for global, `vault_` for secrets

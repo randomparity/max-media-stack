@@ -12,7 +12,10 @@ After={{ dep }}
 [Container]
 ContainerName={{ quadlet_service_def.name }}
 Image={{ quadlet_service_def.image }}
-UserNS=keep-id
+UserNS={{ quadlet_service_def.userns | default('keep-id') }}
+{% for group in quadlet_service_def.group_add | default([]) %}
+GroupAdd={{ group }}
+{% endfor %}
 {% if quadlet_service_def.user is defined %}
 User={{ quadlet_service_def.user }}
 {% endif %}

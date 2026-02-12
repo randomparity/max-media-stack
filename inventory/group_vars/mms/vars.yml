@@ -33,6 +33,9 @@ mms_services:
   - lidarr
   - sabnzbd
   - jellyfin
+  - plex
+  - tautulli
+  - kometa
   - channels
   - navidrome
 
@@ -74,6 +77,14 @@ mms_traefik_routes:
     subdomain: channels
     container: channels
     port: 8089
+  plex:
+    subdomain: plex
+    container: plex
+    port: 32400
+  tautulli:
+    subdomain: tautulli
+    container: tautulli
+    port: 8181
   navidrome:
     subdomain: navidrome
     container: navidrome
@@ -98,6 +109,9 @@ autodeploy_groups:
     schedule: "*-*-* 02:00:00"
     services:
       - jellyfin
+      - plex
+      - tautulli
+      - kometa
       - immich
       - channels
       - navidrome

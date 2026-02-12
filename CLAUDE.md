@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Max Media Stack (MMS)** — Ansible project to provision and manage a full homelab media stack on a Fedora VM (Proxmox 9.x), using rootless Podman with Quadlet systemd integration.
 
-**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Immich, Channels DVR, Navidrome
+**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome
 **Storage:** TrueNAS NFS exports mounted at `/data`
 **Access:** Traefik reverse proxy on port 80, Tailscale only (no LAN exposure)
 
@@ -47,7 +47,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role; volume mounts split NFS (user content: upload, library) from local SSD (generated content: thumbs, encoded-video, profile, backups)
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 - **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits
-- **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik)
+- **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik); Plex backups exclude Cache, Crash Reports, Updates, and Codecs directories
 
 ## Repository Layout
 
@@ -72,5 +72,6 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Jellyfin uses the official `jellyfin/jellyfin` image (no PUID/PGID); relies on `UserNS=keep-id` for file ownership
 - INI settings use a stop-then-apply pattern: check in check-mode, stop service if changes needed, apply to quiescent file, restart (avoids apps like SABnzbd overwriting changes on shutdown)
 - Inter-container `host_whitelist` must include the bare container hostname (e.g., `sabnzbd`) in addition to the Traefik subdomain FQDN
+- Plex backup type (`backup_type: "plex"`) stops the service and excludes regenerable directories (Cache, Crash Reports, Updates, Codecs) — similar pattern to Jellyfin's cache exclusion
 - Backup role uses `backup_*` prefix for all variables; API backup variables use `backup_api_*`
 - Deploy resilience: `deploy-services.yml` wraps each service (including Immich and Traefik) in `block/rescue`; a single service failure is logged and skipped, and the playbook fails at the end with a summary of all failed services

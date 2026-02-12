@@ -1,0 +1,8 @@
+---
+# Encrypt this file with: ansible-vault encrypt inventory/group_vars/proxmox/vault.yml
+#
+# Proxmox API token user (create at Datacenter > Permissions > API Tokens)
+vault_proxmox_api_user: "ansible@pam!mms"
+
+# Proxmox API token secret
+vault_proxmox_api_token_secret: "00000000-0000-0000-0000-000000000000"
