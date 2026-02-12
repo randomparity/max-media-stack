@@ -26,6 +26,9 @@ backup_age_identity_file: ""
 # Immich PostgreSQL container name
 backup_immich_db_container: immich-postgres
 
+# Immich generated media directory (relative to backup_config_dir, excluded from config backup)
+backup_immich_media_exclude: immich/media
+
 # Immich photos source directory
 backup_immich_photos_dir: "{{ mms_data_dir | default('/data') }}/photos"
 

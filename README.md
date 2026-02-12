@@ -172,7 +172,7 @@ Retention:
 - **Config backups**: 7 daily, 4 weekly, 6 monthly
 - **API backups**: 30 days
 
-Config backups are encrypted with `age`. API backups are native *arr `.zip` files triggered via each service's API and downloaded through Traefik on localhost.
+Config backups are encrypted with `age`. API backups are native *arr `.zip` files triggered via each service's API and downloaded through Traefik on localhost. Immich config backups exclude locally-generated content (thumbnails, transcoded video, profile images) stored in `/home/mms/config/immich/media/` — this content is regenerable and will be recreated automatically by Immich when needed.
 
 To manually trigger or inspect API backups on the VM:
 
@@ -205,7 +205,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=old-lxc-host
 This will:
 1. Create a Proxmox snapshot for rollback
 2. Verify SQLite integrity on source
-3. Rsync config directories to the new VM
+3. Rsync config directories to the new VM (Immich skips regenerable content: thumbnails, transcoded video, profile images)
 4. Fix ownership and start services
 5. Verify health checks pass
 
@@ -231,10 +231,17 @@ This will:
 │       ├── radarr4k/
 │       ├── sonarr/
 │       └── lidarr/
-├── photos/                     # Immich uploads
+├── photos/                     # Immich user content (NFS)
+│   ├── upload/                 # User uploads
+│   └── library/                # External library links
 └── recordings/                 # Channels DVR recordings
 
 /home/mms/config/<service>/     # Local SSD, per-service config
+/home/mms/config/immich/media/  # Local SSD, Immich generated content
+├── encoded-video/              #   Transcoded video (regenerable)
+├── thumbs/                     #   Thumbnails (regenerable)
+├── profile/                    #   Profile images (regenerable)
+└── backups/                    #   Immich internal backups
 /home/mms/backups/              # Config backup staging area (age-encrypted)
 ```
 

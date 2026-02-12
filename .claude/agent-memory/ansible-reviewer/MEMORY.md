@@ -39,9 +39,12 @@
 - Handlers pattern: daemon_reload + restart per role, all need XDG/DBUS env
 - Network quadlet deployed by both podman role and deploy-services playbook (duplication)
 - Immich DB secret: passed via env var + printf pipe to avoid /proc exposure
-- Immich server volume: /data (was /upload pre-v2.x), UPLOAD_LOCATION env var removed
+- Immich server volume: three-mount overlay -- local SSD base at /data:Z, NFS /data/upload, NFS /data/library
+- Immich storage split: NFS holds user content (upload, library), local SSD holds regenerable (encoded-video, thumbs, profile, backups)
 - Immich mount-check: .immich marker files in each data subdir (Immich verifies on startup)
-- Immich data subdirs: encoded-video, thumbs, upload, library, profile, backups
+- Immich data subdirs split: immich_nfs_dirs (upload, library) + immich_local_dirs (encoded-video, thumbs, profile, backups)
+- Immich local media dir: {{ mms_config_dir }}/immich/media (on local SSD)
+- Immich one-time migration block: moves generated dirs from NFS to local SSD (guarded by stat check)
 - Traefik: file provider (no socket mount), Host-header routing, only container with PublishPort
 - Traefik dynamic config uses watch: true, so changes are picked up without restart (but Ansible still notifies restart)
 - Service definitions no longer have publish_ports; container.j2 wraps PublishPort in `is defined` guard
@@ -124,6 +127,14 @@ See review-findings.md for detailed findings from all reviews.
 33. api_backup_services duplicates port data from mms_traefik_routes (port field unused in script)
 34. ~~README storage layout missing complete/manual directory~~ fixed: movies4k removed, manual present
 35. No Molecule test for backup role
-36. Immich media subdir tasks use become: true (root) with owner/group on NFS (root_squash will fail) -- needs become_user
-37. immich_upload_dir variable name is misleading after /upload->/data change (should be immich_data_dir)
+36. ~~Immich media subdir tasks use become: true (root) with owner/group on NFS (root_squash will fail)~~ partially fixed: NFS tasks now use become_user, local tasks still root
+37. immich_upload_dir variable name is misleading (now only used for NFS paths, sits alongside immich_media_dir)
 38. No Molecule test for immich role
+39. ~~Migration block stops immich-server but not immich-ml~~ fixed: both stopped in commit adc4f6c
+40. ~~Migration block-level when only checks thumbs dir~~ fixed: checks all immich_local_dirs via stat loop
+41. Migrate role rsync excludes hardcode dir list instead of referencing immich_local_dirs variable
+42. Backup --exclude='immich/media' assumes immich_media_dir is under mms_config_dir/immich/media (fragile coupling)
+43. Local generated content (thumbs, transcodes) not backed up -- intentional but undocumented tradeoff
+44. Migration mv across filesystems (NFS->local) is not atomic; rsync --remove-source-files is safer
+45. NFS overlay on :Z-labeled base volume needs SELinux runtime validation (virt_use_nfs should handle it)
+46. Inconsistent become/become_user between NFS and local dir creation tasks in immich role

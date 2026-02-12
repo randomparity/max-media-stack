@@ -1,5 +1,47 @@
 # Review Findings
 
+## feat/immich-split-volumes Branch Review (2026-02-11)
+
+### Scope
+All .md files on feat/immich-split-volumes branch (1 commit over main). Key change: Immich volume mounts split from single NFS Volume= to three-mount overlay (local SSD base at /data:Z, NFS overlays for upload/ and library/). Generated content (thumbs, encoded-video, profile, backups) on local SSD. One-time migration block. Backup excludes regenerable content. Migrate rsync excludes regenerable dirs.
+
+### Files Reviewed
+- CLAUDE.md (76 lines)
+- README.md (674 lines)
+- .claude/agents/ansible-reviewer.md (185 lines)
+- .claude/agents/supply-chain-hygiene-reviewer.md (185 lines)
+- roles/immich/defaults/main.yml (37 lines)
+- roles/immich/tasks/main.yml (379 lines)
+- roles/immich/templates/immich-server.container.j2 (27 lines)
+- roles/backup/templates/mms-backup.sh.j2 (199 lines)
+- roles/backup/defaults/main.yml (49 lines)
+- roles/migrate/tasks/immich.yml (92 lines)
+- inventory/group_vars/mms/vars.yml (104 lines)
+- inventory/group_vars/all/vars.yml (67 lines)
+
+### Findings
+- HIGH: README Storage Layout (line 234) /data/photos/ described as "Immich uploads" -- now only holds upload/ and library/ (user content)
+- HIGH: README Storage Layout (lines 237-238) missing /home/mms/config/immich/media/ for Immich generated content
+- HIGH: CLAUDE.md Architecture (line 47) Immich bullet missing volume split
+- MEDIUM: CLAUDE.md Conventions missing Immich three-mount overlay pattern and variable names
+- MEDIUM: README Backup section (lines 168-170) missing note that Immich config backup excludes regenerable content
+- MEDIUM: README Migrate section (lines 205-210) missing note about rsync skipping regenerable dirs
+- LOW: README Storage Layout /data/photos/ comment understates scope ("uploads" vs "user content")
+
+### Verified Accurate
+- Backup script --exclude='immich/media' correctly matches immich_media_dir relative path under config dir
+- Backup rsync of photos dir naturally only syncs NFS content (correct by design)
+- Migrate rsync excludes (thumbs, encoded-video, profile, backups) match immich_local_dirs exactly
+- Container template three-mount order is correct: base first, overlays second
+- immich_media_dir resolves to /home/mms/config/immich/media (mms_config_dir = /home/mms/config)
+- immich_upload_dir = /data/photos (unchanged NFS mount)
+- Agent .md files (ansible-reviewer, supply-chain-hygiene-reviewer) have no Immich volume references to update
+- README Architecture diagram unaffected (shows container relationships, not volume mounts)
+- README Prerequisites unaffected (NFS exports list unchanged)
+- README Quick Start unaffected (volume split is internal)
+
+---
+
 ## fix/base-system-packages Branch Review (2026-02-11)
 
 ### Scope
