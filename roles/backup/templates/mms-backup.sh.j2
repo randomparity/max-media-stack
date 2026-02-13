@@ -109,15 +109,13 @@ backup_immich() {
         encrypt_file "$db_dest"
     fi
 
-    # Config backup
+    # Config backup (excludes regenerable media: thumbs, encoded-video, profile)
     if [[ ! -f "$config_dest" && ! -f "${config_dest}.age" ]]; then
         tar -cf - -C "${CONFIG_DIR}" --exclude='{{ backup_immich_media_exclude }}' immich | zstd -T0 -o "$config_dest"
         encrypt_file "$config_dest"
     fi
 
-    # Rsync photos (separate, not compressed/encrypted - too large)
-    log "Syncing immich photos..."
-    rsync -a --delete "{{ backup_immich_photos_dir }}/" "${BACKUP_DIR}/immich/photos/"
+    # Photos live on NFS (TrueNAS) and are backed up via TrueNAS snapshots/replication
 
     log "immich backup complete"
 }

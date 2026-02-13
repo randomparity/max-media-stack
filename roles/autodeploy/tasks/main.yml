@@ -167,7 +167,6 @@
     label: "{{ item.key }}"
   notify:
     - Reload systemd user daemon
-    - Enable autodeploy timers
 
 - name: Deploy per-group systemd timer units  # noqa: var-naming[no-role-prefix]
   ansible.builtin.template:
@@ -184,7 +183,19 @@
     label: "{{ item.key }}"
   notify:
     - Reload systemd user daemon
-    - Enable autodeploy timers
+
+- name: Enable and start autodeploy timers
+  ansible.builtin.systemd:
+    name: "mms-autodeploy-{{ item.key }}.timer"
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ autodeploy_user }}"
+  environment: "{{ mms_systemd_env }}"
+  loop: "{{ autodeploy_groups | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
 
 # --- Cleanup stale per-group units for removed groups ---
 

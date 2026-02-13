@@ -65,7 +65,6 @@
     mode: "0644"
   notify:
     - Reload systemd user daemon
-    - Enable backup timer
 
 - name: Deploy systemd backup timer
   ansible.builtin.template:
@@ -76,7 +75,16 @@
     mode: "0644"
   notify:
     - Reload systemd user daemon
-    - Enable backup timer
+
+- name: Enable and start backup timer
+  ansible.builtin.systemd:
+    name: mms-backup.timer
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ backup_user }}"
+  environment: "{{ mms_systemd_env }}"
 
 # API backup (*arr services to NAS)
 - name: Install jq for API backup JSON parsing
@@ -112,7 +120,6 @@
     mode: "0644"
   notify:
     - Reload systemd user daemon
-    - Enable API backup timer
 
 - name: Deploy systemd API backup timer
   ansible.builtin.template:
@@ -123,4 +130,13 @@
     mode: "0644"
   notify:
     - Reload systemd user daemon
-    - Enable API backup timer
+
+- name: Enable and start API backup timer
+  ansible.builtin.systemd:
+    name: mms-api-backup.timer
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ backup_user }}"
+  environment: "{{ mms_systemd_env }}"
