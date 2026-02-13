@@ -6,23 +6,3 @@
   become: true
   become_user: "{{ backup_user }}"
   environment: "{{ mms_systemd_env }}"
-
-- name: Enable backup timer
-  ansible.builtin.systemd:
-    name: mms-backup.timer
-    enabled: true
-    state: started
-    scope: user
-  become: true
-  become_user: "{{ backup_user }}"
-  environment: "{{ mms_systemd_env }}"
-
-- name: Enable API backup timer
-  ansible.builtin.systemd:
-    name: mms-api-backup.timer
-    enabled: true
-    state: started
-    scope: user
-  become: true
-  become_user: "{{ backup_user }}"
-  environment: "{{ mms_systemd_env }}"
