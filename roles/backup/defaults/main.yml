@@ -30,9 +30,6 @@ backup_immich_db_user: "{{ immich_db_user | default('immich') }}"
 # Immich generated media directory (relative to backup_config_dir, excluded from config backup)
 backup_immich_media_exclude: immich/media
 
-# Immich photos source directory
-backup_immich_photos_dir: "{{ mms_data_dir | default('/data') }}/photos"
-
 # API backup settings (*arr services to NAS)
 backup_api_dir: /data/backups/arr-api
 backup_api_mount_point: /data/backups
