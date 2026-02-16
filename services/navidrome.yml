@@ -2,7 +2,7 @@
 navidrome:
   name: navidrome
   description: "Navidrome - Music Streaming Server"
-  image: "deluan/navidrome:0.60.2"
+  image: "deluan/navidrome:0.60.3"
   user: "{{ mms_uid }}:{{ mms_gid }}"
   volumes:
     - "{{ mms_config_dir }}/navidrome:/data:Z"
