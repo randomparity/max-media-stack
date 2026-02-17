@@ -61,6 +61,10 @@ mms_vm_description: |
   - [Lidarr](http://lidarr.{{ mms_traefik_domain }})
   - [SABnzbd](http://sabnzbd.{{ mms_traefik_domain }})
   - [Jellyfin](http://jellyfin.{{ mms_traefik_domain }})
+  - [Plex](http://plex.{{ mms_traefik_domain }})
+  - [Tautulli](http://tautulli.{{ mms_traefik_domain }})
+  - [Channels DVR](http://channels.{{ mms_traefik_domain }})
+  - [Navidrome](http://navidrome.{{ mms_traefik_domain }})
   - [Immich](http://immich.{{ mms_traefik_domain }})
   - [Open Notebook](http://notebook.{{ mms_traefik_domain }})
 
