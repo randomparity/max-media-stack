@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Max Media Stack (MMS)** — Ansible project to provision and manage a full homelab media stack on a Fedora VM (Proxmox 9.x), using rootless Podman with Quadlet systemd integration.
 
-**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome
+**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome, Open Notebook
 **Storage:** TrueNAS NFS exports mounted at `/data`
 **Access:** Traefik reverse proxy on port 80, Tailscale only (no LAN exposure)
 
@@ -53,7 +53,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 
 - `inventory/` — Hosts and group variables
 - `playbooks/` — All playbooks (site, provision, setup, deploy, backup, migrate, etc.)
-- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, traefik, backup, migrate, autodeploy)
+- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, traefik, backup, migrate, autodeploy, open_notebook)
 - `services/` — Per-service variable definitions (YAML files loaded at deploy time)
 - `templates/quadlet/` — Jinja2 templates for Podman Quadlet files (.container, .network, .volume)
 

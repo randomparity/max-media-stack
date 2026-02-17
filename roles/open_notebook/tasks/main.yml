@@ -34,6 +34,7 @@
     group: "{{ mms_user }}"
     mode: "0600"
   become: true
+  no_log: true
   notify: Restart open-notebook-db
 
 - name: Deploy Open Notebook environment file
@@ -44,6 +45,7 @@
     group: "{{ mms_user }}"
     mode: "0600"
   become: true
+  no_log: true
   notify: Restart open-notebook
 
 - name: Deploy SurrealDB container quadlet

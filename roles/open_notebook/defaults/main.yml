@@ -5,7 +5,8 @@ open_notebook_version: "1.7.2"
 # Container images
 open_notebook_app_image: "docker.io/lfnovo/open_notebook:{{ open_notebook_version }}"
 # renovate: datasource=docker depName=docker.io/surrealdb/surrealdb
-open_notebook_db_image: "docker.io/surrealdb/surrealdb:v2.6.2"
+open_notebook_db_version: "v2.6.2"
+open_notebook_db_image: "docker.io/surrealdb/surrealdb:{{ open_notebook_db_version }}"
 
 # SurrealDB settings
 open_notebook_db_user: root
