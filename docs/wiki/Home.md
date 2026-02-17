@@ -19,6 +19,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Immich    | `immich.media.example.com`       | Photo/video management         |
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
+| Open Notebook | `notebook.media.example.com` | AI research notebook           |
 
 ## Architecture
 
@@ -36,6 +37,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      ├── sonarr  lidarr  sabnzbd             │  │  │
 │  │  │      ├── jellyfin  plex  channels             │  │  │
 │  │  │      ├── tautulli  kometa  navidrome         │  │  │
+│  │  │      ├── open-notebook  open-notebook-db    │  │  │
 │  │  │      └── immich-server  immich-ml            │  │  │
 │  │  │          immich-postgres immich-redis        │  │  │
 │  │  │            ┌───────────┐                     │  │  │
@@ -49,7 +51,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 └──────────────────────────────────────────────────────────┘
 ```
 
-Traefik is the only container that publishes a host port (80). All backend services are reached via the shared `mms.network` bridge using container-name DNS. Traffic is HTTP only -- the Tailscale WireGuard tunnel already encrypts everything end-to-end.
+Traefik and Plex are the only containers that publish host ports (80 and 32400 respectively). All other backend services are reached via the shared `mms.network` bridge using container-name DNS. Traffic is HTTP only -- the Tailscale WireGuard tunnel already encrypts everything end-to-end.
 
 ## Inter-Container Access
 
@@ -72,6 +74,8 @@ All containers share the `mms.network` bridge and reach each other by container 
 | Immich ML        | `immich-ml`        | 3003  | `http://immich-ml:3003`             |
 | Immich PostgreSQL| `immich-postgres`  | 5432  | `immich-postgres:5432` (TCP)        |
 | Immich Redis     | `immich-redis`     | 6379  | `immich-redis:6379` (TCP)           |
+| Open Notebook    | `open-notebook`    | 8502  | `http://open-notebook:8502`         |
+| Open Notebook DB | `open-notebook-db` | 8000  | `open-notebook-db:8000` (TCP)       |
 | Traefik          | `traefik`          | 80    | `http://traefik:80`                 |
 
 Common connections to configure:

@@ -15,7 +15,7 @@ Configure wildcard DNS so `*.media.example.com` resolves to your VM's Tailscale 
 
 ## Configuration
 
-Set your domain in `inventory/group_vars/mms/vars.yml`:
+Set your domain in `inventory/group_vars/all/vars.yml`:
 
 ```yaml
 mms_traefik_domain: media.example.com   # Replace with your actual domain
@@ -51,6 +51,6 @@ curl http://radarr.media.example.com
 
 ## How it works
 
-Traefik is the only container that publishes a host port (80). All backend services are internal to the `mms.network` bridge. Traefik routes incoming HTTP requests based on the `Host` header to the appropriate backend container.
+Traefik is the only container that uses Ansible-managed host port publishing (port 80). Plex also publishes port 32400 directly for client compatibility. All other services are internal to the `mms.network` bridge. Traefik routes incoming HTTP requests based on the `Host` header to the appropriate backend container.
 
 Traffic is HTTP only -- there is no TLS at Traefik. The Tailscale WireGuard tunnel already provides end-to-end encryption for all traffic between clients and the VM. See [Security](Security) for more details.

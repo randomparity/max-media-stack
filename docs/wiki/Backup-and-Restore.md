@@ -7,7 +7,7 @@ MMS uses two backup systems -- config backups (local, encrypted) and API backups
 ### Config backups
 
 - **Schedule**: Daily at 03:00 via `mms-backup.timer`
-- **Location**: `/home/mms/backups/` (local SSD)
+- **Location**: `/data/backups/config/` (NFS)
 - **Format**: `tar.zst.age` (compressed, encrypted)
 - **Retention**: 7 daily, 4 weekly, 6 monthly
 
@@ -51,7 +51,7 @@ DRY_RUN=true /home/mms/bin/mms-api-backup.sh
 ```bash
 ansible-playbook playbooks/restore.yml \
   -e service_name=radarr \
-  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age
+  -e backup_file=/data/backups/config/radarr/radarr-2025-01-15.tar.zst.age
 ```
 
 For encrypted backups, provide the identity file path:
@@ -59,7 +59,7 @@ For encrypted backups, provide the identity file path:
 ```bash
 ansible-playbook playbooks/restore.yml \
   -e service_name=radarr \
-  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age \
+  -e backup_file=/data/backups/config/radarr/radarr-2025-01-15.tar.zst.age \
   -e backup_age_identity_file=/path/to/age-identity.txt
 ```
 
@@ -147,13 +147,13 @@ The restore playbook needs the private key (identity file) path:
 # With a native age identity file:
 ansible-playbook playbooks/restore.yml \
   -e service_name=radarr \
-  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age \
+  -e backup_file=/data/backups/config/radarr/radarr-2025-01-15.tar.zst.age \
   -e backup_age_identity_file=/path/to/age-identity.txt
 
 # With an SSH private key:
 ansible-playbook playbooks/restore.yml \
   -e service_name=radarr \
-  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age \
+  -e backup_file=/data/backups/config/radarr/radarr-2025-01-15.tar.zst.age \
   -e backup_age_identity_file=~/.ssh/id_ed25519
 ```
 

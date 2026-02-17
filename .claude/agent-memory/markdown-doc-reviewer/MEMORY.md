@@ -1,8 +1,22 @@
 # MMS Documentation Reviewer Memory
 
 ## Document Inventory
-- `CLAUDE.md` -- Developer onboarding / AI assistant context (68 lines)
-- `README.md` -- Full project README with architecture, Quick Start, operations, Proxmox setup, Traefik, age encryption, Auto-Deploy (~600 lines)
+- `CLAUDE.md` -- Developer onboarding / AI assistant context (78 lines)
+- `README.md` -- Slim project README with services table, architecture diagram, Quick Start, wiki links, security (~89 lines)
+- `docs/wiki/Home.md` -- Wiki homepage with services table, architecture, inter-container access, doc links (~97 lines)
+- `docs/wiki/Getting-Started.md` -- Prerequisites, install, configure, deploy (~77 lines)
+- `docs/wiki/Configuration.md` -- Inventory variables, vault secrets, naming conventions (~84 lines)
+- `docs/wiki/Proxmox-API-Setup.md` -- API token, role, permissions (~88 lines)
+- `docs/wiki/Storage-Layout.md` -- Directory tree, NFS vs local, Immich volumes, SELinux (~64 lines)
+- `docs/wiki/Traefik-Reverse-Proxy.md` -- DNS setup, routing config, verification (~57 lines)
+- `docs/wiki/Security.md` -- Network, container, secrets security model (~22 lines)
+- `docs/wiki/Common-Operations.md` -- Deploy, backup, restore, migrate, lint, dry-run (~84 lines)
+- `docs/wiki/Backup-and-Restore.md` -- Config + API backups, encryption, restore (~166 lines)
+- `docs/wiki/Auto-Deploy.md` -- Renovate, deploy keys, groups, schedules (~176 lines)
+- `docs/wiki/Adding-a-New-Service.md` -- 5-step data-driven service guide (~68 lines)
+- `docs/wiki/Troubleshooting.md` -- Systemd, containers, Quadlet, NFS, Podman, backups, autodeploy, Traefik, Immich (~328 lines)
+- `docs/wiki/_Sidebar.md` -- Wiki sidebar navigation (~23 lines)
+- `docs/wiki/_Footer.md` -- Wiki footer with repo link (~1 line)
 - `.claude/agents/ansible-reviewer.md` -- Ansible review agent definition
 - `.claude/agents/supply-chain-hygiene-reviewer.md` -- Supply-chain review agent definition
 - `.claude/agents/markdown-doc-reviewer.md` -- This agent's definition
@@ -17,52 +31,40 @@
 - List markers: `-` consistently
 - Code blocks: `bash` for shell, `yaml` for YAML, bare fence for ASCII art
 
-## Known Documentation Gaps (as of 2026-02-11)
+## Known Documentation Gaps (as of 2026-02-17)
 - No CHANGELOG documenting the UID/GID change from 1100 to 3000
 - No migration guide for existing deployments
 - Fedora version (43) not mentioned in prose of CLAUDE.md or README.md (only in inventory)
 - No LICENSE or CONTRIBUTING files (acceptable for personal homelab)
 - Dead variable `immich_port` in roles/immich/defaults/main.yml (no longer published)
-- CLAUDE.md Conventions missing: `mms_vm_hostname`/`mms_vm_name` split, `mms_vm_ssh_pubkeys` list, `Tmpfs=/run:U`, per-service `tmpfs`, `NoNewPrivileges`, Jellyfin official image
-- CLAUDE.md Conventions missing: INI race condition pattern, `host_whitelist` inter-container DNS, `backup_api_*` variable prefix
-- CLAUDE.md Architecture missing: backup subsystem bullet (config + API backups)
-- CLAUDE.md Architecture missing: Immich volume split (NFS user content vs local SSD generated content)
-- CLAUDE.md Conventions missing: Immich three-mount overlay pattern (`:Z` local base + NFS overlays)
-- README Backup section missing: API backup at 04:30 (*arr to NAS), retention split, verification commands
-- README Backup section missing: note that Immich config backup excludes regenerable content
-- README Storage Layout missing: `/data/backups/` NFS mount and `arr-api/` subdirs
-- README Storage Layout missing: `/home/mms/config/immich/media/` local SSD path for Immich generated content
-- README Storage Layout: `/data/photos/` comment should say "user content" not just "uploads"
-- README Migrate section missing: note about rsync skipping regenerable Immich content
-- README Prerequisites missing: "backups" in NFS exports list
-- README Quick Start step 2 file descriptions stale (VM specs/SSH keys moved to group_vars/all)
-- supply-chain-hygiene-reviewer.md services list missing Channels DVR and Navidrome
-- CLAUDE.md Conventions missing: deploy resilience pattern (block/rescue in deploy-services.yml)
+- BLOCKER: Config backup path in all docs says `/home/mms/backups/` but code uses `/data/backups/config` (NFS)
+- HIGH: Open Notebook completely absent from README and all wiki pages (but present in CLAUDE.md)
+- HIGH: "Only Traefik publishes a host port" is wrong -- Plex also publishes 32400
+- HIGH: Configuration.md vault table missing 4 variables (vm_password, backup_age, open_notebook x2)
+- MEDIUM: Traefik wiki says `mms_traefik_domain` is in `group_vars/mms/vars.yml` (actually in `all`)
+- MEDIUM: supply-chain-hygiene-reviewer.md services list missing Channels DVR, Navidrome, Open Notebook
+- MEDIUM: Auto-Deploy example two-group config missing channels, navidrome, open-notebook
+- LOW: Home.md Kometa URL uses `---` vs README's `---` (em dash)
 
 ## Source of Truth for Key Values
 - UID/GID: `inventory/group_vars/all/vars.yml` lines 23-25 (currently 3000:3000)
 - VM hostname: `inventory/group_vars/all/vars.yml` line 6 (`mms_vm_hostname`)
 - VM display name: `inventory/group_vars/proxmox/vars.yml` line 18 (`mms_vm_name`)
 - SSH public keys: `inventory/group_vars/all/vars.yml` lines 18-20 (`mms_vm_ssh_pubkeys` -- list)
-- Traefik domain: `inventory/group_vars/all/vars.yml` line 50 (`mms_traefik_domain`)
+- Traefik domain: `inventory/group_vars/all/vars.yml` line 50 (`mms_traefik_domain`) -- NOT in mms/vars.yml
 - SELinux boolean: `roles/base_system/defaults/main.yml` line 20 (`virt_use_nfs`)
 - Fedora version: `inventory/group_vars/proxmox/vars.yml` line 14 (Fedora 43)
-- Services list: `inventory/group_vars/mms/vars.yml` lines 25-33
-- Traefik routes: `inventory/group_vars/mms/vars.yml` lines 36-72 (`mms_traefik_routes`)
-- Traefik role defaults: `roles/traefik/defaults/main.yml` (image, port 80, log level)
+- Services list: `inventory/group_vars/mms/vars.yml` lines 28-41 (does NOT include open-notebook or immich)
+- Traefik routes: `inventory/group_vars/mms/vars.yml` lines 43-95 (`mms_traefik_routes`, includes open-notebook)
+- Config backup dir: `inventory/group_vars/all/vars.yml` line 33 (`mms_backup_dir: /data/backups/config` -- NFS)
 - Autodeploy defaults: `roles/autodeploy/defaults/main.yml` (groups, branch, timeout, retention)
-- Autodeploy inventory override: `inventory/group_vars/mms/vars.yml` lines 74-94 (repo URL, groups)
-- Jellyfin image: `services/jellyfin.yml` (`docker.io/jellyfin/jellyfin`, no PUID/PGID)
-- Container template: `templates/quadlet/container.j2` (Tmpfs=/run:U, per-service tmpfs, NoNewPrivileges)
-- Playbook names: `playbooks/` directory
+- Autodeploy inventory override: `inventory/group_vars/mms/vars.yml` lines 97-122 (repo URL, groups)
 - Backup role defaults: `roles/backup/defaults/main.yml` (config backup + API backup vars)
-- Backup API services: `roles/backup/defaults/main.yml` lines 32-46 (`backup_api_*` prefix)
+- Backup API services: `roles/backup/defaults/main.yml` lines 39-49 (`backup_api_*` prefix)
 - NFS backups mount: `inventory/group_vars/mms/vars.yml` lines 23-25 (`/data/backups`)
-- Base system packages: `roles/base_system/defaults/main.yml` lines 9-18 (includes btop, jq via backup role)
-- Immich NFS dirs: `roles/immich/defaults/main.yml` lines 27-29 (`immich_nfs_dirs`: upload, library)
-- Immich local dirs: `roles/immich/defaults/main.yml` lines 32-36 (`immich_local_dirs`: encoded-video, thumbs, profile, backups)
-- Immich media dir: `roles/immich/defaults/main.yml` line 24 (`immich_media_dir`: `{{ mms_config_dir }}/immich/media`)
-- Immich upload dir: `roles/immich/defaults/main.yml` line 21 (`immich_upload_dir`: /data/photos)
+- Open Notebook role: `roles/open_notebook/` (app + SurrealDB, two containers)
+- Open Notebook ports: 8502 (Next.js frontend), 5055 (FastAPI backend)
+- Plex publishes port 32400: `services/plex.yml` line 7 (`publish_ports: ["32400:32400"]`)
 
 ## Review History
 - 2026-02-08: Full review of all .md files on fix/dry-run-issues branch (15 commits over main)
@@ -125,4 +127,13 @@
   - README Migrate section missing note about rsync skipping regenerable content
   - Backup script --exclude='immich/media' correctly excludes local generated content
   - Migrate rsync excludes match immich_local_dirs (thumbs, encoded-video, profile, backups)
+  - See review-findings.md for details
+- 2026-02-17: Full review of all .md files on feat/open-notebook branch (4 commits over main)
+  - Docs restructured: README slim, full content in docs/wiki/ (11 pages + sidebar/footer)
+  - CLAUDE.md correctly updated with Open Notebook (services, roles)
+  - BLOCKER: Config backup path wrong everywhere (/home/mms/backups/ vs /data/backups/config)
+  - HIGH: Open Notebook absent from README and all wiki pages
+  - HIGH: "Only Traefik publishes host port" wrong (Plex publishes 32400)
+  - HIGH: Configuration.md vault table missing 4 variables
+  - MEDIUM: Traefik doc wrong about mms_traefik_domain location
   - See review-findings.md for details
