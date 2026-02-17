@@ -1,0 +1,25 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Open Notebook - SurrealDB
+After=network-online.target
+
+[Container]
+Image={{ open_notebook_db_image }}
+Network={{ mms_network_name }}.network
+ContainerName=open-notebook-db
+Exec=start --log info rocksdb:/mydata/mydatabase.db
+Volume={{ open_notebook_db_dir }}:/mydata:Z
+EnvironmentFile={{ open_notebook_config_dir }}/open-notebook-db.env
+UserNS=keep-id
+HealthCmd=surreal isready -e http://localhost:8000
+HealthInterval=30s
+Tmpfs=/run:U
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

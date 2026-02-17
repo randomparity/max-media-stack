@@ -1,0 +1,25 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Open Notebook - AI Research Notebook
+After=network-online.target
+After=open-notebook-db.service
+
+[Container]
+Image={{ open_notebook_app_image }}
+Network={{ mms_network_name }}.network
+ContainerName=open-notebook
+Volume={{ open_notebook_config_dir }}/data:/app/data:Z
+EnvironmentFile={{ open_notebook_config_dir }}/open-notebook.env
+UserNS=keep-id
+HealthCmd=curl -sf http://localhost:5055/health || exit 1
+HealthInterval=60s
+Tmpfs=/run:U
+NoNewPrivileges=false
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target
