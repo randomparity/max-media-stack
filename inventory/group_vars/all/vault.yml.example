@@ -19,6 +19,12 @@ vault_autodeploy_ssh_key: |
   PASTE_YOUR_ED25519_PRIVATE_KEY_HERE
   -----END OPENSSH PRIVATE KEY-----
 
+# Open Notebook SurrealDB password (generate with: openssl rand -base64 16)
+vault_open_notebook_db_password: "CHANGE_ME_random_base64"
+
+# Open Notebook encryption key for API keys stored in DB (generate with: python3 -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
+vault_open_notebook_encryption_key: "CHANGE_ME_fernet_key"
+
 # Plex claim token (get from https://plex.tv/claim — set for first run, then clear)
 vault_plex_claim_token: ""
 
