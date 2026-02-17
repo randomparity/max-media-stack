@@ -15,6 +15,7 @@ UserNS=keep-id
 HealthCmd=curl -sf http://localhost:5055/health || exit 1
 HealthInterval=60s
 Tmpfs=/run:U
+Tmpfs=/app/.cache:U
 NoNewPrivileges=false
 
 [Service]

@@ -8,6 +8,7 @@ mms_vm_ip: 192.168.20.2
 mms_vm_gateway: 192.168.20.1
 mms_vm_cidr: 24
 mms_vm_cores: 4
+mms_vm_cpu: host
 mms_vm_memory: 16384
 mms_vm_disk_size: 256G
 mms_vm_bridge: vmbr0
