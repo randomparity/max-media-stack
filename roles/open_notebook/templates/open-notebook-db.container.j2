@@ -12,8 +12,6 @@ Exec=start --log info rocksdb:/mydata/mydatabase.db
 Volume={{ open_notebook_db_dir }}:/mydata:Z
 EnvironmentFile={{ open_notebook_config_dir }}/open-notebook-db.env
 UserNS=keep-id:uid=65532,gid=65532
-HealthCmd=/surreal isready -e http://localhost:8000
-HealthInterval=30s
 Tmpfs=/run:U
 NoNewPrivileges=true
 

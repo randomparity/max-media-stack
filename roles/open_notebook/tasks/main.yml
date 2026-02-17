@@ -117,7 +117,7 @@
 
 - name: Wait for SurrealDB to be ready
   ansible.builtin.command:
-    cmd: podman healthcheck run open-notebook-db
+    cmd: podman exec open-notebook-db /surreal isready -e http://localhost:8000
   register: _open_notebook_db_health
   until: _open_notebook_db_health.rc == 0
   retries: 12
