@@ -36,6 +36,8 @@ MMS splits storage between NFS (bulk media on TrueNAS) and local SSD (per-servic
 ├── thumbs/                     #   Thumbnails (regenerable)
 ├── profile/                    #   Profile images (regenerable)
 └── backups/                    #   Immich internal backups
+/home/mms/config/open-notebook/     # Open Notebook app config + data
+/home/mms/config/open-notebook-db/  # SurrealDB data (separate for cold backup)
 ```
 
 ## Design rationale

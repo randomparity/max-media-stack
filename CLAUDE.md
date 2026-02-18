@@ -74,4 +74,6 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Inter-container `host_whitelist` must include the bare container hostname (e.g., `sabnzbd`) in addition to the Traefik subdomain FQDN
 - Plex backup type (`backup_type: "plex"`) stops the service and excludes regenerable directories (Cache, Crash Reports, Updates, Codecs) — similar pattern to Jellyfin's cache exclusion
 - Backup role uses `backup_*` prefix for all variables; API backup variables use `backup_api_*`
+- Multi-container role testability: roles like `open_notebook` split into `setup.yml` (files/templates, testable without Podman) and `containers.yml` (runtime: image pull, start, healthcheck); Molecule tests target `setup.yml` only
+- Molecule shared pre-tasks: `molecule/shared/prepare_mms_user.yml` creates the mms user/group/quadlet directory; all role converge playbooks include it via `include_tasks`
 - Deploy resilience: `deploy-services.yml` wraps each service (including Immich and Traefik) in `block/rescue`; a single service failure is logged and skipped, and the playbook fails at the end with a summary of all failed services

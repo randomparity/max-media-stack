@@ -11,7 +11,7 @@ MMS uses two backup systems -- config backups (local, encrypted) and API backups
 - **Format**: `tar.zst.age` (compressed, encrypted)
 - **Retention**: 7 daily, 4 weekly, 6 monthly
 
-Config backups capture each service's configuration directory. Immich config backups exclude locally-generated content (thumbnails, transcoded video, profile images) stored in `/home/mms/config/immich/media/` -- this content is regenerable and will be recreated automatically by Immich when needed. Plex config backups exclude the Cache, Crash Reports, Updates, and Codecs directories -- all regenerable content that Plex recreates automatically.
+Config backups capture each service's configuration directory. Immich config backups exclude locally-generated content (thumbnails, transcoded video, profile images) stored in `/home/mms/config/immich/media/` -- this content is regenerable and will be recreated automatically by Immich when needed. Plex config backups exclude the Cache, Crash Reports, Updates, and Codecs directories -- all regenerable content that Plex recreates automatically. Open Notebook uses a cold backup -- both the app and SurrealDB containers are stopped before creating a single tar archive of `open-notebook/` and `open-notebook-db/` config directories, then restarted. This is necessary because SurrealDB has no hot-dump CLI tool.
 
 ### API backups
 
@@ -62,6 +62,8 @@ ansible-playbook playbooks/restore.yml \
   -e backup_file=/data/backups/config/radarr/radarr-2025-01-15.tar.zst.age \
   -e backup_age_identity_file=/path/to/age-identity.txt
 ```
+
+Multi-container services like Open Notebook use the same restore command -- the playbook handles stopping/starting both containers and restoring both directories from the single archive automatically.
 
 ## Backup encryption with age
 

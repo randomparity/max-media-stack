@@ -325,3 +325,42 @@ Usually a database connection issue. Check that PostgreSQL is running and health
 podman logs mms-immich-postgres
 podman healthcheck run mms-immich-postgres
 ```
+
+## Open Notebook-specific issues
+
+Open Notebook is a two-container stack: the app container (`mms-open-notebook`) and a SurrealDB database container (`mms-open-notebook-db`). SurrealDB must be running and ready before the app can connect.
+
+```bash
+# Check both containers
+podman ps | grep open-notebook
+
+# Check systemd unit status
+systemctl --user status mms-open-notebook.service
+systemctl --user status mms-open-notebook-db.service
+
+# View app logs
+podman logs --tail 50 mms-open-notebook
+
+# View SurrealDB logs (check here first for DB issues)
+podman logs --tail 50 mms-open-notebook-db
+
+# Test SurrealDB readiness
+podman exec mms-open-notebook-db /surreal isready -e http://localhost:8000
+```
+
+**Common issue: App won't connect to database**
+
+Check SurrealDB logs first -- the database must be fully ready before the app can connect. If SurrealDB is in a restart loop, check its logs for storage or permission errors:
+
+```bash
+podman logs mms-open-notebook-db
+```
+
+If needed, restart in order (database first, then app):
+
+```bash
+systemctl --user restart mms-open-notebook-db.service
+systemctl --user restart mms-open-notebook.service
+```
+
+**Note:** Backups for Open Notebook cause brief downtime because they use a cold backup strategy (both containers are stopped during the backup).
