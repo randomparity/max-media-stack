@@ -6,6 +6,8 @@ channels:
   volumes:
     - "{{ mms_config_dir }}/channels:/channels-dvr:Z"
     - "/data/recordings:/shares/DVR"
+  publish_ports:
+    - "8089:8089"
   environment:
     - "TZ={{ mms_timezone }}"
   health_cmd: "curl -sf http://localhost:8089 || exit 1"
