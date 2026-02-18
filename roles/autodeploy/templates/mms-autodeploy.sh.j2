@@ -107,6 +107,11 @@ if [[ $EXIT_CODE -eq 0 ]]; then
     log "Deploy completed successfully"
     # Write state file only on success
     echo "$REMOTE" > "$STATE_FILE"
+{% if autodeploy_prune_images %}
+    # Prune dangling images left behind by tag updates
+    log "Pruning dangling container images..."
+    podman image prune -f 2>&1 | while IFS= read -r line; do log "prune: $line"; done || true
+{% endif %}
 else
     log "Deploy failed with exit code ${EXIT_CODE}"
 fi

@@ -11,3 +11,7 @@ podman_registries:
 
 podman_storage_root: "/home/{{ mms_user }}/.local/share/containers/storage"
 podman_storage_driver: overlay
+
+# Periodic image pruning (dangling images only)
+podman_prune_enabled: true
+podman_prune_schedule: "Sun *-*-* 05:00:00"

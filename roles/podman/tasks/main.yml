@@ -50,3 +50,44 @@
     mode: "0644"
   become: true
   notify: Reload systemd user daemon
+
+# --- Image prune timer ---
+
+- name: Create systemd user unit directory
+  ansible.builtin.file:
+    path: "{{ mms_home }}/.config/systemd/user"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy image prune service unit
+  ansible.builtin.template:
+    src: mms-image-prune.service.j2
+    dest: "{{ mms_home }}/.config/systemd/user/mms-image-prune.service"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Reload systemd user daemon
+
+- name: Deploy image prune timer unit
+  ansible.builtin.template:
+    src: mms-image-prune.timer.j2
+    dest: "{{ mms_home }}/.config/systemd/user/mms-image-prune.timer"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Reload systemd user daemon
+
+- name: Enable and start image prune timer
+  ansible.builtin.systemd:
+    name: mms-image-prune.timer
+    enabled: "{{ podman_prune_enabled }}"
+    state: "{{ podman_prune_enabled | ternary('started', 'stopped') }}"
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
