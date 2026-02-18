@@ -1,0 +1,27 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Grafana - Log Visualization
+After=network-online.target
+After=loki.service
+
+[Container]
+ContainerName=grafana
+Image={{ logging_grafana_image }}
+Network={{ mms_network_name }}.network
+Volume={{ logging_config_dir }}/grafana/grafana.ini:/etc/grafana/grafana.ini:Z,ro
+Volume={{ logging_config_dir }}/grafana/provisioning:/etc/grafana/provisioning:Z,ro
+Volume={{ logging_config_dir }}/grafana/dashboards:/etc/grafana/dashboards:Z,ro
+Volume={{ logging_grafana_data_dir }}:/var/lib/grafana:Z
+UserNS=keep-id
+HealthCmd=wget -qO- http://localhost:3000/api/health || exit 1
+HealthInterval=30s
+Tmpfs=/run:U
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

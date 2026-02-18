@@ -1,2 +1,5 @@
 ---
-# Handlers intentionally empty - sysctl module handles its own reload
+- name: Restart journald
+  ansible.builtin.systemd:
+    name: systemd-journald
+    state: restarted

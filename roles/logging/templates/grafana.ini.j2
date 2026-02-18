@@ -1,0 +1,18 @@
+; {{ ansible_managed }}
+
+[server]
+root_url = http://grafana.{{ mms_traefik_domain }}
+
+[security]
+admin_user = {{ logging_grafana_admin_user }}
+admin_password = {{ vault_logging_grafana_admin_password }}
+
+[analytics]
+reporting_enabled = false
+check_for_updates = false
+
+[unified_alerting]
+enabled = true
+
+[alerting]
+enabled = false
