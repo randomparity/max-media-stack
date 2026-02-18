@@ -90,7 +90,7 @@ DEPLOY_CMD=(
 {% for group_name, group_cfg in autodeploy_groups.items() %}
 {% if group_cfg.services is defined %}
 if [[ "$GROUP" == "{{ group_name }}" ]]; then
-    DEPLOY_CMD+=(-e 'deploy_services={{ group_cfg.services | to_json }}')
+    DEPLOY_CMD+=(-e '{"deploy_services": {{ group_cfg.services | to_json }}}')
 fi
 {% endif %}
 {% endfor %}
