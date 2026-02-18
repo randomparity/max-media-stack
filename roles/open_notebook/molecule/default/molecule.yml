@@ -1,0 +1,29 @@
+---
+driver:
+  name: docker
+
+platforms:
+  - name: open-notebook-test
+    image: fedora:43
+    command: /usr/sbin/init
+    privileged: true
+    pre_build_image: true
+
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      open-notebook-test:
+        mms_user: mms
+        mms_uid: "3000"
+        mms_gid: "3000"
+        mms_timezone: America/New_York
+        mms_config_dir: /opt/mms/config
+        mms_quadlet_dir: /home/mms/.config/containers/systemd
+        mms_network_name: mms
+        mms_traefik_domain: media.example.com
+        mms_systemd_env:
+          XDG_RUNTIME_DIR: /run/user/3000
+          DBUS_SESSION_BUS_ADDRESS: unix:path=/run/user/3000/bus
+        vault_open_notebook_db_password: test-db-password
+        vault_open_notebook_encryption_key: test-encryption-key

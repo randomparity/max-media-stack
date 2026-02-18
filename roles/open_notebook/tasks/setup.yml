@@ -1,0 +1,73 @@
+---
+- name: Create Open Notebook config directory
+  ansible.builtin.file:
+    path: "{{ open_notebook_config_dir }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Create Open Notebook data directory
+  ansible.builtin.file:
+    path: "{{ open_notebook_config_dir }}/data"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Create SurrealDB data directory
+  ansible.builtin.file:
+    path: "{{ open_notebook_db_dir }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy SurrealDB environment file
+  ansible.builtin.template:
+    src: open-notebook-db.env.j2
+    dest: "{{ open_notebook_config_dir }}/open-notebook-db.env"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+  become: true
+  no_log: true
+  notify: Restart open-notebook-db
+
+- name: Deploy Open Notebook environment file
+  ansible.builtin.template:
+    src: open-notebook.env.j2
+    dest: "{{ open_notebook_config_dir }}/open-notebook.env"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+  become: true
+  no_log: true
+  notify: Restart open-notebook
+
+- name: Deploy SurrealDB container quadlet
+  ansible.builtin.template:
+    src: open-notebook-db.container.j2
+    dest: "{{ mms_quadlet_dir }}/open-notebook-db.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart open-notebook-db
+
+- name: Deploy Open Notebook container quadlet
+  ansible.builtin.template:
+    src: open-notebook.container.j2
+    dest: "{{ mms_quadlet_dir }}/open-notebook.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart open-notebook

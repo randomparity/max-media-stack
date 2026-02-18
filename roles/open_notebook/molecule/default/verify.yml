@@ -1,0 +1,108 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Check config directory exists
+      ansible.builtin.stat:
+        path: /opt/mms/config/open-notebook
+      register: _config_dir
+      failed_when: not _config_dir.stat.exists
+
+    - name: Check data directory exists
+      ansible.builtin.stat:
+        path: /opt/mms/config/open-notebook/data
+      register: _data_dir
+      failed_when: not _data_dir.stat.exists
+
+    - name: Check SurrealDB data directory exists
+      ansible.builtin.stat:
+        path: /opt/mms/config/open-notebook-db
+      register: _db_dir
+      failed_when: not _db_dir.stat.exists
+
+    - name: Check app env file permissions
+      ansible.builtin.stat:
+        path: /opt/mms/config/open-notebook/open-notebook.env
+      register: _app_env
+      failed_when: not _app_env.stat.exists or _app_env.stat.mode != '0600'
+
+    - name: Check db env file permissions
+      ansible.builtin.stat:
+        path: /opt/mms/config/open-notebook/open-notebook-db.env
+      register: _db_env
+      failed_when: not _db_env.stat.exists or _db_env.stat.mode != '0600'
+
+    - name: Read app env file
+      ansible.builtin.slurp:
+        src: /opt/mms/config/open-notebook/open-notebook.env
+      register: _app_env_content
+
+    - name: Verify app env file content
+      ansible.builtin.assert:
+        that:
+          - "'SURREAL_URL=ws://open-notebook-db:8000/rpc' in _app_env_decoded"
+          - "'SURREAL_USER=root' in _app_env_decoded"
+          - "'SURREAL_PASSWORD=test-db-password' in _app_env_decoded"
+          - "'OPEN_NOTEBOOK_ENCRYPTION_KEY=test-encryption-key' in _app_env_decoded"
+          - "'API_URL=http://notebook.media.example.com' in _app_env_decoded"
+          - "'TZ=America/New_York' in _app_env_decoded"
+      vars:
+        _app_env_decoded: "{{ _app_env_content.content | b64decode }}"
+
+    - name: Read db env file
+      ansible.builtin.slurp:
+        src: /opt/mms/config/open-notebook/open-notebook-db.env
+      register: _db_env_content
+
+    - name: Verify db env file content
+      ansible.builtin.assert:
+        that:
+          - "'SURREAL_USER=root' in _db_env_decoded"
+          - "'SURREAL_PASS=test-db-password' in _db_env_decoded"
+          - "'SURREAL_EXPERIMENTAL_GRAPHQL=true' in _db_env_decoded"
+      vars:
+        _db_env_decoded: "{{ _db_env_content.content | b64decode }}"
+
+    - name: Check app container quadlet file exists
+      ansible.builtin.stat:
+        path: /home/mms/.config/containers/systemd/open-notebook.container
+      register: _app_quadlet
+      failed_when: not _app_quadlet.stat.exists
+
+    - name: Read app container quadlet
+      ansible.builtin.slurp:
+        src: /home/mms/.config/containers/systemd/open-notebook.container
+      register: _app_quadlet_content
+
+    - name: Verify app container quadlet content
+      ansible.builtin.assert:
+        that:
+          - "'ContainerName=open-notebook' in _app_quadlet_decoded"
+          - "'After=open-notebook-db.service' in _app_quadlet_decoded"
+          - "'UserNS=keep-id' in _app_quadlet_decoded"
+          - "'Volume=/opt/mms/config/open-notebook/data:/app/data:Z' in _app_quadlet_decoded"
+          - "'Tmpfs=/run:U' in _app_quadlet_decoded"
+      vars:
+        _app_quadlet_decoded: "{{ _app_quadlet_content.content | b64decode }}"
+
+    - name: Check db container quadlet file exists
+      ansible.builtin.stat:
+        path: /home/mms/.config/containers/systemd/open-notebook-db.container
+      register: _db_quadlet
+      failed_when: not _db_quadlet.stat.exists
+
+    - name: Read db container quadlet
+      ansible.builtin.slurp:
+        src: /home/mms/.config/containers/systemd/open-notebook-db.container
+      register: _db_quadlet_content
+
+    - name: Verify db container quadlet content
+      ansible.builtin.assert:
+        that:
+          - "'ContainerName=open-notebook-db' in _db_quadlet_decoded"
+          - "'Volume=/opt/mms/config/open-notebook-db:/mydata:Z' in _db_quadlet_decoded"
+          - "'UserNS=keep-id:uid=65532,gid=65532' in _db_quadlet_decoded"
+          - "'Tmpfs=/run:U' in _db_quadlet_decoded"
+      vars:
+        _db_quadlet_decoded: "{{ _db_quadlet_content.content | b64decode }}"

@@ -6,7 +6,7 @@ set -euo pipefail
 usage() {
     echo "Usage: $0 <service_name> <backup_file>"
     echo ""
-    echo "Services: {% for svc in mms_services %}{{ svc }}, {% endfor %}traefik, immich"
+    echo "Services: {% for svc in mms_services %}{{ svc }}, {% endfor %}traefik, immich, open-notebook"
     echo ""
     echo "Examples:"
     echo "  $0 radarr /home/{{ backup_user }}/backups/radarr/radarr-2025-01-15.tar.zst.age"
@@ -123,6 +123,29 @@ restore_immich_db() {
     log "immich database restore complete"
 }
 
+restore_open_notebook() {
+    local archive="$WORK_DIR/backup.tar.zst"
+    decrypt_file "$BACKUP_FILE" "$archive"
+
+    log "Stopping {{ backup_open_notebook_app_service }}..."
+    systemctl --user stop {{ backup_open_notebook_app_service }} || true
+    log "Stopping {{ backup_open_notebook_db_service }}..."
+    systemctl --user stop {{ backup_open_notebook_db_service }} || true
+
+    log "Removing existing open-notebook config..."
+    rm -rf "${CONFIG_DIR:?}/open-notebook"
+    rm -rf "${CONFIG_DIR:?}/open-notebook-db"
+
+    log "Extracting backup..."
+    zstd -d "$archive" --stdout | tar -xf - -C "${CONFIG_DIR}"
+
+    log "Starting {{ backup_open_notebook_db_service }}..."
+    systemctl --user start {{ backup_open_notebook_db_service }}
+    log "Starting {{ backup_open_notebook_app_service }}..."
+    systemctl --user start {{ backup_open_notebook_app_service }}
+    log "open-notebook restore complete"
+}
+
 restore_immich_config() {
     local archive="$WORK_DIR/backup.tar.zst"
     decrypt_file "$BACKUP_FILE" "$archive"
@@ -155,6 +178,9 @@ case "$SERVICE" in
         else
             restore_immich_config
         fi
+        ;;
+    open-notebook)
+        restore_open_notebook
         ;;
     *)
         echo "Unknown service: $SERVICE"
