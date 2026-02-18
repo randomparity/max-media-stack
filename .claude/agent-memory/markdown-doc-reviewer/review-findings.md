@@ -1,5 +1,124 @@
 # Review Findings
 
+## feat/gh-issue-62-image-pruning Branch Review (2026-02-18)
+
+### Scope
+All .md files on feat/gh-issue-62-image-pruning branch (1 commit over main). Key changes: weekly systemd timer (mms-image-prune.timer) for dangling Podman image pruning in podman role, inline image pruning after successful autodeploy runs in autodeploy role. New variables: podman_prune_enabled, podman_prune_schedule, autodeploy_prune_images.
+
+### Files Reviewed
+- CLAUDE.md (80 lines)
+- README.md (91 lines)
+- docs/wiki/Home.md (101 lines)
+- docs/wiki/Getting-Started.md (77 lines)
+- docs/wiki/Configuration.md (88 lines)
+- docs/wiki/Common-Operations.md (93 lines)
+- docs/wiki/Auto-Deploy.md (179 lines)
+- docs/wiki/Troubleshooting.md (367 lines)
+- roles/podman/defaults/main.yml (17 lines)
+- roles/podman/tasks/main.yml (94 lines)
+- roles/podman/templates/mms-image-prune.service.j2 (7 lines)
+- roles/podman/templates/mms-image-prune.timer.j2 (11 lines)
+- roles/autodeploy/defaults/main.yml (20 lines)
+- roles/autodeploy/templates/mms-autodeploy.sh.j2 (125 lines)
+
+### Findings
+- MEDIUM: CLAUDE.md Architecture Rootless Podman bullet (line 44) missing image pruning timer
+- MEDIUM: CLAUDE.md Architecture Auto-deploy bullet (line 49) missing inline image pruning on success
+- MEDIUM: Auto-Deploy.md variable table (line 134) missing autodeploy_prune_images
+- MEDIUM: Troubleshooting.md missing "Disk space and image pruning" section
+- LOW: Common-Operations.md (line 93) missing manual image pruning section
+- LOW: Configuration.md naming conventions (line 87) missing podman_ prefix example
+
+### Verified Accurate
+- All existing documentation remains accurate -- no claims broken by this branch
+- CLAUDE.md services list, roles list, repository layout all correct
+- README services table, architecture diagram, security section all correct
+- Auto-Deploy.md existing variable table entries match code defaults
+- Troubleshooting.md existing systemd/container/autodeploy debug commands all correct
+- Timer unit placed in ~/.config/systemd/user/ (correct for non-Quadlet user units)
+- Timer naming follows mms- prefix convention (mms-image-prune.timer)
+- autodeploy_prune_images default true, rendered via Jinja2 conditional in script template
+- podman_prune_enabled controls both enable and started state via ternary
+- podman_prune_schedule "Sun *-*-* 05:00:00" uses valid systemd OnCalendar syntax
+- RandomizedDelaySec=300 in timer prevents thundering herd
+
+### Still Open (Pre-existing, Not Introduced by This Branch)
+- BLOCKER: Config backup path mismatch in docs vs code
+- All other pre-existing gaps from prior reviews remain open
+
+---
+
+## feat/open-notebook-backup Branch Review (2026-02-18)
+
+### Scope
+All .md files on feat/open-notebook-backup branch (2 commits over main). Key changes: Open Notebook backup/restore added to backup role and restore playbook, open_notebook role split into setup.yml + containers.yml for Molecule testability, shared Molecule pre-tasks extracted to molecule/shared/prepare_mms_user.yml, Molecule tests added for open_notebook role.
+
+### Files Reviewed
+- CLAUDE.md (78 lines)
+- README.md (89 lines)
+- docs/wiki/Home.md (101 lines)
+- docs/wiki/Getting-Started.md (77 lines)
+- docs/wiki/Configuration.md (84 lines)
+- docs/wiki/Storage-Layout.md (64 lines)
+- docs/wiki/Common-Operations.md (84 lines)
+- docs/wiki/Backup-and-Restore.md (166 lines)
+- docs/wiki/Adding-a-New-Service.md (68 lines)
+- docs/wiki/Troubleshooting.md (328 lines)
+- docs/wiki/Security.md (22 lines)
+- docs/wiki/_Sidebar.md (23 lines)
+- .claude/agents/supply-chain-hygiene-reviewer.md (first 30 lines)
+- roles/backup/defaults/main.yml (54 lines)
+- roles/backup/templates/mms-backup.sh.j2 (diff)
+- roles/backup/templates/mms-restore.sh.j2 (diff)
+- roles/backup/tasks/main.yml (diff)
+- playbooks/restore.yml (diff)
+- roles/open_notebook/tasks/main.yml (diff)
+- roles/open_notebook/tasks/setup.yml (new)
+- roles/open_notebook/tasks/containers.yml (new)
+- roles/open_notebook/molecule/default/ (3 new files)
+- molecule/shared/prepare_mms_user.yml (new)
+
+### Findings
+- HIGH: Backup-and-Restore.md config backups section (line 14) missing Open Notebook cold backup behavior
+- HIGH: Troubleshooting.md missing Open Notebook section (Immich has one at line 302)
+- MEDIUM: Storage-Layout.md directory tree (line 33) missing open-notebook/ and open-notebook-db/ under /home/mms/config/
+- MEDIUM: Common-Operations.md Restore section (line 39) missing Open Notebook restore example
+- MEDIUM: Backup-and-Restore.md Restore section (line 49) missing Open Notebook restore example
+- LOW: CLAUDE.md Conventions missing Molecule shared pre-tasks and role split (setup.yml/containers.yml) pattern
+
+### Verified Accurate
+- CLAUDE.md:9 services list includes Open Notebook
+- CLAUDE.md:50 Backups bullet correctly updated with cold backup description and SurrealDB rationale
+- CLAUDE.md:56 roles list includes open_notebook
+- CLAUDE.md:76 backup_* prefix convention accurately describes naming pattern
+- CLAUDE.md:77 deploy resilience pattern accurately described
+- README.md:22 services table includes Open Notebook with correct URL
+- README.md:40 architecture diagram includes open-notebook + open-notebook-db
+- README.md:85 security section correctly says Traefik (80) and Plex (32400)
+- Home.md:22 services table includes Open Notebook
+- Home.md:40 architecture diagram includes open-notebook containers
+- Home.md:77-78 inter-container access table includes Open Notebook (8502) and Open Notebook DB (8000)
+- Configuration.md:57-58 vault table includes vault_open_notebook_db_password and vault_open_notebook_encryption_key
+- Adding-a-New-Service.md:71 mentions Open Notebook as multi-container example
+- supply-chain-hygiene-reviewer.md:19 includes Open Notebook in services list
+- Backup role defaults: backup_open_notebook_app_service and backup_open_notebook_db_service follow backup_* prefix
+- Backup script: backup_open_notebook() follows same pattern as backup_immich() (cold backup)
+- Restore script: restore_open_notebook() follows same pattern as restore_immich_config()
+- Restore playbook: stops both containers, restores, fixes ownership, restarts in dependency order
+- Molecule shared pre-tasks correctly create mms user/group/quadlet dir with UID/GID 3000
+
+### Prior Issues Resolved on This Branch
+- Open Notebook now present in README and all wiki pages (was HIGH from 2026-02-17)
+- Configuration.md vault table now includes all vault variables (was HIGH from 2026-02-17)
+- "Only Traefik publishes host port" corrected to include Plex 32400 (was HIGH from 2026-02-17)
+
+### Still Open (Pre-existing, Not Introduced by This Branch)
+- BLOCKER: Config backup path in docs vs code mismatch (/home/mms/backups/ vs /data/backups/config)
+- MEDIUM: Traefik-Reverse-Proxy.md says mms_traefik_domain is in group_vars/mms/vars.yml (actually in all)
+- MEDIUM: Auto-Deploy example two-group config missing channels, navidrome, open-notebook
+
+---
+
 ## feat/open-notebook Branch Review (2026-02-17)
 
 ### Scope

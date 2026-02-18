@@ -326,6 +326,38 @@ podman logs mms-immich-postgres
 podman healthcheck run mms-immich-postgres
 ```
 
+## Disk space and image pruning
+
+Container image updates leave behind old (dangling) images that accumulate over time. MMS has two cleanup mechanisms:
+
+1. **Weekly timer** (`mms-image-prune.timer`) -- runs `podman image prune -f` on a schedule (default: Sunday 05:00)
+2. **Post-deploy prune** -- the autodeploy script prunes dangling images after each successful deploy
+
+```bash
+# Check the prune timer
+systemctl --user list-timers mms-image-prune.timer
+
+# View prune logs
+journalctl --user -u mms-image-prune --since today
+
+# Manual prune (dangling images only)
+podman image prune -f
+
+# Check disk usage
+podman system df
+
+# List dangling images
+podman images --filter dangling=true
+```
+
+**Common issue: Disk full despite pruning**
+
+If the root filesystem is filling up, check whether non-dangling (tagged) images are accumulating. The timer and autodeploy only prune dangling images. To remove all unused images (including tagged ones not used by any container):
+
+```bash
+podman image prune -af
+```
+
 ## Open Notebook-specific issues
 
 Open Notebook is a two-container stack: the app container (`mms-open-notebook`) and a SurrealDB database container (`mms-open-notebook-db`). SurrealDB must be running and ready before the app can connect.

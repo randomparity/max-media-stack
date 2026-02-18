@@ -11,6 +11,8 @@ autodeploy_log_retention: 30
 autodeploy_log_dir: "{{ mms_home }}/logs/autodeploy"
 autodeploy_state_dir: "{{ mms_home }}/.state/autodeploy"
 
+autodeploy_prune_images: true
+
 autodeploy_groups:
   default:
     schedule: "*-*-* *:00/30:00"

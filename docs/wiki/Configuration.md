@@ -84,4 +84,4 @@ ansible-vault encrypt inventory/group_vars/all/vault.yml
 
 - `mms_` prefix -- global project variables
 - `vault_` prefix -- encrypted secrets
-- Role-specific prefixes (e.g., `autodeploy_`, `backup_`) -- role defaults in `roles/<name>/defaults/main.yml`
+- Role-specific prefixes (e.g., `autodeploy_`, `backup_`, `podman_`) -- role defaults in `roles/<name>/defaults/main.yml`
