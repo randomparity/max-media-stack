@@ -18,7 +18,7 @@ provisioner:
         mms_uid: "3000"
         mms_gid: "3000"
         mms_timezone: America/New_York
-        mms_config_dir: /opt/mms/config
+        mms_config_dir: /home/mms/config
         mms_quadlet_dir: /home/mms/.config/containers/systemd
         mms_network_name: mms
         mms_traefik_domain: media.example.com

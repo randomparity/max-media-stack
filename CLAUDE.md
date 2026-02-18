@@ -47,7 +47,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role; volume mounts split NFS (user content: upload, library) from local SSD (generated content: thumbs, encoded-video, profile, backups)
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 - **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits
-- **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik); Plex backups exclude Cache, Crash Reports, Updates, and Codecs directories
+- **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik); Plex backups exclude Cache, Crash Reports, Updates, and Codecs directories; Open Notebook uses cold backup (stops both app + SurrealDB containers, tars both config dirs) since SurrealDB has no hot-dump CLI
 
 ## Repository Layout
 

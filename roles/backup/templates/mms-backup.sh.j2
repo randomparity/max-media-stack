@@ -130,6 +130,8 @@ backup_open_notebook() {
     log "Stopping {{ backup_open_notebook_db_service }}..."
     systemctl --user stop {{ backup_open_notebook_db_service }} || true
 
+    # Directory names "open-notebook" and "open-notebook-db" must match the basenames of
+    # open_notebook_config_dir and open_notebook_db_dir in roles/open_notebook/defaults/main.yml
     tar -cf - -C "${CONFIG_DIR}" open-notebook open-notebook-db | zstd -T0 -o "$dest"
 
     log "Starting {{ backup_open_notebook_db_service }}..."

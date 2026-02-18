@@ -1,0 +1,19 @@
+---
+- name: Create mms group
+  ansible.builtin.group:
+    name: mms
+    gid: 3000
+
+- name: Create mms user
+  ansible.builtin.user:
+    name: mms
+    uid: 3000
+    group: mms
+
+- name: Create quadlet directory
+  ansible.builtin.file:
+    path: /home/mms/.config/containers/systemd
+    state: directory
+    owner: mms
+    group: mms
+    mode: "0755"

@@ -3,24 +3,8 @@
   hosts: all
   become: true
   pre_tasks:
-    - name: Create mms group
-      ansible.builtin.group:
-        name: mms
-        gid: 3000
-
-    - name: Create mms user
-      ansible.builtin.user:
-        name: mms
-        uid: 3000
-        group: mms
-
-    - name: Create quadlet directory
-      ansible.builtin.file:
-        path: /home/mms/.config/containers/systemd
-        state: directory
-        owner: mms
-        group: mms
-        mode: "0755"
+    - name: Prepare mms user and directories
+      ansible.builtin.include_tasks: "{{ playbook_dir }}/../../../../molecule/shared/prepare_mms_user.yml"
   tasks:
     - name: Include open_notebook role (setup only)
       ansible.builtin.include_role:

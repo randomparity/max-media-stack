@@ -28,7 +28,7 @@
 - tailscale: Install, auth (serve mappings removed in Traefik branch)
 - quadlet_service: Generic data-driven container deployment from services/*.yml
 - immich: Special-cased multi-container (server, ML, postgres, redis), ML uses python healthcheck
-- open_notebook: Multi-container (SurrealDB + app), env-file secrets with vault_, curl healthcheck on app
+- open_notebook: Multi-container (SurrealDB + app), env-file secrets with vault_, curl healthcheck on app, split into setup.yml + containers.yml for Molecule testability
 - traefik: Reverse proxy with file provider, Host-header routing via mms_traefik_routes
 - backup: Scripts, systemd timers, retention, encryption with age
 - autodeploy: Git-based auto-deploy with systemd timer, polls repo and runs deploy-services.yml
@@ -148,8 +148,10 @@ See review-findings.md for detailed findings from all reviews.
 44. Migration mv across filesystems (NFS->local) is not atomic; rsync --remove-source-files is safer
 45. NFS overlay on :Z-labeled base volume needs SELinux runtime validation (virt_use_nfs should handle it)
 46. Inconsistent become/become_user between NFS and local dir creation tasks in immich role
-47. open_notebook env file templates missing no_log (vault secrets exposed in verbose output)
+47. ~~open_notebook env file templates missing no_log~~ fixed: no_log: true on both env templates
 48. mms-services.sh get_tier() missing open-notebook-db in tier 0 (infra)
 49. open_notebook HealthCmd uses curl -- verify curl exists in lfnovo/open_notebook image
-50. No meta/main.yml for open_notebook role
-51. No Molecule test for open_notebook role
+50. ~~No meta/main.yml for open_notebook role~~ fixed: meta/main.yml exists
+51. ~~No Molecule test for open_notebook role~~ fixed: Molecule tests added for setup.yml
+52. Restore playbook chown runs after services started for open-notebook (should be before)
+53. Open-notebook backup script hardcodes directory names (open-notebook, open-notebook-db) in tar command
