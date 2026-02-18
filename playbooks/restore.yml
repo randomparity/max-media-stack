@@ -74,9 +74,60 @@
         _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
       when: service_name == 'immich' and 'config' in backup_file
 
-    - name: Fix ownership after restore
-      ansible.builtin.command:
-        cmd: "chown -R {{ mms_user }}:{{ mms_user }} {{ mms_config_dir }}/{{ service_name }}"
+    - name: Stop open-notebook services before restore
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        scope: user
+      environment: "{{ mms_systemd_env }}"
+      loop:
+        - open-notebook
+        - open-notebook-db
+      when: service_name == 'open-notebook'
+      failed_when: false
+
+    - name: Restore open-notebook  # noqa: no-relative-paths
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+      vars:
+        _restore_label: open-notebook
+        _restore_tmp_ext: tar.zst
+        _restore_service: ""
+        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+      when: service_name == 'open-notebook'
+
+    - name: Fix ownership after open-notebook restore
+      ansible.builtin.file:
+        path: "{{ mms_config_dir }}/{{ item }}"
+        state: directory
+        owner: "{{ mms_user }}"
+        group: "{{ mms_user }}"
+        recurse: true
       become: true
       become_user: root
-      changed_when: true
+      loop:
+        - open-notebook
+        - open-notebook-db
+      when: service_name == 'open-notebook'
+
+    - name: Start open-notebook services after restore
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        scope: user
+      environment: "{{ mms_systemd_env }}"
+      loop:
+        - open-notebook-db
+        - open-notebook
+      when: service_name == 'open-notebook'
+
+    - name: Fix ownership after restore
+      ansible.builtin.file:
+        path: "{{ mms_config_dir }}/{{ service_name }}"
+        state: directory
+        owner: "{{ mms_user }}"
+        group: "{{ mms_user }}"
+        recurse: true
+      become: true
+      become_user: root
+      when: service_name != 'open-notebook'

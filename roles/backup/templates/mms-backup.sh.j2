@@ -120,6 +120,29 @@ backup_immich() {
     log "immich backup complete"
 }
 
+backup_open_notebook() {
+    log "Backing up open-notebook..."
+    local dest="${BACKUP_DIR}/open-notebook/open-notebook-${DATE}.tar.zst"
+    [[ -f "$dest" || -f "${dest}.age" ]] && { log "Backup already exists, skipping"; return 0; }
+
+    log "Stopping {{ backup_open_notebook_app_service }}..."
+    systemctl --user stop {{ backup_open_notebook_app_service }} || true
+    log "Stopping {{ backup_open_notebook_db_service }}..."
+    systemctl --user stop {{ backup_open_notebook_db_service }} || true
+
+    # Directory names "open-notebook" and "open-notebook-db" must match the basenames of
+    # open_notebook_config_dir and open_notebook_db_dir in roles/open_notebook/defaults/main.yml
+    tar -cf - -C "${CONFIG_DIR}" open-notebook open-notebook-db | zstd -T0 -o "$dest"
+
+    log "Starting {{ backup_open_notebook_db_service }}..."
+    systemctl --user start {{ backup_open_notebook_db_service }}
+    log "Starting {{ backup_open_notebook_app_service }}..."
+    systemctl --user start {{ backup_open_notebook_app_service }}
+
+    encrypt_file "$dest"
+    log "open-notebook backup complete"
+}
+
 encrypt_file() {
     local file="$1"
     if [[ -n "$AGE_KEY" && -f "$file" ]]; then
@@ -189,7 +212,7 @@ apply_retention() {
 }
 
 # Ensure backup directories exist
-{% for svc in mms_services + ['traefik', 'immich'] %}
+{% for svc in mms_services + ['traefik', 'immich', 'open-notebook'] %}
 mkdir -p "${BACKUP_DIR}/{{ svc }}"
 {% endfor %}
 
@@ -212,8 +235,10 @@ backup_traefik
 
 backup_immich
 
+backup_open_notebook
+
 # Apply retention
-{% for svc in mms_services + ['immich', 'traefik'] %}
+{% for svc in mms_services + ['immich', 'traefik', 'open-notebook'] %}
 apply_retention "{{ svc }}"
 {% endfor %}
 

@@ -6,6 +6,7 @@
     - name: Prepare mms user and directories
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../../../../molecule/shared/prepare_mms_user.yml"
   tasks:
-    - name: Include quadlet_service role
+    - name: Include open_notebook role (setup only)
       ansible.builtin.include_role:
-        name: quadlet_service
+        name: open_notebook
+        tasks_from: setup.yml

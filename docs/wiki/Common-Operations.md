@@ -53,6 +53,15 @@ ansible-playbook playbooks/restore.yml \
   -e backup_age_identity_file=/path/to/age-identity.txt
 ```
 
+Multi-container services (e.g., Open Notebook) work the same way:
+
+```bash
+ansible-playbook playbooks/restore.yml \
+  -e service_name=open-notebook \
+  -e backup_file=/data/backups/config/open-notebook/open-notebook-2025-01-15.tar.zst.age \
+  -e backup_age_identity_file=/path/to/age-identity.txt
+```
+
 See [Backup & Restore](Backup-and-Restore#restoring-encrypted-backups) for full restore instructions.
 
 ## Migrate from existing LXC containers

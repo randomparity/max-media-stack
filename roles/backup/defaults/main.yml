@@ -30,6 +30,10 @@ backup_immich_db_user: "{{ immich_db_user | default('immich') }}"
 # Immich generated media directory (relative to backup_config_dir, excluded from config backup)
 backup_immich_media_exclude: immich/media
 
+# Open Notebook service names (app + SurrealDB, both must stop for consistent backup)
+backup_open_notebook_app_service: open-notebook
+backup_open_notebook_db_service: open-notebook-db
+
 # API backup settings (*arr services to NAS)
 backup_api_dir: /data/backups/arr-api
 backup_api_mount_point: /data/backups

@@ -47,7 +47,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role; volume mounts split NFS (user content: upload, library) from local SSD (generated content: thumbs, encoded-video, profile, backups)
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 - **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits
-- **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik); Plex backups exclude Cache, Crash Reports, Updates, and Codecs directories
+- **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik); Plex backups exclude Cache, Crash Reports, Updates, and Codecs directories; Open Notebook uses cold backup (stops both app + SurrealDB containers, tars both config dirs) since SurrealDB has no hot-dump CLI
 
 ## Repository Layout
 
@@ -74,4 +74,6 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Inter-container `host_whitelist` must include the bare container hostname (e.g., `sabnzbd`) in addition to the Traefik subdomain FQDN
 - Plex backup type (`backup_type: "plex"`) stops the service and excludes regenerable directories (Cache, Crash Reports, Updates, Codecs) — similar pattern to Jellyfin's cache exclusion
 - Backup role uses `backup_*` prefix for all variables; API backup variables use `backup_api_*`
+- Multi-container role testability: roles like `open_notebook` split into `setup.yml` (files/templates, testable without Podman) and `containers.yml` (runtime: image pull, start, healthcheck); Molecule tests target `setup.yml` only
+- Molecule shared pre-tasks: `molecule/shared/prepare_mms_user.yml` creates the mms user/group/quadlet directory; all role converge playbooks include it via `include_tasks`
 - Deploy resilience: `deploy-services.yml` wraps each service (including Immich and Traefik) in `block/rescue`; a single service failure is logged and skipped, and the playbook fails at the end with a summary of all failed services

@@ -14,7 +14,7 @@
     owner: "{{ backup_user }}"
     group: "{{ backup_user }}"
     mode: "0750"
-  loop: "{{ mms_services + ['immich', 'traefik'] }}"
+  loop: "{{ mms_services + ['immich', 'traefik', 'open-notebook'] }}"
 
 - name: Install age encryption tool
   ansible.builtin.dnf:

@@ -1,5 +1,62 @@
 # Review Findings
 
+## 2026-02-18: Open Notebook Backup/Restore + Molecule Tests (feat/open-notebook-backup)
+
+Branch adds Open Notebook backup/restore support to the backup role, restore playbook, and shell scripts.
+Also refactors the open_notebook role by splitting main.yml into setup.yml (files/templates) and
+containers.yml (runtime operations), and adds Molecule tests for the setup path.
+
+### Files Changed
+- playbooks/restore.yml (added open-notebook stop/restore/start/chown blocks)
+- roles/backup/defaults/main.yml (added backup_open_notebook_app_service, backup_open_notebook_db_service)
+- roles/backup/tasks/main.yml (added open-notebook to backup dir loop)
+- roles/backup/templates/mms-backup.sh.j2 (added backup_open_notebook function)
+- roles/backup/templates/mms-restore.sh.j2 (added restore_open_notebook function)
+- roles/open_notebook/tasks/main.yml (refactored to include setup.yml + containers.yml)
+- roles/open_notebook/tasks/setup.yml (new, extracted file/template tasks)
+- roles/open_notebook/tasks/containers.yml (new, extracted runtime tasks)
+- roles/open_notebook/molecule/default/converge.yml (new)
+- roles/open_notebook/molecule/default/molecule.yml (new)
+- roles/open_notebook/molecule/default/verify.yml (new)
+
+### Findings Summary
+Overall: **Clean, well-patterned implementation**. Follows established backup/restore conventions from
+Immich closely. Role split enables Molecule testing of setup path. One ordering bug in restore playbook.
+
+### High Priority
+1. **Restore playbook chown runs after services started** -- SurrealDB may be writing while chown -R runs
+   on its data dir. Fix: move chown tasks before the start tasks.
+
+### Medium Priority
+2. **Restore diverges from restore_service.yml pattern** -- inline stop/start/chown for open-notebook
+   instead of using the common include. Acceptable (matches Immich pattern) but adds maintenance burden.
+3. **chown always reports changed** -- `changed_when: true` on restore chown tasks (acceptable for one-shot restore).
+4. **Backup script tar hardcodes directory names** -- `open-notebook` and `open-notebook-db` in tar command
+   are strings, not derived from variables.
+
+### Low Priority
+5. Molecule converge pre_tasks duplicated across roles (mms user/group/quadlet dir creation).
+6. Molecule mms_config_dir (/opt/mms/config) differs from production (/home/mms/config) -- cosmetic.
+
+### Positive Patterns
+- Role split (setup.yml + containers.yml) is clean and testable; good model for Immich role refactor
+- Shell backup/restore scripts follow exact same pattern as Immich (cold backup with stop/start)
+- Service ordering correct throughout: DB before app on start, app before DB on stop
+- no_log: true on env file templates (resolves prior issue #47)
+- meta/main.yml exists (resolves prior issue #50)
+- Molecule tests added with thorough env file content and quadlet assertions (resolves prior issue #51)
+- Molecule verify checks file permissions (0600 on env files), content via slurp/assert
+- failed_when: false on service stops during restore (handles case where service not running)
+- check_mode: false on image existence check (correct pattern)
+
+### Items Resolved from Prior Reviews
+- #47: open_notebook env file templates now have no_log: true
+- #50: meta/main.yml exists for open_notebook role
+- #51: Molecule test added for open_notebook role (setup.yml path)
+
+---
+
+
 ## 2026-02-12: Plex/Tautulli/Kometa Services Review (fix/various-changes)
 
 Branch adds three new media services: Plex (media server), Tautulli (Plex analytics), and Kometa (Plex metadata manager).
