@@ -19,7 +19,7 @@
 - provision-vm.yml: Play 2 (connection: local) uses Proxmox API via proxmox_vm role
 - Proxmox API token: vault_proxmox_api_user contains "user@realm!tokenname", split on "!" for api_user vs api_token_id
 
-## Roles (12)
+## Roles (13)
 - proxmox_vm: Provision VM from cloud-init template (API calls, connection: local)
 - base_system: OS config, mms user, packages, SELinux, sysctl, cloud-init wait, ~/bin/mms-services script
 - podman: Rootless config, registries, storage, quadlet dir
@@ -28,17 +28,19 @@
 - tailscale: Install, auth (serve mappings removed in Traefik branch)
 - quadlet_service: Generic data-driven container deployment from services/*.yml
 - immich: Special-cased multi-container (server, ML, postgres, redis), ML uses python healthcheck
+- open_notebook: Multi-container (SurrealDB + app), env-file secrets with vault_, curl healthcheck on app
 - traefik: Reverse proxy with file provider, Host-header routing via mms_traefik_routes
 - backup: Scripts, systemd timers, retention, encryption with age
 - autodeploy: Git-based auto-deploy with systemd timer, polls repo and runs deploy-services.yml
 - migrate: LXC-to-VM migration with rsync, DB dump, healthchecks
 
-## Services (12 as of 2026-02-12)
+## Services (13 as of 2026-02-17)
 - *arr stack: prowlarr, radarr, radarr4k, sonarr, lidarr (all LSIO images, arr backup type)
 - Downloads: sabnzbd (LSIO, custom backup with ini subset)
 - Media servers: jellyfin (official), plex (LSIO), channels (fancybits)
 - Media tools: tautulli (LSIO, Plex analytics), kometa (LSIO, Plex metadata), navidrome (music)
 - Photos: immich (special multi-container role)
+- AI/Research: open-notebook (lfnovo/open_notebook + SurrealDB, special multi-container role)
 - Reverse proxy: traefik (official, file provider)
 
 ## Key Patterns
@@ -78,7 +80,7 @@
 ## Recurring Anti-pattern: String-as-Boolean Facts
 - set_fact with Jinja2 comparison produces strings "True"/"False", NOT booleans
 - `not "False"` is False (works by accident), but `"False" | bool` is False (correct)
-- Affected: _template_exists in provision-vm.yml, _immich_secret_needs_update in immich role, _deploy_immich/_deploy_traefik in deploy-services.yml
+- Affected: _template_exists in provision-vm.yml, _immich_secret_needs_update in immich role, _deploy_immich/_deploy_traefik/_deploy_open_notebook in deploy-services.yml
 - Fix: always use `| bool` filter, or test the raw condition directly
 
 ## Review History
@@ -146,3 +148,8 @@ See review-findings.md for detailed findings from all reviews.
 44. Migration mv across filesystems (NFS->local) is not atomic; rsync --remove-source-files is safer
 45. NFS overlay on :Z-labeled base volume needs SELinux runtime validation (virt_use_nfs should handle it)
 46. Inconsistent become/become_user between NFS and local dir creation tasks in immich role
+47. open_notebook env file templates missing no_log (vault secrets exposed in verbose output)
+48. mms-services.sh get_tier() missing open-notebook-db in tier 0 (infra)
+49. open_notebook HealthCmd uses curl -- verify curl exists in lfnovo/open_notebook image
+50. No meta/main.yml for open_notebook role
+51. No Molecule test for open_notebook role

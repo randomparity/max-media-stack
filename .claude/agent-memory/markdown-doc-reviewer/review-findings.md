@@ -1,5 +1,73 @@
 # Review Findings
 
+## feat/open-notebook Branch Review (2026-02-17)
+
+### Scope
+All .md files on feat/open-notebook branch (4 commits over main). Key changes: Open Notebook service added (app + SurrealDB, own role), vault variables added, docs restructured (README slimmed, wiki pages added in docs/wiki/).
+
+### Files Reviewed
+- CLAUDE.md (78 lines)
+- README.md (89 lines)
+- docs/wiki/Home.md (97 lines)
+- docs/wiki/Getting-Started.md (77 lines)
+- docs/wiki/Configuration.md (84 lines)
+- docs/wiki/Proxmox-API-Setup.md (88 lines)
+- docs/wiki/Storage-Layout.md (64 lines)
+- docs/wiki/Traefik-Reverse-Proxy.md (57 lines)
+- docs/wiki/Security.md (22 lines)
+- docs/wiki/Common-Operations.md (84 lines)
+- docs/wiki/Backup-and-Restore.md (166 lines)
+- docs/wiki/Auto-Deploy.md (176 lines)
+- docs/wiki/Adding-a-New-Service.md (68 lines)
+- docs/wiki/Troubleshooting.md (328 lines)
+- docs/wiki/_Sidebar.md (23 lines)
+- docs/wiki/_Footer.md (1 line)
+- .claude/agents/supply-chain-hygiene-reviewer.md (185 lines)
+- roles/open_notebook/ (defaults, tasks, handlers, templates)
+- inventory/group_vars/all/vars.yml (67 lines)
+- inventory/group_vars/mms/vars.yml (123 lines)
+- inventory/group_vars/all/vault.yml.example (33 lines)
+- services/plex.yml (31 lines)
+- playbooks/deploy-services.yml (72 lines)
+- roles/backup/defaults/main.yml (50 lines)
+- roles/backup/templates/mms-backup.sh.j2 (221 lines)
+- playbooks/restore.yml (83 lines)
+
+### Findings
+- BLOCKER: Config backup path documented as `/home/mms/backups/` (local SSD) in Backup-and-Restore.md:10, Storage-Layout.md:38, Common-Operations.md:44,52, Troubleshooting.md:182 -- but actual `mms_backup_dir` is `/data/backups/config` (NFS). All restore command examples use wrong path.
+- HIGH: Open Notebook absent from README services table, README architecture diagram, Home.md services table and architecture diagram, Configuration.md vault variables, all other wiki pages
+- HIGH: README:84, Home.md:8, Security.md:8 say "only Traefik publishes a host port (80)" but Plex publishes 32400 (services/plex.yml:6-7)
+- HIGH: Configuration.md:46-54 vault table missing: vault_backup_age_public_key, vault_vm_password, vault_open_notebook_db_password, vault_open_notebook_encryption_key
+- MEDIUM: Traefik-Reverse-Proxy.md:18 says mms_traefik_domain is in group_vars/mms/vars.yml; actually in group_vars/all/vars.yml:50
+- MEDIUM: supply-chain-hygiene-reviewer.md:19 missing Open Notebook from services list
+- MEDIUM: Auto-Deploy.md:165-173 example two-group config missing channels, navidrome, open-notebook from interactive group
+- LOW: Home.md:18 Kometa URL uses `---` (three hyphens) vs README's em dash
+- INFO: Open Notebook is NOT in mms_services (by design, like Immich) -- has its own role, deployed in deploy-services.yml block
+- INFO: Open Notebook is NOT backed up by config backup system (not in mms_services iteration)
+- INFO: Restore playbook only supports: prowlarr, radarr, radarr4k, sonarr, lidarr, jellyfin, sabnzbd, immich -- not plex, tautulli, kometa, channels, navidrome, traefik, open-notebook
+
+### Verified Accurate
+- CLAUDE.md:9 services list correctly includes Open Notebook
+- CLAUDE.md:56 roles list correctly includes open_notebook
+- CLAUDE.md:47 Architecture Immich bullet correctly describes volume split
+- CLAUDE.md:49 Architecture auto-deploy bullet correct
+- CLAUDE.md:50 Architecture backup bullet correctly describes both systems
+- CLAUDE.md:77 Conventions deploy resilience pattern correct
+- deploy-services.yml correctly includes Open Notebook block/rescue (lines 40-52)
+- Traefik route for open-notebook correctly maps port 8502 (Next.js frontend)
+- Open Notebook health check on port 5055 (FastAPI backend) is valid (both ports run in container)
+- Autodeploy interactive group in inventory correctly includes open-notebook
+- vault.yml.example correctly has vault_open_notebook_db_password and vault_open_notebook_encryption_key
+- Getting-Started.md prerequisites correctly list NFS exports including backups
+- Getting-Started.md correctly references all three vault file groups
+- Proxmox-API-Setup.md permissions list is correct and detailed
+- Troubleshooting.md is comprehensive and commands are accurate
+- Wiki sidebar navigation covers all pages
+- requirements.yml correctly lists 4 Galaxy collections with pinned versions
+- Inter-container access table in Home.md: all ports match service definitions
+
+---
+
 ## feat/immich-split-volumes Branch Review (2026-02-11)
 
 ### Scope

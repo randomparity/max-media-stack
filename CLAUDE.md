@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Max Media Stack (MMS)** — Ansible project to provision and manage a full homelab media stack on a Fedora VM (Proxmox 9.x), using rootless Podman with Quadlet systemd integration.
 
-**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome
+**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome, Open Notebook
 **Storage:** TrueNAS NFS exports mounted at `/data`
 **Access:** Traefik reverse proxy on port 80, Tailscale only (no LAN exposure)
 
@@ -43,7 +43,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 
 - **Rootless Podman**: All containers run as `mms` user (3000:3000) with Quadlet files in `~mms/.config/containers/systemd/`
 - **Data-driven services**: Each service defined in `services/<name>.yml`; the generic `quadlet_service` role renders templates
-- **Traefik**: Reverse proxy with file provider; routes by `Host` header from `mms_traefik_routes`; only container that publishes a host port
+- **Traefik**: Reverse proxy with file provider; routes by `Host` header from `mms_traefik_routes`; publishes host port 80. Plex also publishes port 32400 for client compatibility
 - **Immich** is special: multi-container (server, ML, PostgreSQL, Redis) handled by its own role; volume mounts split NFS (user content: upload, library) from local SSD (generated content: thumbs, encoded-video, profile, backups)
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 - **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits
@@ -53,7 +53,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 
 - `inventory/` — Hosts and group variables
 - `playbooks/` — All playbooks (site, provision, setup, deploy, backup, migrate, etc.)
-- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, traefik, backup, migrate, autodeploy)
+- `roles/` — Ansible roles (proxmox_vm, base_system, podman, tailscale, storage, firewall, quadlet_service, immich, traefik, backup, migrate, autodeploy, open_notebook)
 - `services/` — Per-service variable definitions (YAML files loaded at deploy time)
 - `templates/quadlet/` — Jinja2 templates for Podman Quadlet files (.container, .network, .volume)
 

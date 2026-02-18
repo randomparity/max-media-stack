@@ -18,12 +18,13 @@ MMS splits storage between NFS (bulk media on TrueNAS) and local SSD (per-servic
 │       ├── music/              # Completed music downloads
 │       └── manual/             # Manual import staging
 ├── backups/
-│   └── arr-api/                # *arr API backups (30-day retention)
-│       ├── prowlarr/
-│       ├── radarr/
-│       ├── radarr4k/
-│       ├── sonarr/
-│       └── lidarr/
+│   ├── arr-api/                # *arr API backups (30-day retention)
+│   │   ├── prowlarr/
+│   │   ├── radarr/
+│   │   ├── radarr4k/
+│   │   ├── sonarr/
+│   │   └── lidarr/
+│   └── config/                 # Config backups (age-encrypted, daily 03:00)
 ├── photos/                     # Immich user content (NFS)
 │   ├── upload/                 # User uploads
 │   └── library/                # External library links
@@ -35,7 +36,6 @@ MMS splits storage between NFS (bulk media on TrueNAS) and local SSD (per-servic
 ├── thumbs/                     #   Thumbnails (regenerable)
 ├── profile/                    #   Profile images (regenerable)
 └── backups/                    #   Immich internal backups
-/home/mms/backups/              # Config backup staging area (age-encrypted)
 ```
 
 ## Design rationale

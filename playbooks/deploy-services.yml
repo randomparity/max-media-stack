@@ -13,6 +13,7 @@
              if deploy_services is defined
              else mms_services }}
         _deploy_immich: "{{ (deploy_services is not defined) or ('immich' in deploy_services) }}"
+        _deploy_open_notebook: "{{ (deploy_services is not defined) or ('open-notebook' in deploy_services) }}"
         _deploy_traefik: "{{ (deploy_services is not defined) or ('traefik' in deploy_services) }}"
 
     - name: Deploy each service
@@ -35,6 +36,20 @@
         - name: Warn about Immich failure
           ansible.builtin.debug:
             msg: "Immich stack failed to deploy — continuing with remaining services"
+
+    - name: Deploy Open Notebook stack
+      when: _deploy_open_notebook | bool
+      block:
+        - name: Include open_notebook role
+          ansible.builtin.include_role:
+            name: open_notebook
+      rescue:
+        - name: Record Open Notebook failure
+          ansible.builtin.set_fact:
+            _failed_services: "{{ _failed_services | default([]) + ['open-notebook'] }}"
+        - name: Warn about Open Notebook failure
+          ansible.builtin.debug:
+            msg: "Open Notebook stack failed to deploy — continuing with remaining services"
 
     - name: Deploy Traefik reverse proxy
       when: _deploy_traefik | bool

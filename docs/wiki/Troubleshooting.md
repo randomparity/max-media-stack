@@ -179,7 +179,7 @@ systemctl --user list-timers mms-backup.timer
 journalctl --user -u mms-backup --since today
 
 # List existing backups
-ls -la ~/backups/
+ls -la /data/backups/config/
 ```
 
 **Common issue: age encryption errors**

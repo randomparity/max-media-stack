@@ -19,6 +19,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Immich    | `immich.media.example.com`       | Photo/video management         |
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
+| Open Notebook | `notebook.media.example.com` | AI research notebook           |
 
 ## Architecture
 
@@ -36,6 +37,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      ├── sonarr  lidarr  sabnzbd             │  │  │
 │  │  │      ├── jellyfin  plex  channels             │  │  │
 │  │  │      ├── tautulli  kometa  navidrome         │  │  │
+│  │  │      ├── open-notebook  open-notebook-db    │  │  │
 │  │  │      └── immich-server  immich-ml            │  │  │
 │  │  │          immich-postgres immich-redis        │  │  │
 │  │  │            ┌───────────┐                     │  │  │
@@ -80,7 +82,7 @@ Full documentation is in the **[Wiki](https://github.com/randomparity/max-media-
 ## Security
 
 - **Tailscale only** — default firewalld zone is `drop`; only `tailscale0` is trusted
-- **No direct port exposure** — only Traefik publishes a host port (80)
+- **Minimal port exposure** — only Traefik (port 80) and Plex (port 32400) publish host ports
 - **No socket mount** — Traefik uses the file provider, not the Podman socket
 - **Rootless Podman** — no containers run as root
 - **SELinux enforcing** — config volumes use `:Z` for private labeling

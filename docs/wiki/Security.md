@@ -5,7 +5,7 @@ MMS follows a defense-in-depth approach with multiple layers of isolation and ac
 ## Network isolation
 
 - **Tailscale only**: The default firewalld zone is `drop`; only the `tailscale0` interface is in the `trusted` zone. The VM is not reachable from the LAN.
-- **No direct port exposure**: Only Traefik publishes a host port (80). All backend services are internal to the container network (`mms.network`).
+- **Minimal port exposure**: Only Traefik (port 80) and Plex (port 32400) publish host ports. All other services are internal to the container network (`mms.network`).
 - **HTTP only**: There is no TLS at Traefik -- the Tailscale WireGuard tunnel provides end-to-end encryption for all traffic. Adding TLS would be redundant and add certificate management complexity.
 
 ## Container security

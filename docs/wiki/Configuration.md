@@ -48,10 +48,14 @@ Secrets are stored in vault-encrypted files. Use `ansible-vault edit` to modify 
 | Variable | Description |
 |----------|-------------|
 | `vault_tailscale_auth_key` | Tailscale pre-auth key |
+| `vault_vm_password` | Password for the `mms` system user account |
 | `vault_immich_db_password` | Immich PostgreSQL password |
+| `vault_backup_age_public_key` | `age` public key for encrypting config backups |
 | `vault_plex_claim_token` | Plex claim token for initial setup (get from https://plex.tv/claim, clear after first run) |
 | `vault_autodeploy_ssh_key` | Private deploy key for git clone/fetch (see [Auto-Deploy](Auto-Deploy#vault-variables)) |
 | `vault_mms_vault_password` | Ansible vault password for VM-side deploys (see [Auto-Deploy](Auto-Deploy#vault-variables)) |
+| `vault_open_notebook_db_password` | Open Notebook SurrealDB password |
+| `vault_open_notebook_encryption_key` | Encryption key for API keys stored in Open Notebook's database |
 
 ### Managing vault files
 

@@ -41,7 +41,7 @@ See [Backup & Restore](Backup-and-Restore) for details on automated timers, rete
 ```bash
 ansible-playbook playbooks/restore.yml \
   -e service_name=radarr \
-  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age
+  -e backup_file=/data/backups/config/radarr/radarr-2025-01-15.tar.zst.age
 ```
 
 For encrypted backups, pass the identity file:
@@ -49,7 +49,7 @@ For encrypted backups, pass the identity file:
 ```bash
 ansible-playbook playbooks/restore.yml \
   -e service_name=radarr \
-  -e backup_file=/home/mms/backups/radarr/radarr-2025-01-15.tar.zst.age \
+  -e backup_file=/data/backups/config/radarr/radarr-2025-01-15.tar.zst.age \
   -e backup_age_identity_file=/path/to/age-identity.txt
 ```
 

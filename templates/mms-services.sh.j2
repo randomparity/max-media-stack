@@ -45,7 +45,7 @@ discover_services() {
 get_tier() {
     local svc="$1"
     case "$svc" in
-        immich-postgres|immich-redis) echo 0 ;;
+        immich-postgres|immich-redis|open-notebook-db) echo 0 ;;
         immich-server|immich-ml)      echo 1 ;;
         traefik)                      echo 3 ;;
         *)                            echo 2 ;;

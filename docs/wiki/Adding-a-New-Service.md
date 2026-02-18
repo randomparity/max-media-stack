@@ -65,3 +65,7 @@ Or deploy just the new service:
 ```bash
 ansible-playbook playbooks/deploy-service.yml -e service_name=myservice
 ```
+
+## Multi-container services
+
+The data-driven `quadlet_service` pattern works for single-container services. Multi-container services like Immich (server, ML, PostgreSQL, Redis) and Open Notebook (app, SurrealDB) need their own dedicated role under `roles/` with explicit Quadlet templates for each container and handler-based service ordering.

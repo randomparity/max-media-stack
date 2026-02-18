@@ -38,6 +38,7 @@
     node: "{{ proxmox_vm_node }}"
     vmid: "{{ proxmox_vm_id }}"
     cores: "{{ proxmox_vm_cores }}"
+    cpu: "{{ proxmox_vm_cpu }}"
     memory: "{{ proxmox_vm_memory }}"
     description: "{{ proxmox_vm_description }}"
     net:
