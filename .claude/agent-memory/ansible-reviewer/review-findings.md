@@ -1,5 +1,43 @@
 # Review Findings
 
+## 2026-02-18: Container Image Pruning (feat/gh-issue-62-image-pruning)
+
+Branch adds container image pruning to prevent disk exhaustion (GH issue #62). Two complementary
+mechanisms: weekly systemd timer in podman role + inline prune after successful autodeploy.
+
+### Files Changed
+- roles/podman/defaults/main.yml (added podman_prune_enabled, podman_prune_schedule)
+- roles/podman/tasks/main.yml (added prune service/timer/enable tasks)
+- roles/podman/templates/mms-image-prune.service.j2 (new, oneshot prune)
+- roles/podman/templates/mms-image-prune.timer.j2 (new, weekly timer)
+- roles/autodeploy/defaults/main.yml (added autodeploy_prune_images)
+- roles/autodeploy/templates/mms-autodeploy.sh.j2 (inline prune after deploy)
+
+### Findings Summary
+Overall: **Clean, well-scoped feature**. Two-layer approach is good design. Follows existing rootless
+systemd patterns correctly (become_user, scope: user, mms_systemd_env). No blockers or high issues.
+
+### Medium Priority
+1. **Prune units always deployed even when disabled** -- template/enable tasks run unconditionally;
+   timer is stopped/disabled but files remain as dead artifacts. Add `when: podman_prune_enabled` guards
+   and cleanup tasks for the disabled path.
+
+### Low Priority
+2. systemd user dir creation duplicates what other roles may ensure (harmless, idempotent)
+3. Autodeploy prune `|| true` silently swallows errors (log exit code instead)
+4. `podman image prune -f` removes all dangling images immediately (no grace period for rollback)
+
+### Positive Patterns
+- Two-layer defense (scheduled + post-deploy) is robust against disk exhaustion
+- Both mechanisms independently toggleable via role defaults
+- Timer uses Persistent=true (catches up after downtime) and RandomizedDelaySec=300 (avoids thundering herd)
+- Autodeploy prune runs only on success path (correct: no prune if deploy failed)
+- Service unit correctly has no [Install] section (timer-activated oneshot)
+- become/become_user/environment on systemd task matches established handler pattern
+- `ansible_managed` comment in both templates
+
+---
+
 ## 2026-02-18: Open Notebook Backup/Restore + Molecule Tests (feat/open-notebook-backup)
 
 Branch adds Open Notebook backup/restore support to the backup role, restore playbook, and shell scripts.

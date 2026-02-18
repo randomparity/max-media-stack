@@ -61,6 +61,7 @@
     group: "{{ mms_user }}"
     mode: "0755"
   become: true
+  when: podman_prune_enabled
 
 - name: Deploy image prune service unit
   ansible.builtin.template:
@@ -71,6 +72,7 @@
     mode: "0644"
   become: true
   notify: Reload systemd user daemon
+  when: podman_prune_enabled
 
 - name: Deploy image prune timer unit
   ansible.builtin.template:
@@ -81,13 +83,38 @@
     mode: "0644"
   become: true
   notify: Reload systemd user daemon
+  when: podman_prune_enabled
 
 - name: Enable and start image prune timer
   ansible.builtin.systemd:
     name: mms-image-prune.timer
-    enabled: "{{ podman_prune_enabled }}"
-    state: "{{ podman_prune_enabled | ternary('started', 'stopped') }}"
+    enabled: true
+    state: started
     scope: user
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+  when: podman_prune_enabled
+
+- name: Stop and disable image prune timer
+  ansible.builtin.systemd:
+    name: mms-image-prune.timer
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: not podman_prune_enabled
+  failed_when: false
+
+- name: Remove image prune unit files when disabled
+  ansible.builtin.file:
+    path: "{{ mms_home }}/.config/systemd/user/{{ item }}"
+    state: absent
+  loop:
+    - mms-image-prune.service
+    - mms-image-prune.timer
+  become: true
+  notify: Reload systemd user daemon
+  when: not podman_prune_enabled

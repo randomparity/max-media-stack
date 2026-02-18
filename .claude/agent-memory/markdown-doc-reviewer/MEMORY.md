@@ -31,20 +31,30 @@
 - List markers: `-` consistently
 - Code blocks: `bash` for shell, `yaml` for YAML, bare fence for ASCII art
 
-## Known Documentation Gaps (as of 2026-02-17)
+## Known Documentation Gaps (as of 2026-02-18)
 - No CHANGELOG documenting the UID/GID change from 1100 to 3000
 - No migration guide for existing deployments
 - Fedora version (43) not mentioned in prose of CLAUDE.md or README.md (only in inventory)
 - No LICENSE or CONTRIBUTING files (acceptable for personal homelab)
 - Dead variable `immich_port` in roles/immich/defaults/main.yml (no longer published)
 - BLOCKER: Config backup path in all docs says `/home/mms/backups/` but code uses `/data/backups/config` (NFS)
-- HIGH: Open Notebook completely absent from README and all wiki pages (but present in CLAUDE.md)
-- HIGH: "Only Traefik publishes a host port" is wrong -- Plex also publishes 32400
-- HIGH: Configuration.md vault table missing 4 variables (vm_password, backup_age, open_notebook x2)
+- HIGH: Backup-and-Restore.md missing Open Notebook cold backup note (stops containers, tars both dirs)
+- HIGH: Troubleshooting.md missing Open Notebook section (multi-container debug guidance)
+- MEDIUM: Storage-Layout.md missing open-notebook/ and open-notebook-db/ under /home/mms/config/
+- MEDIUM: Common-Operations.md and Backup-and-Restore.md missing Open Notebook restore example
 - MEDIUM: Traefik wiki says `mms_traefik_domain` is in `group_vars/mms/vars.yml` (actually in `all`)
-- MEDIUM: supply-chain-hygiene-reviewer.md services list missing Channels DVR, Navidrome, Open Notebook
+- MEDIUM: supply-chain-hygiene-reviewer.md services list missing Channels DVR, Navidrome
 - MEDIUM: Auto-Deploy example two-group config missing channels, navidrome, open-notebook
+- MEDIUM: CLAUDE.md Architecture missing image pruning timer and inline autodeploy pruning
+- MEDIUM: Auto-Deploy.md variable table missing `autodeploy_prune_images`
+- MEDIUM: Troubleshooting.md missing disk space / dangling image section
+- LOW: CLAUDE.md Conventions missing Molecule shared pre-tasks and role split pattern
 - LOW: Home.md Kometa URL uses `---` vs README's `---` (em dash)
+- LOW: Common-Operations.md missing manual image pruning section
+- LOW: Configuration.md naming conventions missing `podman_` prefix example
+- RESOLVED: Open Notebook now present in README, Home.md, Configuration.md vault table (was HIGH)
+- RESOLVED: "Only Traefik publishes host port" fixed -- Plex 32400 now mentioned (was HIGH)
+- RESOLVED: Configuration.md vault table now includes all vault variables (was HIGH)
 
 ## Source of Truth for Key Values
 - UID/GID: `inventory/group_vars/all/vars.yml` lines 23-25 (currently 3000:3000)
@@ -65,6 +75,9 @@
 - Open Notebook role: `roles/open_notebook/` (app + SurrealDB, two containers)
 - Open Notebook ports: 8502 (Next.js frontend), 5055 (FastAPI backend)
 - Plex publishes port 32400: `services/plex.yml` line 7 (`publish_ports: ["32400:32400"]`)
+- Podman prune defaults: `roles/podman/defaults/main.yml` (`podman_prune_enabled: true`, `podman_prune_schedule: "Sun *-*-* 05:00:00"`)
+- Autodeploy prune default: `roles/autodeploy/defaults/main.yml` (`autodeploy_prune_images: true`)
+- Image prune timer: `~/.config/systemd/user/mms-image-prune.{timer,service}` (NOT in containers/systemd/)
 
 ## Review History
 - 2026-02-08: Full review of all .md files on fix/dry-run-issues branch (15 commits over main)
@@ -136,4 +149,25 @@
   - HIGH: "Only Traefik publishes host port" wrong (Plex publishes 32400)
   - HIGH: Configuration.md vault table missing 4 variables
   - MEDIUM: Traefik doc wrong about mms_traefik_domain location
+  - See review-findings.md for details
+- 2026-02-18: Review of all .md files on feat/open-notebook-backup branch (2 commits over main)
+  - CLAUDE.md Backups bullet correctly updated with Open Notebook cold backup strategy
+  - open_notebook role correctly listed in CLAUDE.md roles list
+  - Molecule shared pre-tasks (molecule/shared/prepare_mms_user.yml) extracted, DRY improvement
+  - Role split (setup.yml + containers.yml) enables Molecule testing of setup path
+  - HIGH: Backup-and-Restore.md missing Open Notebook cold backup note
+  - HIGH: Troubleshooting.md missing Open Notebook section
+  - MEDIUM: Storage-Layout.md missing open-notebook config dirs
+  - MEDIUM: Restore examples in Common-Operations.md and Backup-and-Restore.md missing Open Notebook
+  - LOW: CLAUDE.md Conventions missing Molecule/role-split pattern
+  - Prior issues RESOLVED: Open Notebook in README/wiki tables, vault table complete, Plex port noted
+  - See review-findings.md for details
+- 2026-02-18: Review of all .md files on feat/gh-issue-62-image-pruning branch (1 commit over main)
+  - No documentation files changed on this branch (code-only: 6 files in roles/)
+  - MEDIUM: CLAUDE.md Architecture missing image pruning timer + inline autodeploy prune
+  - MEDIUM: Auto-Deploy.md variable table missing autodeploy_prune_images
+  - MEDIUM: Troubleshooting.md missing disk space / dangling image section
+  - LOW: Common-Operations.md missing manual image pruning section
+  - LOW: Configuration.md naming conventions missing podman_ prefix
+  - All existing docs remain accurate (no breakage)
   - See review-findings.md for details

@@ -132,6 +132,7 @@ The autodeploy role accepts these defaults (override in inventory vars):
 | `autodeploy_playbook` | `playbooks/deploy-services.yml` | Playbook to run on changes |
 | `autodeploy_timeout` | `1800` | Max deploy duration in seconds |
 | `autodeploy_log_retention` | `30` | Number of log files to keep |
+| `autodeploy_prune_images` | `true` | Prune dangling Podman images after successful deploy |
 
 ### Deploy groups
 

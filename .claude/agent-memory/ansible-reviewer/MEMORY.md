@@ -22,7 +22,7 @@
 ## Roles (13)
 - proxmox_vm: Provision VM from cloud-init template (API calls, connection: local)
 - base_system: OS config, mms user, packages, SELinux, sysctl, cloud-init wait, ~/bin/mms-services script
-- podman: Rootless config, registries, storage, quadlet dir
+- podman: Rootless config, registries, storage, quadlet dir, image prune timer
 - storage: NFS mounts, TRaSH-guide directory structure (NFS dirs use become_user, no explicit owner/group)
 - firewall: firewalld with drop default, tailscale trusted
 - tailscale: Install, auth (serve mappings removed in Traefik branch)
@@ -76,6 +76,8 @@
 - Backup role: two systems -- config backups (mms-backup.*) + API backups (mms-api-backup.*) for *arr services to NAS
 - API backup uses Host-header routing through Traefik on localhost:80 (no direct container ports)
 - API backup reads API keys from config.xml at runtime (no secrets in Ansible vars)
+- Image pruning: two-layer approach -- weekly systemd timer (podman role) + inline post-deploy prune (autodeploy role)
+- Prune units in ~/.config/systemd/user/ (not quadlet dir); Persistent=true + RandomizedDelaySec=300
 
 ## Recurring Anti-pattern: String-as-Boolean Facts
 - set_fact with Jinja2 comparison produces strings "True"/"False", NOT booleans
@@ -155,3 +157,5 @@ See review-findings.md for detailed findings from all reviews.
 51. ~~No Molecule test for open_notebook role~~ fixed: Molecule tests added for setup.yml
 52. Restore playbook chown runs after services started for open-notebook (should be before)
 53. Open-notebook backup script hardcodes directory names (open-notebook, open-notebook-db) in tar command
+54. Podman prune units always deployed even when podman_prune_enabled: false (dead files on disk)
+55. No Molecule test for podman role prune timer tasks

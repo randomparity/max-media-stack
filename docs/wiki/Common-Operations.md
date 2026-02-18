@@ -85,6 +85,18 @@ ansible-lint playbooks/ roles/
 yamllint .
 ```
 
+## Image pruning
+
+Dangling container images are cleaned up automatically by a weekly timer and after each successful autodeploy. To run a manual prune:
+
+```bash
+# Prune dangling images only
+podman image prune -f
+
+# Check disk usage
+podman system df
+```
+
 ## Dry run
 
 ```bash
