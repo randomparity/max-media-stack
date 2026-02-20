@@ -22,7 +22,7 @@ plex:
     - "PLEX_UID=0"
     - "PLEX_GID=0"
     - "CHANGE_CONFIG_DIR_OWNERSHIP=false"
-    - "ADVERTISE_IP=http://{{ ansible_tailscale0.ipv4.address }}:32400"
+    - "ADVERTISE_IP=http://{{ ansible_facts['tailscale0']['ipv4']['address'] }}:32400"
   health_cmd: "curl -sf http://localhost:32400/identity || exit 1"
   health_interval: "60s"
   backup_type: "plex"
