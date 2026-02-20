@@ -10,6 +10,9 @@
   ignorePaths: [
     'roles/quadlet_service/molecule/**',
   ],
+  registryAliases: {
+    'lscr.io': 'ghcr.io',
+  },
   customManagers: [
     {
       customType: 'regex',
@@ -86,6 +89,13 @@
         'galaxy-collection',
       ],
       groupName: 'ansible galaxy collections',
+    },
+    {
+      description: 'Disable Python runtime updates',
+      matchPackageNames: [
+        'python',
+      ],
+      enabled: false,
     },
     {
       description: 'Auto-merge patch and minor updates',
