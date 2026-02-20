@@ -10,6 +10,9 @@
   ignorePaths: [
     'roles/quadlet_service/molecule/**',
   ],
+  registryAliases: {
+    'lscr.io': 'ghcr.io',
+  },
   customManagers: [
     {
       customType: 'regex',
