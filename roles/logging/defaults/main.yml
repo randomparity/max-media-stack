@@ -1,8 +1,8 @@
 ---
 # renovate: datasource=docker depName=docker.io/grafana/loki
 logging_loki_image: "docker.io/grafana/loki:3.4.2"
-# renovate: datasource=docker depName=docker.io/grafana/alloy
-logging_alloy_image: "docker.io/grafana/alloy:1.6.1"
+# renovate: datasource=docker depName=docker.io/grafana/alloy versioning=docker
+logging_alloy_image: "docker.io/grafana/alloy:v1.6.1"
 # renovate: datasource=docker depName=docker.io/grafana/grafana
 logging_grafana_image: "docker.io/grafana/grafana:11.6.0"
 
