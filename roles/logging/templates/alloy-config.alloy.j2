@@ -27,14 +27,14 @@ loki.relabel "journal" {
   // Extract service name (unit without .service suffix)
   rule {
     source_labels = ["__journal__systemd_user_unit"]
-    regex         = "(.+)\\.service"
+    regex         = `(.+)\.service`
     target_label  = "service_name"
   }
 
   // Keep only MMS-related units
   rule {
     source_labels = ["__journal__systemd_user_unit"]
-    regex         = "({{ _logging_alloy_unit_filter }})"
+    regex         = `({{ _logging_alloy_unit_filter }})`
     action        = "keep"
   }
 }
