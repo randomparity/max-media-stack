@@ -79,3 +79,29 @@
     sysctl_file: /etc/sysctl.d/99-mms.conf
     reload: true
     state: present
+
+# Persistent journal for centralized logging (Loki reads from /var/log/journal)
+- name: Create persistent journal directory
+  ansible.builtin.file:
+    path: /var/log/journal
+    state: directory
+    owner: root
+    group: systemd-journal
+    mode: "2755"
+
+- name: Create journald config directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy journald persistent storage config
+  ansible.builtin.template:
+    src: journald-mms.conf.j2
+    dest: /etc/systemd/journald.conf.d/mms.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart journald

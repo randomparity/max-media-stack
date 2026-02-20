@@ -1,0 +1,84 @@
+{{ ansible_managed | comment }}
+
+groups:
+  - name: mms-container-alerts
+    rules:
+      - alert: ContainerCrashLoop
+        expr: |
+          count_over_time({job="mms"} |~ "Main process exited|Failed with result" [15m]) > {{ logging_alert_restart_count }}
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container crash loop detected"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} has restarted more than {{ logging_alert_restart_count }} times in 15 minutes"
+
+      - alert: HighErrorRate
+        expr: |
+          sum by (unit) (count_over_time({job="mms"} |~ "(?i)(error|exception|fatal|panic)" [5m])) > {{ logging_alert_error_rate_threshold }}
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} has more than {{ logging_alert_error_rate_threshold }} errors in the last 5 minutes"
+
+      - alert: DatabaseConnectionFailure
+        expr: |
+          count_over_time({job="mms"} |~ "(?i)(database.*connection|connection.*refused|could not connect to server|pg_isready)" [5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failure"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} is experiencing database connection errors"
+
+      - alert: DiskSpaceWarning
+        expr: |
+          count_over_time({job="mms"} |~ "(?i)(no space left on device|ENOSPC|disk full)" [5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space exhausted"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} reports no space left on device"
+
+      - alert: OutOfMemory
+        expr: |
+          count_over_time({job="mms"} |~ "(?i)(out of memory|OOM|cannot allocate memory)" [5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Out of memory"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} reports out of memory condition"
+
+      - alert: ServiceSilence
+        expr: |
+          count_over_time({unit=~"({{ (mms_services | reject('equalto', 'kometa') | list + ['immich-server', 'immich-ml']) | join('|') }}).service"} [{{ logging_alert_silence_minutes }}m]) == 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Service appears silent"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} has produced no logs for {{ logging_alert_silence_minutes }} minutes"
+
+      - alert: BackupFailure
+        expr: |
+          count_over_time({unit=~"mms-backup.*"} |~ "(?i)(error|failed|failure)" [30m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup failure detected"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} reports a backup error"
+
+      - alert: AutodeployFailure
+        expr: |
+          count_over_time({unit=~"mms-autodeploy.*"} |~ "(?i)(error|failed|failure)" [30m]) > 0
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Auto-deploy failure detected"
+          description: "{% raw %}{{ $labels.unit }}{% endraw %} reports an auto-deploy error"

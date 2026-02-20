@@ -1,0 +1,31 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Grafana Alloy - Log Collector
+After=network-online.target
+After=loki.service
+
+[Container]
+ContainerName=alloy
+Image={{ logging_alloy_image }}
+Network={{ mms_network_name }}.network
+Exec=run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/alloy-data /etc/alloy/config.alloy
+Volume={{ logging_config_dir }}/alloy/config.alloy:/etc/alloy/config.alloy:Z,ro
+Volume={{ logging_journal_path }}:/var/log/journal:ro
+Volume=/run/log/journal:/run/log/journal:ro
+Volume=/etc/machine-id:/etc/machine-id:ro
+SecurityLabelDisable=true
+Volume={{ logging_config_dir }}/alloy-data:/alloy-data:Z
+UserNS=keep-id:uid=0,gid=0
+GroupAdd={{ _logging_journal_gid }}
+HealthCmd=bash -c 'echo > /dev/tcp/localhost/12345'
+HealthInterval=30s
+Tmpfs=/run:U
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

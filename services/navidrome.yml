@@ -12,7 +12,7 @@ navidrome:
     - "ND_LOGLEVEL=info"
     - "ND_ENABLEINSIGHTSCOLLECTOR=false"
     - "ND_ENABLEEXTERNALSERVICES=false"
-  health_cmd: "curl -sf http://localhost:4533/ping || exit 1"
+  health_cmd: "wget -q --spider http://localhost:4533/ping || exit 1"
   health_interval: "60s"
   backup_type: "navidrome"
   backup_db_files: ["navidrome.db"]

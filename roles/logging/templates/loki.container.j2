@@ -1,0 +1,26 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Loki - Log Aggregation
+After=network-online.target
+
+[Container]
+ContainerName=loki
+Image={{ logging_loki_image }}
+Network={{ mms_network_name }}.network
+Exec=-config.file=/etc/loki/loki-config.yml
+Volume={{ logging_config_dir }}/loki/loki-config.yml:/etc/loki/loki-config.yml:Z,ro
+Volume={{ logging_config_dir }}/loki/rules:/etc/loki/rules:Z,ro
+Volume={{ logging_loki_data_dir }}:/loki:Z
+UserNS=keep-id:uid=10001,gid=10001
+HealthCmd=wget -qO- http://localhost:3100/ready || exit 1
+HealthInterval=30s
+Tmpfs=/run:U
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

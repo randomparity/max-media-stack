@@ -27,7 +27,7 @@
     - name: Check mms-services script is deployed and executable
       ansible.builtin.stat:
         path: /home/mms/bin/mms-services
-      register: _mms_services_script
+      register: base_system_mms_services_script
       failed_when: >-
-        not _mms_services_script.stat.exists or
-        not _mms_services_script.stat.executable
+        not base_system_mms_services_script.stat.exists or
+        not base_system_mms_services_script.stat.executable

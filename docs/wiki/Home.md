@@ -20,6 +20,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
 | Open Notebook | `notebook.media.example.com` | AI research notebook           |
+| Grafana   | `grafana.media.example.com`    | Log dashboard and alerting     |
 
 ## Architecture
 
@@ -38,8 +39,9 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      ├── jellyfin  plex  channels             │  │  │
 │  │  │      ├── tautulli  kometa  navidrome         │  │  │
 │  │  │      ├── open-notebook  open-notebook-db    │  │  │
-│  │  │      └── immich-server  immich-ml            │  │  │
-│  │  │          immich-postgres immich-redis        │  │  │
+│  │  │      ├── immich-server  immich-ml             │  │  │
+│  │  │      │   immich-postgres immich-redis        │  │  │
+│  │  │      └── grafana  loki  alloy               │  │  │
 │  │  │            ┌───────────┐                     │  │  │
 │  │  │            │mms.network│                     │  │  │
 │  │  │            └───────────┘                     │  │  │
@@ -77,6 +79,9 @@ All containers share the `mms.network` bridge and reach each other by container 
 | Open Notebook    | `open-notebook`    | 8502  | `http://open-notebook:8502`         |
 | Open Notebook DB | `open-notebook-db` | 8000  | `open-notebook-db:8000` (TCP)       |
 | Traefik          | `traefik`          | 80    | `http://traefik:80`                 |
+| Loki             | `loki`             | 3100  | `http://loki:3100`                  |
+| Alloy            | `alloy`            | 12345 | `http://alloy:12345`                |
+| Grafana          | `grafana`          | 3000  | `http://grafana:3000`               |
 
 Common connections to configure:
 

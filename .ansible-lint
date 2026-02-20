@@ -21,5 +21,6 @@ exclude_paths:
   - "*/vault.yml"
   - "*/vault_*.yml"
   - roles/quadlet_service/molecule/services/
+  - molecule/shared/
 
 offline: true

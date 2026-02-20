@@ -93,6 +93,10 @@ mms_traefik_routes:
     subdomain: notebook
     container: open-notebook
     port: 8502
+  grafana:
+    subdomain: grafana
+    container: grafana
+    port: 3000
 
 # Auto-deploy repository URL
 mms_autodeploy_repo_url: "git@github.com:randomparity/max-media-stack.git"
@@ -120,3 +124,4 @@ autodeploy_groups:
       - channels
       - navidrome
       - open-notebook
+      - logging

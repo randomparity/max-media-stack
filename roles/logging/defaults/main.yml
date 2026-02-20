@@ -1,0 +1,29 @@
+---
+# renovate: datasource=docker depName=docker.io/grafana/loki
+logging_loki_image: "docker.io/grafana/loki:3.4.2"
+# renovate: datasource=docker depName=docker.io/grafana/alloy versioning=docker
+logging_alloy_image: "docker.io/grafana/alloy:v1.6.1"
+# renovate: datasource=docker depName=docker.io/grafana/grafana
+logging_grafana_image: "docker.io/grafana/grafana:11.6.0"
+
+# Directories
+logging_config_dir: "{{ mms_config_dir }}/logging"
+logging_loki_data_dir: "{{ mms_config_dir }}/logging/loki-data"
+logging_grafana_data_dir: "{{ mms_config_dir }}/logging/grafana-data"
+
+# Loki retention
+logging_loki_retention_period: "720h"  # 30 days
+
+# Grafana
+logging_grafana_admin_user: admin
+# logging_grafana_admin_password is set via vault_logging_grafana_admin_password
+# Note: Grafana state (dashboards, datasources) is fully provisioned from Ansible
+# templates. The grafana-data directory is disposable — no backup needed.
+
+# Journal path
+logging_journal_path: "/var/log/journal"
+
+# Alert thresholds
+logging_alert_error_rate_threshold: 10   # errors per 5m
+logging_alert_silence_minutes: 15        # no logs = possibly down
+logging_alert_restart_count: 3           # restarts in 15m = crash loop

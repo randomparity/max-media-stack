@@ -20,6 +20,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
 | Open Notebook | `notebook.media.example.com` | AI research notebook           |
+| Grafana   | `grafana.media.example.com`    | Log dashboard and alerting     |
 
 ## Architecture
 
@@ -38,8 +39,9 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      ├── jellyfin  plex  channels             │  │  │
 │  │  │      ├── tautulli  kometa  navidrome         │  │  │
 │  │  │      ├── open-notebook  open-notebook-db    │  │  │
-│  │  │      └── immich-server  immich-ml            │  │  │
-│  │  │          immich-postgres immich-redis        │  │  │
+│  │  │      ├── immich-server  immich-ml             │  │  │
+│  │  │      │   immich-postgres immich-redis        │  │  │
+│  │  │      └── grafana  loki  alloy               │  │  │
 │  │  │            ┌───────────┐                     │  │  │
 │  │  │            │mms.network│                     │  │  │
 │  │  │            └───────────┘                     │  │  │

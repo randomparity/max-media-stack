@@ -1,0 +1,170 @@
+---
+# Build regex filter for Alloy to match MMS service units
+- name: Build Alloy journal unit filter  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    _logging_alloy_unit_filter: >-
+      {{ (mms_services
+          + ['immich-server', 'immich-ml', 'immich-postgres', 'immich-redis',
+             'open-notebook', 'open-notebook-db',
+             'traefik', 'loki', 'alloy', 'grafana',
+             'mms-backup', 'mms-api-backup', 'mms-image-prune']
+          + (autodeploy_groups | default({}) | dict2items
+             | map(attribute='key')
+             | map('regex_replace', '^', 'mms-autodeploy-')
+             | list))
+         | map('regex_escape')
+         | map('regex_replace', '$', '\\.(service|timer)')
+         | join('|') }}
+
+# Add mms user to systemd-journal group so rootless Alloy can read /var/log/journal
+- name: Add mms user to systemd-journal group
+  ansible.builtin.user:
+    name: "{{ mms_user }}"
+    groups: systemd-journal
+    append: true
+  become: true
+
+# Look up the numeric GID for systemd-journal (the group name doesn't exist
+# inside the container, so GroupAdd must use the numeric GID)
+- name: Look up systemd-journal GID  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.getent:
+    database: group
+    key: systemd-journal
+  become: true
+
+- name: Set systemd-journal GID fact  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    _logging_journal_gid: "{{ ansible_facts.getent_group['systemd-journal'][1] }}"
+
+# Create directory tree
+- name: Create logging config directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+  loop:
+    - "{{ logging_config_dir }}"
+    - "{{ logging_config_dir }}/alloy"
+    - "{{ logging_config_dir }}/loki"
+    - "{{ logging_config_dir }}/loki/rules/mms"
+    - "{{ logging_config_dir }}/grafana"
+    - "{{ logging_config_dir }}/grafana/provisioning/datasources"
+    - "{{ logging_config_dir }}/grafana/provisioning/dashboards"
+    - "{{ logging_config_dir }}/grafana/dashboards"
+    - "{{ logging_loki_data_dir }}"
+    - "{{ logging_grafana_data_dir }}"
+    - "{{ logging_config_dir }}/alloy-data"
+
+# Deploy Alloy config
+- name: Deploy Alloy config
+  ansible.builtin.template:
+    src: alloy-config.alloy.j2
+    dest: "{{ logging_config_dir }}/alloy/config.alloy"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Restart alloy
+
+# Deploy Loki config
+- name: Deploy Loki config
+  ansible.builtin.template:
+    src: loki-config.yml.j2
+    dest: "{{ logging_config_dir }}/loki/loki-config.yml"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Restart loki
+
+# Deploy Loki alert rules
+- name: Deploy Loki alert rules
+  ansible.builtin.template:
+    src: loki-alert-rules.yml.j2
+    dest: "{{ logging_config_dir }}/loki/rules/mms/alerts.yml"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Restart loki
+
+# Deploy Grafana config
+- name: Deploy Grafana config
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: "{{ logging_config_dir }}/grafana/grafana.ini"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+  become: true
+  no_log: true
+  notify: Restart grafana
+
+- name: Deploy Grafana datasource provisioning
+  ansible.builtin.template:
+    src: grafana-datasources.yml.j2
+    dest: "{{ logging_config_dir }}/grafana/provisioning/datasources/loki.yml"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Restart grafana
+
+- name: Deploy Grafana dashboard provider
+  ansible.builtin.template:
+    src: grafana-dashboards-provider.yml.j2
+    dest: "{{ logging_config_dir }}/grafana/provisioning/dashboards/default.yml"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Restart grafana
+
+- name: Deploy MMS logs dashboard
+  ansible.builtin.template:
+    src: grafana-dashboard-mms-logs.json.j2
+    dest: "{{ logging_config_dir }}/grafana/dashboards/mms-logs.json"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+
+# Deploy Quadlet container files
+- name: Deploy Loki container quadlet
+  ansible.builtin.template:
+    src: loki.container.j2
+    dest: "{{ mms_quadlet_dir }}/loki.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart loki
+
+- name: Deploy Alloy container quadlet
+  ansible.builtin.template:
+    src: alloy.container.j2
+    dest: "{{ mms_quadlet_dir }}/alloy.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart alloy
+
+- name: Deploy Grafana container quadlet
+  ansible.builtin.template:
+    src: grafana.container.j2
+    dest: "{{ mms_quadlet_dir }}/grafana.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart grafana

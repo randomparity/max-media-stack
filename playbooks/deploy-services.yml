@@ -15,6 +15,7 @@
         _deploy_immich: "{{ (deploy_services is not defined) or ('immich' in deploy_services) }}"
         _deploy_open_notebook: "{{ (deploy_services is not defined) or ('open-notebook' in deploy_services) }}"
         _deploy_traefik: "{{ (deploy_services is not defined) or ('traefik' in deploy_services) }}"
+        _deploy_logging: "{{ (deploy_services is not defined) or ('logging' in deploy_services) }}"
 
     - name: Deploy each service
       ansible.builtin.include_tasks:
@@ -64,6 +65,20 @@
         - name: Warn about Traefik failure
           ansible.builtin.debug:
             msg: "Traefik failed to deploy — continuing with remaining tasks"
+
+    - name: Deploy logging stack
+      when: _deploy_logging | bool
+      block:
+        - name: Include logging role
+          ansible.builtin.include_role:
+            name: logging
+      rescue:
+        - name: Record logging failure
+          ansible.builtin.set_fact:
+            _failed_services: "{{ _failed_services | default([]) + ['logging'] }}"
+        - name: Warn about logging failure
+          ansible.builtin.debug:
+            msg: "Logging stack failed to deploy — continuing with remaining tasks"
 
     - name: Fail if any services failed to deploy
       ansible.builtin.fail:

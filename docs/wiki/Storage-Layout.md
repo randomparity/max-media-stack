@@ -38,6 +38,12 @@ MMS splits storage between NFS (bulk media on TrueNAS) and local SSD (per-servic
 └── backups/                    #   Immich internal backups
 /home/mms/config/open-notebook/     # Open Notebook app config + data
 /home/mms/config/open-notebook-db/  # SurrealDB data (separate for cold backup)
+/home/mms/config/logging/           # Logging stack config
+├── loki/                           #   Loki config + alert rules
+├── alloy/                          #   Alloy collector config
+├── grafana/                        #   Grafana config + provisioning
+├── loki-data/                      #   Loki log storage (retention-managed)
+└── grafana-data/                   #   Grafana SQLite DB (disposable)
 ```
 
 ## Design rationale

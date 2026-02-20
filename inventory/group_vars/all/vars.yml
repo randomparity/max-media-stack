@@ -67,6 +67,7 @@ mms_vm_description: |
   - [Navidrome](http://navidrome.{{ mms_traefik_domain }})
   - [Immich](http://immich.{{ mms_traefik_domain }})
   - [Open Notebook](http://notebook.{{ mms_traefik_domain }})
+  - [Grafana](http://grafana.{{ mms_traefik_domain }})
 
 # Backup encryption
 # mms_backup_age_public_key: "age1xyq002lqfyspv9fn6vfurpljfcd7jd4vpzl2ayz3wqjfg6h4jvnq8zfndu"  # Set in vault or override
