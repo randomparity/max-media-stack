@@ -15,7 +15,7 @@ Volume={{ logging_journal_path }}:/var/log/journal:ro
 Volume=/run/log/journal:/run/log/journal:ro
 Volume=/etc/machine-id:/etc/machine-id:ro
 Volume={{ logging_config_dir }}/alloy-data:/var/lib/alloy/data:Z
-UserNS=keep-id
+UserNS=keep-id:uid=0,gid=0
 GroupAdd={{ _logging_journal_gid }}
 HealthCmd=wget -qO- http://localhost:12345/-/healthy || exit 1
 HealthInterval=30s
