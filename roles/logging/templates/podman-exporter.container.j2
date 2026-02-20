@@ -13,7 +13,7 @@ Exec=--collector.enable-all
 Volume=/run/user/{{ mms_uid }}/podman/podman.sock:/run/podman/podman.sock:ro
 UserNS=keep-id
 SecurityLabelDisable=true
-HealthCmd=wget -qO- http://localhost:9882/healthz || exit 1
+HealthCmd=wget -qO- http://localhost:9882/metrics > /dev/null 2>&1 || exit 1
 HealthInterval=30s
 NoNewPrivileges=true
 

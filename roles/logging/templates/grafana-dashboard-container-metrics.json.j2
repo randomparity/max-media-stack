@@ -183,7 +183,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "podman_container_cpu_percent{name!=\"\"}",
+          "expr": "rate(podman_container_cpu_seconds_total{name!=\"\"}[$__rate_interval]) * 100",
           "legendFormat": "{% raw %}{{ name }}{% endraw %}",
           "refId": "A"
         }
