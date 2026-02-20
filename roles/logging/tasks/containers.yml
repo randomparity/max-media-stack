@@ -46,8 +46,8 @@
 - name: Wait for Loki to be ready
   ansible.builtin.command:
     cmd: podman healthcheck run loki
-  register: _loki_health
-  until: _loki_health.rc == 0
+  register: logging_loki_health
+  until: logging_loki_health.rc == 0
   retries: 12
   delay: 10
   changed_when: false
@@ -69,8 +69,8 @@
 - name: Wait for Alloy to be ready
   ansible.builtin.command:
     cmd: podman healthcheck run alloy
-  register: _alloy_health
-  until: _alloy_health.rc == 0
+  register: logging_alloy_health
+  until: logging_alloy_health.rc == 0
   retries: 12
   delay: 10
   changed_when: false
@@ -92,8 +92,8 @@
 - name: Wait for Grafana to be ready
   ansible.builtin.command:
     cmd: podman healthcheck run grafana
-  register: _grafana_health
-  until: _grafana_health.rc == 0
+  register: logging_grafana_health
+  until: logging_grafana_health.rc == 0
   retries: 12
   delay: 10
   changed_when: false

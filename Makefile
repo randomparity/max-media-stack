@@ -2,7 +2,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 VENV := .venv
-PYTHON_MIN := 3.11
+PYTHON_MIN := 3.13
 ACTIVATE := source $(VENV)/bin/activate
 
 # Detect Python provider: uv > pyenv > system
@@ -17,6 +17,13 @@ PYTHON_BIN := $(shell \
 		echo none; \
 	fi)
 
+# Use uv pip when available (uv venvs don't include pip by default)
+ifeq ($(PYTHON_BIN),uv)
+  PIP_INSTALL := uv pip install --python $(VENV)/bin/python3
+else
+  PIP_INSTALL := $(ACTIVATE) && pip install
+endif
+
 .PHONY: help setup hooks lint check deploy clean
 
 help: ## Show this help
@@ -26,8 +33,7 @@ help: ## Show this help
 setup: $(VENV)/bin/ansible ## Create venv and install Ansible + Galaxy collections
 
 $(VENV)/bin/ansible: $(VENV)/bin/activate requirements.yml
-	$(ACTIVATE) && pip install --upgrade pip
-	$(ACTIVATE) && pip install ansible ansible-lint yamllint pre-commit
+	$(PIP_INSTALL) ansible ansible-lint yamllint pre-commit
 	$(ACTIVATE) && ansible-galaxy collection install -r requirements.yml
 	@touch $@
 

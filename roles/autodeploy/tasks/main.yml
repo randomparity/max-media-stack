@@ -203,12 +203,12 @@
   ansible.builtin.find:
     paths: "/home/{{ autodeploy_user }}/.config/systemd/user"
     patterns: "mms-autodeploy-*.timer"
-  register: _existing_timers
+  register: autodeploy_existing_timers
 
-- name: Identify stale autodeploy timers  # noqa: var-naming[no-role-prefix]
+- name: Identify stale autodeploy timers
   ansible.builtin.set_fact:
-    _stale_timers: >-
-      {{ _existing_timers.files | rejectattr('path', 'search', _expected_pattern) | list }}
+    autodeploy_stale_timers: >-
+      {{ autodeploy_existing_timers.files | rejectattr('path', 'search', _expected_pattern) | list }}
   vars:
     _expected_pattern: "{{ autodeploy_groups.keys() | map('regex_replace', '^(.*)$', 'mms-autodeploy-\\1\\.timer$') | join('|') }}"
 
@@ -221,7 +221,7 @@
   become: true
   become_user: "{{ autodeploy_user }}"
   environment: "{{ mms_systemd_env }}"
-  loop: "{{ _stale_timers }}"
+  loop: "{{ autodeploy_stale_timers }}"
   loop_control:
     label: "{{ item.path | basename }}"
   failed_when: false
@@ -230,7 +230,7 @@
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
-  loop: "{{ _stale_timers }}"
+  loop: "{{ autodeploy_stale_timers }}"
   loop_control:
     label: "{{ item.path | basename }}"
   notify: Reload systemd user daemon
@@ -239,12 +239,12 @@
   ansible.builtin.find:
     paths: "/home/{{ autodeploy_user }}/.config/systemd/user"
     patterns: "mms-autodeploy-*.service"
-  register: _existing_services
+  register: autodeploy_existing_services
 
-- name: Identify stale autodeploy services  # noqa: var-naming[no-role-prefix]
+- name: Identify stale autodeploy services
   ansible.builtin.set_fact:
-    _stale_services: >-
-      {{ _existing_services.files | rejectattr('path', 'search', _expected_pattern) | list }}
+    autodeploy_stale_services: >-
+      {{ autodeploy_existing_services.files | rejectattr('path', 'search', _expected_pattern) | list }}
   vars:
     _expected_pattern: "{{ autodeploy_groups.keys() | map('regex_replace', '^(.*)$', 'mms-autodeploy-\\1\\.service$') | join('|') }}"
 
@@ -256,7 +256,7 @@
   become: true
   become_user: "{{ autodeploy_user }}"
   environment: "{{ mms_systemd_env }}"
-  loop: "{{ _stale_services }}"
+  loop: "{{ autodeploy_stale_services }}"
   loop_control:
     label: "{{ item.path | basename }}"
   failed_when: false
@@ -265,7 +265,7 @@
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
-  loop: "{{ _stale_services }}"
+  loop: "{{ autodeploy_stale_services }}"
   loop_control:
     label: "{{ item.path | basename }}"
   notify: Reload systemd user daemon
