@@ -11,7 +11,7 @@ MMS follows a defense-in-depth approach with multiple layers of isolation and ac
 ## Container security
 
 - **Rootless Podman**: All containers run as the unprivileged `mms` user (UID/GID 3000:3000). No containers run as root.
-- **No socket mount**: Traefik uses the file provider to discover routes. The Podman socket is never mounted into any container, eliminating a common container escape vector.
+- **Minimal socket exposure**: Traefik uses the file provider (no socket). Only `podman-exporter` mounts the Podman socket (read-only) for container metrics — scoped to the rootless `mms` user socket, not the system daemon.
 - **SELinux enforcing**: Config volumes use `:Z` for private labeling. NFS volumes rely on the `virt_use_nfs` SELinux boolean instead of `:z`/`:Z` labels.
 
 ## Secrets management

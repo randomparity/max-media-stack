@@ -16,6 +16,7 @@ Volume=/run/log/journal:/run/log/journal:ro
 Volume=/etc/machine-id:/etc/machine-id:ro
 Volume=/proc:/host/proc:ro
 Volume=/sys:/host/sys:ro
+# Full rootfs mount required for prometheus.exporter.unix filesystem collector
 Volume=/:/host/root:ro
 SecurityLabelDisable=true
 Volume={{ logging_config_dir }}/alloy-data:/alloy-data:Z

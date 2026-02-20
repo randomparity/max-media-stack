@@ -397,17 +397,19 @@ systemctl --user restart mms-open-notebook.service
 
 **Note:** Backups for Open Notebook cause brief downtime because they use a cold backup strategy (both containers are stopped during the backup).
 
-## Logging stack (Loki / Alloy / Grafana)
+## Observability stack (Loki / Alloy / Prometheus / Grafana / podman-exporter)
 
-The logging stack consists of three containers: Loki (log storage), Alloy (journal collector), and Grafana (dashboard UI).
+The observability stack consists of five containers: Loki (log storage), Alloy (journal collector + host metrics), Prometheus (metrics storage), podman-exporter (container metrics), and Grafana (dashboard UI).
 
 ```bash
-# Check all three containers
-systemctl --user status loki.service alloy.service grafana.service
+# Check all five containers
+systemctl --user status loki.service alloy.service prometheus.service podman-exporter.service grafana.service
 
 # View container logs
 podman logs --tail 50 loki
 podman logs --tail 50 alloy
+podman logs --tail 50 prometheus
+podman logs --tail 50 podman-exporter
 podman logs --tail 50 grafana
 
 # Access Grafana UI

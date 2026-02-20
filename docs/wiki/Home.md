@@ -20,7 +20,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
 | Open Notebook | `notebook.media.example.com` | AI research notebook           |
-| Grafana   | `grafana.media.example.com`    | Log dashboard and alerting     |
+| Grafana   | `grafana.media.example.com`    | Observability dashboard and alerting |
 
 ## Architecture
 
@@ -42,6 +42,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      ├── immich-server  immich-ml             │  │  │
 │  │  │      │   immich-postgres immich-redis        │  │  │
 │  │  │      └── grafana  loki  alloy               │  │  │
+│  │  │          prometheus  podman-exporter         │  │  │
 │  │  │            ┌───────────┐                     │  │  │
 │  │  │            │mms.network│                     │  │  │
 │  │  │            └───────────┘                     │  │  │
@@ -82,6 +83,8 @@ All containers share the `mms.network` bridge and reach each other by container 
 | Loki             | `loki`             | 3100  | `http://loki:3100`                  |
 | Alloy            | `alloy`            | 12345 | `http://alloy:12345`                |
 | Grafana          | `grafana`          | 3000  | `http://grafana:3000`               |
+| Prometheus       | `prometheus`       | 9090  | `http://prometheus:9090`            |
+| Podman Exporter  | `podman-exporter`  | 9882  | `http://podman-exporter:9882`       |
 
 Common connections to configure:
 
