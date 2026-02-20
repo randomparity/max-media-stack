@@ -33,3 +33,21 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+
+- name: Restart prometheus
+  ansible.builtin.systemd:
+    name: prometheus.service
+    state: restarted
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Restart podman-exporter
+  ansible.builtin.systemd:
+    name: podman-exporter.service
+    state: restarted
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"

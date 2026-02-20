@@ -32,7 +32,7 @@
 - traefik: Reverse proxy with file provider, Host-header routing via mms_traefik_routes
 - backup: Scripts, systemd timers, retention, encryption with age
 - autodeploy: Git-based auto-deploy with systemd timer, polls repo and runs deploy-services.yml
-- logging: Loki + Alloy + Grafana centralized logging; Alloy reads journal, ships to Loki; Grafana dashboards + alert rules
+- logging: Loki + Alloy + Grafana + Prometheus + podman-exporter; Alloy reads journal + exposes unix metrics; Prometheus scrapes Alloy + podman-exporter; Grafana dashboards (logs, host metrics, container metrics) + alert rules
 - migrate: LXC-to-VM migration with rsync, DB dump, healthchecks
 
 ## Services (13 as of 2026-02-17)
@@ -43,7 +43,11 @@
 - Photos: immich (special multi-container role)
 - AI/Research: open-notebook (lfnovo/open_notebook + SurrealDB, special multi-container role)
 - Reverse proxy: traefik (official, file provider)
-- Monitoring: logging role (Loki + Alloy + Grafana, Grafana routed via Traefik)
+- Monitoring: logging role (Loki + Alloy + Grafana + Prometheus + podman-exporter, Grafana routed via Traefik)
+  - Prometheus: prom/prometheus image, runs as nobody (65534), UserNS=keep-id:uid=65534,gid=65534
+  - podman-exporter: navidys/prometheus-podman-exporter, reads podman.sock, SecurityLabelDisable=true
+  - Alloy: dual role -- journal log collector + prometheus.exporter.unix for host metrics (mounts /proc, /sys, / read-only)
+  - Prometheus scrapes Alloy's built-in HTTP API for node metrics + podman-exporter for container metrics
 
 ## Key Patterns
 - Data-driven services: services/*.yml loaded by include_vars, rendered by quadlet templates
@@ -153,7 +157,7 @@ See review-findings.md for detailed findings from all reviews.
 45. NFS overlay on :Z-labeled base volume needs SELinux runtime validation (virt_use_nfs should handle it)
 46. Inconsistent become/become_user between NFS and local dir creation tasks in immich role
 47. ~~open_notebook env file templates missing no_log~~ fixed: no_log: true on both env templates
-48. mms-services.sh get_tier() missing open-notebook-db in tier 0 (infra)
+48. ~~mms-services.sh get_tier() missing open-notebook-db in tier 0 (infra)~~ fixed: open-notebook-db now in tier 0
 49. open_notebook HealthCmd uses curl -- verify curl exists in lfnovo/open_notebook image
 50. ~~No meta/main.yml for open_notebook role~~ fixed: meta/main.yml exists
 51. ~~No Molecule test for open_notebook role~~ fixed: Molecule tests added for setup.yml
@@ -162,9 +166,13 @@ See review-findings.md for detailed findings from all reviews.
 54. Podman prune units always deployed even when podman_prune_enabled: false (dead files on disk)
 55. No Molecule test for podman role prune timer tasks
 56. Logging role: Grafana config template missing no_log: true (admin password exposed in diff)
-57. Logging role: Grafana datasource missing explicit uid field (dashboard panels won't find datasource)
+57. ~~Logging role: Grafana datasource missing explicit uid field (dashboard panels won't find datasource)~~ fixed: uid fields added to both Loki and Prometheus datasources
 58. base_system journald handler missing explicit become: true (works via play-level become)
-59. mms-services.sh get_tier() missing loki in tier 0 (infra) -- wrong start/stop ordering
+59. ~~mms-services.sh get_tier() missing loki in tier 0 (infra)~~ fixed: loki now in tier 0
 60. No backup configuration for Grafana data or Loki data directories
 61. ServiceSilence alert rule hardcodes service names instead of deriving from mms_services
 62. No Molecule test for logging role
+63. mms-services.sh get_tier() missing prometheus and podman-exporter in tier 0 (infra)
+64. Alloy container mounts entire root filesystem (Volume=/:/host/root:ro) for filesystem collector -- works but wide attack surface
+65. Prometheus data not backed up (disposable, same pattern as Grafana/Loki)
+66. Old datasource file cleanup task (setup.yml:129-133) should be removed after first deploy

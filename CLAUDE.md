@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Max Media Stack (MMS)** — Ansible project to provision and manage a full homelab media stack on a Fedora VM (Proxmox 9.x), using rootless Podman with Quadlet systemd integration.
 
-**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome, Open Notebook, Grafana
+**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome, Open Notebook, Grafana, Prometheus
 **Storage:** TrueNAS NFS exports mounted at `/data`
 **Access:** Traefik reverse proxy on port 80, Tailscale only (no LAN exposure)
 
@@ -48,7 +48,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - **Secrets**: `ansible-vault` encrypts `vault.yml` files; vault password in `~/.vault_pass_mms`
 - **Auto-deploy**: Renovate opens PRs for image updates; per-group systemd timers (`mms-autodeploy-{group}`) poll git and run `ansible-playbook` on new commits; successful deploys prune dangling images inline
 - **Backups**: Two systems -- config backups (`mms-backup.timer`, daily 03:00, age-encrypted to local disk) + API backups (`mms-api-backup.timer`, daily 04:30, *arr services to NAS via Traefik); Plex backups exclude Cache, Crash Reports, Updates, and Codecs directories; Open Notebook uses cold backup (stops both app + SurrealDB containers, tars both config dirs) since SurrealDB has no hot-dump CLI
-- **Logging**: Centralized log aggregation with Loki (storage), Alloy (journal collector), and Grafana (UI); persistent journald configured by `base_system`; Alloy reads systemd journal via `GroupAdd=systemd-journal`; Grafana state is fully provisioned from templates and disposable (no backup needed)
+- **Observability**: Centralized log aggregation with Loki (storage), Alloy (journal collector + host metrics exporter), and Grafana (UI); system metrics via Prometheus scraping Alloy's built-in `prometheus.exporter.unix`; per-container metrics via `podman-exporter`; persistent journald configured by `base_system`; Alloy reads systemd journal via `GroupAdd=systemd-journal`; Grafana state is fully provisioned from templates and disposable (no backup needed)
 
 ## Repository Layout
 
@@ -75,7 +75,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Inter-container `host_whitelist` must include the bare container hostname (e.g., `sabnzbd`) in addition to the Traefik subdomain FQDN
 - Plex backup type (`backup_type: "plex"`) stops the service and excludes regenerable directories (Cache, Crash Reports, Updates, Codecs) — similar pattern to Jellyfin's cache exclusion
 - Backup role uses `backup_*` prefix for all variables; API backup variables use `backup_api_*`
-- Logging role uses `logging_*` prefix for all defaults; Grafana state is fully provisioned from Ansible templates and disposable
+- Logging role uses `logging_*` prefix for all defaults; Grafana state and Prometheus TSDB are fully provisioned/retention-managed and disposable (no backup needed); `podman-exporter` requires `podman.socket` enabled for the mms user
 - Multi-container role testability: roles like `open_notebook` split into `setup.yml` (files/templates, testable without Podman) and `containers.yml` (runtime: image pull, start, healthcheck); Molecule tests target `setup.yml` only
 - Molecule shared pre-tasks: `molecule/shared/prepare_mms_user.yml` creates the mms user/group/quadlet directory; all role converge playbooks include it via `include_tasks`
 - Deploy resilience: `deploy-services.yml` wraps each service (including Immich and Traefik) in `block/rescue`; a single service failure is logged and skipped, and the playbook fails at the end with a summary of all failed services

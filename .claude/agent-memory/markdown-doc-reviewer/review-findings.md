@@ -1,5 +1,72 @@
 # Review Findings
 
+## fix/various-admin-fixes Branch Review (2026-02-20)
+
+### Scope
+All .md files on fix/various-admin-fixes branch (2 commits over main). Key changes: Prometheus (metrics TSDB) and podman-exporter (container metrics) added to logging role (2 new containers), Alloy extended with prometheus.exporter.unix for host metrics, 2 new Grafana dashboards (host + container metrics), Prometheus datasource added to Grafana, podman.socket enabled for mms user.
+
+### Files Reviewed
+- CLAUDE.md (82 lines)
+- README.md (93 lines)
+- docs/wiki/Home.md (106 lines)
+- docs/wiki/Getting-Started.md (77 lines)
+- docs/wiki/Configuration.md (89 lines)
+- docs/wiki/Storage-Layout.md (72 lines)
+- docs/wiki/Common-Operations.md (105 lines)
+- docs/wiki/Auto-Deploy.md (180 lines)
+- docs/wiki/Troubleshooting.md (452 lines)
+- docs/wiki/Security.md (22 lines)
+- docs/wiki/Backup-and-Restore.md (168 lines)
+- docs/wiki/Adding-a-New-Service.md (72 lines)
+- docs/wiki/_Sidebar.md (23 lines)
+- .claude/agents/supply-chain-hygiene-reviewer.md (185 lines)
+- roles/logging/defaults/main.yml (40 lines)
+- roles/logging/tasks/setup.yml (231 lines)
+- roles/logging/tasks/containers.yml (143 lines)
+- roles/logging/handlers/main.yml (53 lines)
+- roles/logging/templates/ (10 templates, 2 new: prometheus.container.j2, podman-exporter.container.j2)
+
+### Findings
+- BLOCKER: Security.md:14 "The Podman socket is never mounted into any container" -- false, podman-exporter mounts it read-only
+- BLOCKER: README.md:88 "No socket mount" -- same stale claim
+- HIGH: CLAUDE.md:9 Services line missing Prometheus
+- HIGH: CLAUDE.md:51 Logging architecture bullet missing Prometheus, podman-exporter, Alloy host metrics role
+- HIGH: CLAUDE.md:78 Conventions logging line missing Prometheus disposability and podman.socket dependency
+- HIGH: README.md:44 and Home.md:44 architecture diagram missing prometheus, podman-exporter
+- HIGH: Home.md:82-84 inter-container access table missing Prometheus (9090) and podman-exporter (9882)
+- MEDIUM: Storage-Layout.md:41-46 missing prometheus/ and prometheus-data/ under logging dir
+- MEDIUM: Troubleshooting.md:401-402 says "three containers" -- now five
+- MEDIUM: Backup-and-Restore.md missing note that Prometheus data is disposable (retention-managed)
+- MEDIUM: README.md:23 and Home.md:23 Grafana description "Log dashboard" should be "Observability dashboard"
+- MEDIUM: Auto-Deploy.md:155-177 two-group example missing `logging`
+- MEDIUM: supply-chain-hygiene-reviewer.md:19 missing Prometheus, podman-exporter
+
+### Verified Accurate
+- CLAUDE.md Key Commands: all playbook paths match filesystem
+- CLAUDE.md Repository Layout: roles list correctly includes `logging`
+- README.md services table correctly has Grafana row
+- Configuration.md vault table correctly includes vault_logging_grafana_admin_password
+- Storage-Layout.md has logging/ directory tree (loki, alloy, grafana, loki-data, grafana-data)
+- Troubleshooting.md has logging stack section with Loki/Alloy/Grafana debug commands
+- Security.md Plex port 32400 correctly noted in minimal port exposure
+- Prometheus container template uses UserNS=keep-id:uid=65534,gid=65534 (nobody user, standard for Prometheus)
+- podman-exporter container template uses SecurityLabelDisable=true (needs socket access)
+- Both new containers join mms.network (consistent)
+- Both new containers use bare names (consistent with other logging containers)
+- Alloy container template correctly adds host bind mounts (/proc, /sys, /) for metrics
+- Alloy config correctly uses prometheus.exporter.unix with restricted collector set
+- Prometheus config scrapes two targets: alloy:12345 (host metrics) and podman-exporter:9882 (container metrics)
+- Grafana datasources template correctly adds Prometheus datasource alongside Loki
+- Old datasources file (loki.yml) correctly removed with cleanup task
+- Dashboard JSON templates use Jinja2 raw blocks for Prometheus label interpolation (correct)
+- Containers started in correct order: Prometheus before podman-exporter, both before Grafana
+
+### Still Open (Pre-existing, Not Introduced by This Branch)
+- BLOCKER: Config backup path mismatch in docs vs code
+- All other pre-existing gaps from prior reviews remain open
+
+---
+
 ## feat/container-monitoring Branch Review (2026-02-18)
 
 ### Scope

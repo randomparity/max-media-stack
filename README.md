@@ -20,7 +20,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
 | Open Notebook | `notebook.media.example.com` | AI research notebook           |
-| Grafana   | `grafana.media.example.com`    | Log dashboard and alerting     |
+| Grafana   | `grafana.media.example.com`    | Observability dashboard and alerting |
 
 ## Architecture
 
@@ -42,6 +42,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      ├── immich-server  immich-ml             │  │  │
 │  │  │      │   immich-postgres immich-redis        │  │  │
 │  │  │      └── grafana  loki  alloy               │  │  │
+│  │  │          prometheus  podman-exporter         │  │  │
 │  │  │            ┌───────────┐                     │  │  │
 │  │  │            │mms.network│                     │  │  │
 │  │  │            └───────────┘                     │  │  │
@@ -85,7 +86,7 @@ Full documentation is in the **[Wiki](https://github.com/randomparity/max-media-
 
 - **Tailscale only** — default firewalld zone is `drop`; only `tailscale0` is trusted
 - **Minimal port exposure** — only Traefik (port 80) and Plex (port 32400) publish host ports
-- **No socket mount** — Traefik uses the file provider, not the Podman socket
+- **Minimal socket exposure** — only `podman-exporter` mounts the rootless Podman socket (read-only) for container metrics; Traefik uses the file provider
 - **Rootless Podman** — no containers run as root
 - **SELinux enforcing** — config volumes use `:Z` for private labeling
 - **Secrets encrypted** — all sensitive values in ansible-vault encrypted files

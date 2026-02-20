@@ -17,6 +17,7 @@ base_system_packages:
   - sqlite
   - systemd-container
   - btop
+  - mc
 
 base_system_seboolean:
   - name: virt_use_nfs

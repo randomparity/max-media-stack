@@ -38,30 +38,34 @@
 - No LICENSE or CONTRIBUTING files (acceptable for personal homelab)
 - Dead variable `immich_port` in roles/immich/defaults/main.yml (no longer published)
 - BLOCKER: Config backup path in all docs says `/home/mms/backups/` but code uses `/data/backups/config` (NFS)
+- BLOCKER: Security.md and README.md "No socket mount" claim now false -- podman-exporter mounts Podman socket (read-only)
+- HIGH: CLAUDE.md Services line missing Prometheus; Architecture Logging bullet missing Prometheus, podman-exporter, Alloy host metrics role
+- HIGH: README.md and Home.md architecture diagrams missing prometheus, podman-exporter containers
+- HIGH: Home.md inter-container access table missing Prometheus (9090) and podman-exporter (9882)
 - HIGH: Backup-and-Restore.md missing Open Notebook cold backup note (stops containers, tars both dirs)
 - HIGH: Troubleshooting.md missing Open Notebook section (multi-container debug guidance)
+- MEDIUM: Storage-Layout.md missing prometheus/ and prometheus-data/ under /home/mms/config/logging/
+- MEDIUM: Troubleshooting.md Logging section says "three containers" -- now five
+- MEDIUM: Backup-and-Restore.md missing note that Prometheus data is disposable (retention-managed)
+- MEDIUM: Grafana description in service tables says "Log dashboard" -- now also metrics dashboards
 - MEDIUM: Storage-Layout.md missing open-notebook/ and open-notebook-db/ under /home/mms/config/
 - MEDIUM: Common-Operations.md and Backup-and-Restore.md missing Open Notebook restore example
 - MEDIUM: Traefik wiki says `mms_traefik_domain` is in `group_vars/mms/vars.yml` (actually in `all`)
-- MEDIUM: supply-chain-hygiene-reviewer.md services list missing Channels DVR, Navidrome
-- MEDIUM: Auto-Deploy example two-group config missing channels, navidrome, open-notebook
+- MEDIUM: supply-chain-hygiene-reviewer.md services list missing Channels DVR, Navidrome, Prometheus, podman-exporter
+- MEDIUM: Auto-Deploy example two-group config missing channels, navidrome, open-notebook, logging
 - MEDIUM: CLAUDE.md Architecture missing image pruning timer and inline autodeploy pruning
 - MEDIUM: Auto-Deploy.md variable table missing `autodeploy_prune_images`
-- MEDIUM: Troubleshooting.md missing disk space / dangling image section
-- HIGH: Logging stack (Loki, Alloy, Grafana) completely absent from all docs (CLAUDE.md, README.md, wiki)
-- HIGH: Configuration.md vault table missing `vault_logging_grafana_admin_password`
-- MEDIUM: Storage-Layout.md missing /home/mms/config/logging/ directory tree
-- MEDIUM: Auto-Deploy.md two-group example missing `logging` in interactive group
-- MEDIUM: Troubleshooting.md missing logging stack section
-- MEDIUM: supply-chain-hygiene-reviewer.md missing Grafana, Loki, Alloy
 - LOW: CLAUDE.md Conventions missing Molecule shared pre-tasks and role split pattern
 - LOW: Home.md Kometa URL uses `---` vs README's `---` (em dash)
 - LOW: Common-Operations.md missing manual image pruning section
 - LOW: Configuration.md naming conventions missing `podman_` prefix example
-- LOW: Logging containers use bare names (loki, alloy, grafana) without mms- prefix -- differs from quadlet_service pattern
+- LOW: Logging/observability containers use bare names (loki, alloy, grafana, prometheus, podman-exporter) without mms- prefix
 - RESOLVED: Open Notebook now present in README, Home.md, Configuration.md vault table (was HIGH)
 - RESOLVED: "Only Traefik publishes host port" fixed -- Plex 32400 now mentioned (was HIGH)
 - RESOLVED: Configuration.md vault table now includes all vault variables (was HIGH)
+- RESOLVED: Troubleshooting.md disk space / dangling image section added (was MEDIUM)
+- RESOLVED: Troubleshooting.md logging stack section added (was HIGH from container-monitoring)
+- RESOLVED: Storage-Layout.md /home/mms/config/logging/ tree added (was MEDIUM)
 
 ## Source of Truth for Key Values
 - UID/GID: `inventory/group_vars/all/vars.yml` lines 23-25 (currently 3000:3000)
@@ -85,12 +89,16 @@
 - Podman prune defaults: `roles/podman/defaults/main.yml` (`podman_prune_enabled: true`, `podman_prune_schedule: "Sun *-*-* 05:00:00"`)
 - Autodeploy prune default: `roles/autodeploy/defaults/main.yml` (`autodeploy_prune_images: true`)
 - Image prune timer: `~/.config/systemd/user/mms-image-prune.{timer,service}` (NOT in containers/systemd/)
-- Logging role: `roles/logging/` (Loki + Alloy + Grafana, three containers)
-- Logging defaults: `roles/logging/defaults/main.yml` (`logging_` prefix, images, retention, alerts)
-- Logging containers: bare names (loki, alloy, grafana) -- NOT mms- prefixed
+- Logging role: `roles/logging/` (Loki + Alloy + Grafana + Prometheus + podman-exporter, five containers)
+- Logging defaults: `roles/logging/defaults/main.yml` (`logging_` prefix, images, retention, alerts, metrics scrape interval)
+- Logging containers: bare names (loki, alloy, grafana, prometheus, podman-exporter) -- NOT mms- prefixed
 - Logging Traefik route: grafana at port 3000 (`grafana.media.example.com`)
 - Logging vault: `vault_logging_grafana_admin_password` in `inventory/group_vars/all/vault.yml`
-- Logging config dir: `/home/mms/config/logging/` (alloy, loki, grafana subdirs)
+- Logging config dir: `/home/mms/config/logging/` (alloy, loki, grafana, prometheus subdirs + loki-data, grafana-data, prometheus-data)
+- Prometheus: metrics storage, scrapes Alloy (host metrics) and podman-exporter (container metrics), 30d retention, data disposable
+- Podman-exporter: requires podman.socket enabled for mms user, mounts Podman socket read-only
+- Alloy: dual role -- journal collector (logs to Loki) AND host metrics exporter (prometheus.exporter.unix for Prometheus)
+- Grafana: 2 datasources (Loki, Prometheus), 3 dashboards (logs, host metrics, container metrics)
 - Journald persistence: base_system role configures /var/log/journal (2G max, 7d retention)
 - Alloy journal access: mms user added to systemd-journal group by logging role
 
@@ -195,4 +203,16 @@
   - HIGH: Configuration.md vault table missing vault_logging_grafana_admin_password
   - MEDIUM: Storage-Layout.md, Auto-Deploy.md, Troubleshooting.md, supply-chain reviewer all need updates
   - Logging containers use bare names (not mms- prefixed) -- differs from quadlet_service convention
+  - See review-findings.md for details
+- 2026-02-20: Review of all .md files on fix/various-admin-fixes branch (2 commits over main)
+  - Adds Prometheus + podman-exporter (2 new containers), host metrics via Alloy, Grafana dashboards
+  - No documentation files changed on this branch (code-only: 13 files in roles/logging/)
+  - BLOCKER: Security.md + README.md "No socket mount" now false (podman-exporter mounts Podman socket)
+  - HIGH: CLAUDE.md Services, Architecture bullet, Conventions all missing Prometheus/podman-exporter
+  - HIGH: README.md + Home.md architecture diagrams missing new containers
+  - HIGH: Home.md inter-container access table missing Prometheus (9090) + podman-exporter (9882)
+  - MEDIUM: Storage-Layout.md missing prometheus/ and prometheus-data/ dirs
+  - MEDIUM: Troubleshooting.md logging section says "three containers" (now five)
+  - MEDIUM: Grafana description "Log dashboard" undersells metrics role
+  - Prior logging docs issues (from feat/container-monitoring) now partly resolved: logging section, storage tree exist
   - See review-findings.md for details

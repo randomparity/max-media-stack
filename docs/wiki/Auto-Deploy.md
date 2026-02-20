@@ -174,6 +174,7 @@ autodeploy_groups:
       - channels
       - navidrome
       - open-notebook
+      - logging
 ```
 
 When `services` is omitted from a group, the playbook deploys everything. When specified, only the listed services are deployed when the group's timer fires.
