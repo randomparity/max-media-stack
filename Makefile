@@ -32,8 +32,8 @@ help: ## Show this help
 
 setup: $(VENV)/bin/ansible ## Create venv and install Ansible + Galaxy collections
 
-$(VENV)/bin/ansible: $(VENV)/bin/activate requirements.yml
-	$(PIP_INSTALL) ansible ansible-lint yamllint pre-commit
+$(VENV)/bin/ansible: $(VENV)/bin/activate requirements-dev.txt requirements.yml
+	$(PIP_INSTALL) -r requirements-dev.txt
 	$(ACTIVATE) && ansible-galaxy collection install -r requirements.yml
 	@touch $@
 
