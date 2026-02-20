@@ -17,6 +17,8 @@ logging_loki_retention_period: "720h"  # 30 days
 # Grafana
 logging_grafana_admin_user: admin
 # logging_grafana_admin_password is set via vault_logging_grafana_admin_password
+# Note: Grafana state (dashboards, datasources) is fully provisioned from Ansible
+# templates. The grafana-data directory is disposable — no backup needed.
 
 # Journal path
 logging_journal_path: "/var/log/journal"

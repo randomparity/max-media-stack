@@ -48,10 +48,17 @@
 - MEDIUM: CLAUDE.md Architecture missing image pruning timer and inline autodeploy pruning
 - MEDIUM: Auto-Deploy.md variable table missing `autodeploy_prune_images`
 - MEDIUM: Troubleshooting.md missing disk space / dangling image section
+- HIGH: Logging stack (Loki, Alloy, Grafana) completely absent from all docs (CLAUDE.md, README.md, wiki)
+- HIGH: Configuration.md vault table missing `vault_logging_grafana_admin_password`
+- MEDIUM: Storage-Layout.md missing /home/mms/config/logging/ directory tree
+- MEDIUM: Auto-Deploy.md two-group example missing `logging` in interactive group
+- MEDIUM: Troubleshooting.md missing logging stack section
+- MEDIUM: supply-chain-hygiene-reviewer.md missing Grafana, Loki, Alloy
 - LOW: CLAUDE.md Conventions missing Molecule shared pre-tasks and role split pattern
 - LOW: Home.md Kometa URL uses `---` vs README's `---` (em dash)
 - LOW: Common-Operations.md missing manual image pruning section
 - LOW: Configuration.md naming conventions missing `podman_` prefix example
+- LOW: Logging containers use bare names (loki, alloy, grafana) without mms- prefix -- differs from quadlet_service pattern
 - RESOLVED: Open Notebook now present in README, Home.md, Configuration.md vault table (was HIGH)
 - RESOLVED: "Only Traefik publishes host port" fixed -- Plex 32400 now mentioned (was HIGH)
 - RESOLVED: Configuration.md vault table now includes all vault variables (was HIGH)
@@ -78,6 +85,14 @@
 - Podman prune defaults: `roles/podman/defaults/main.yml` (`podman_prune_enabled: true`, `podman_prune_schedule: "Sun *-*-* 05:00:00"`)
 - Autodeploy prune default: `roles/autodeploy/defaults/main.yml` (`autodeploy_prune_images: true`)
 - Image prune timer: `~/.config/systemd/user/mms-image-prune.{timer,service}` (NOT in containers/systemd/)
+- Logging role: `roles/logging/` (Loki + Alloy + Grafana, three containers)
+- Logging defaults: `roles/logging/defaults/main.yml` (`logging_` prefix, images, retention, alerts)
+- Logging containers: bare names (loki, alloy, grafana) -- NOT mms- prefixed
+- Logging Traefik route: grafana at port 3000 (`grafana.media.example.com`)
+- Logging vault: `vault_logging_grafana_admin_password` in `inventory/group_vars/all/vault.yml`
+- Logging config dir: `/home/mms/config/logging/` (alloy, loki, grafana subdirs)
+- Journald persistence: base_system role configures /var/log/journal (2G max, 7d retention)
+- Alloy journal access: mms user added to systemd-journal group by logging role
 
 ## Review History
 - 2026-02-08: Full review of all .md files on fix/dry-run-issues branch (15 commits over main)
@@ -170,4 +185,14 @@
   - LOW: Common-Operations.md missing manual image pruning section
   - LOW: Configuration.md naming conventions missing podman_ prefix
   - All existing docs remain accurate (no breakage)
+  - See review-findings.md for details
+- 2026-02-18: Review of all .md files on feat/container-monitoring branch (1 commit over main)
+  - Logging role adds Loki, Alloy, Grafana (3 containers) + journald persistence in base_system
+  - No documentation files changed on this branch (code-only: 24 files)
+  - HIGH: CLAUDE.md missing logging role in services, architecture, roles list, conventions
+  - HIGH: README.md and Home.md missing Grafana in services table and logging in architecture diagram
+  - HIGH: Home.md inter-container access table missing Loki/Alloy/Grafana
+  - HIGH: Configuration.md vault table missing vault_logging_grafana_admin_password
+  - MEDIUM: Storage-Layout.md, Auto-Deploy.md, Troubleshooting.md, supply-chain reviewer all need updates
+  - Logging containers use bare names (not mms- prefixed) -- differs from quadlet_service convention
   - See review-findings.md for details

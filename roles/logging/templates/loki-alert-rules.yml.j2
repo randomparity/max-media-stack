@@ -55,7 +55,7 @@ groups:
 
       - alert: ServiceSilence
         expr: |
-          count_over_time({unit=~"(prowlarr|radarr|radarr4k|sonarr|lidarr|sabnzbd|jellyfin|plex|tautulli|immich-server|immich-ml).service"} [{{ logging_alert_silence_minutes }}m]) == 0
+          count_over_time({unit=~"({{ (mms_services | reject('equalto', 'kometa') | list + ['immich-server', 'immich-ml']) | join('|') }}).service"} [{{ logging_alert_silence_minutes }}m]) == 0
         for: 0s
         labels:
           severity: warning

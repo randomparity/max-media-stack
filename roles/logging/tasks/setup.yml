@@ -88,6 +88,7 @@
     group: "{{ mms_user }}"
     mode: "0600"
   become: true
+  no_log: true
   notify: Restart grafana
 
 - name: Deploy Grafana datasource provisioning

@@ -1,5 +1,87 @@
 # Review Findings
 
+## feat/container-monitoring Branch Review (2026-02-18)
+
+### Scope
+All .md files on feat/container-monitoring branch (1 commit over main). Key changes: new `roles/logging/` role deploying Loki (log aggregation), Alloy (journal collector), and Grafana (visualization) as three Quadlet containers; journald persistence configured in base_system role; Grafana Traefik route added; vault secret for Grafana admin password; logging added to autodeploy interactive group.
+
+### Files Reviewed
+- CLAUDE.md (80 lines)
+- README.md (91 lines)
+- docs/wiki/Home.md (101 lines)
+- docs/wiki/Getting-Started.md (77 lines)
+- docs/wiki/Configuration.md (88 lines)
+- docs/wiki/Storage-Layout.md (66 lines)
+- docs/wiki/Common-Operations.md (105 lines)
+- docs/wiki/Auto-Deploy.md (180 lines)
+- docs/wiki/Troubleshooting.md (399 lines)
+- docs/wiki/Security.md (22 lines)
+- docs/wiki/Backup-and-Restore.md (168 lines)
+- docs/wiki/Adding-a-New-Service.md (72 lines)
+- docs/wiki/Traefik-Reverse-Proxy.md (57 lines)
+- docs/wiki/_Sidebar.md (23 lines)
+- .claude/agents/supply-chain-hygiene-reviewer.md (185 lines)
+- roles/logging/defaults/main.yml (28 lines)
+- roles/logging/tasks/main.yml (6 lines)
+- roles/logging/tasks/setup.yml (157 lines)
+- roles/logging/tasks/containers.yml (103 lines)
+- roles/logging/handlers/main.yml (35 lines)
+- roles/logging/meta/main.yml (13 lines)
+- roles/logging/templates/*.j2 (7 templates)
+- inventory/group_vars/mms/vars.yml (128 lines)
+- inventory/group_vars/all/vars.yml (74 lines)
+- inventory/group_vars/all/vault.yml.example (36 lines)
+- playbooks/deploy-services.yml (87 lines)
+- roles/base_system/tasks/main.yml (108 lines)
+- roles/base_system/templates/journald-mms.conf.j2 (6 lines)
+
+### Findings
+- HIGH: CLAUDE.md:9 Services list missing Grafana (and no mention of Loki/Alloy as infrastructure)
+- HIGH: CLAUDE.md:42-50 Architecture section missing logging stack bullet
+- HIGH: CLAUDE.md:56 Roles list missing `logging`
+- HIGH: README.md:7-22 Services table missing Grafana row
+- HIGH: README.md:26-51 Architecture diagram missing loki, alloy, grafana containers
+- HIGH: Home.md:7-22 Services table missing Grafana row
+- HIGH: Home.md:26-51 Architecture diagram missing logging containers
+- HIGH: Home.md:56-79 Inter-container access table missing Loki (3100), Alloy (12345), Grafana (3000)
+- HIGH: Configuration.md:48-58 Vault table missing `vault_logging_grafana_admin_password`
+- MEDIUM: Storage-Layout.md:33-40 Missing /home/mms/config/logging/ directory tree
+- MEDIUM: Auto-Deploy.md:155-177 Two-group example missing `logging` in interactive group
+- MEDIUM: Troubleshooting.md missing logging stack section
+- MEDIUM: CLAUDE.md:60-79 Conventions missing logging_ prefix, journald persistence, systemd-journal group
+- MEDIUM: supply-chain-hygiene-reviewer.md:19 Services list missing Grafana, Loki, Alloy
+- MEDIUM: Configuration.md:87 Naming conventions missing `logging_` prefix
+- LOW: Backup-and-Restore.md missing note on whether logging data is backed up
+- LOW: Security.md missing Grafana authentication note
+
+### Verified Accurate
+- CLAUDE.md Key Commands: all playbook paths still match filesystem
+- CLAUDE.md Architecture: existing bullets all still accurate
+- README.md Security section: "Minimal port exposure" still accurate (Grafana is behind Traefik, not a new host port)
+- deploy-services.yml: logging block/rescue follows established pattern (consistent with Immich, Open Notebook, Traefik)
+- Logging role follows setup.yml + containers.yml split pattern (matches open_notebook)
+- Container startup ordering: Loki -> Alloy + Grafana (Alloy and Grafana both have After=loki.service)
+- Alloy reads /var/log/journal via bind mount (requires journald persistence from base_system)
+- All three containers join mms.network (consistent with other services)
+- Grafana Traefik route correctly maps port 3000
+- vault.yml.example correctly includes vault_logging_grafana_admin_password (line 32)
+- Autodeploy interactive group correctly includes logging (line 127)
+- Logging containers use bare names (loki, alloy, grafana) -- NOT mms- prefixed (differs from quadlet_service)
+- All logging containers have Tmpfs=/run:U, NoNewPrivileges=true, UserNS=keep-id (consistent patterns)
+- Logging role has no Molecule tests yet (unlike open_notebook which has tests)
+
+### Notable Design Observations
+- Container naming: loki, alloy, grafana use bare names (not mms-prefixed). This is consistent with other multi-container roles (immich-server, open-notebook) which also use bare names. Only quadlet_service-deployed containers get the mms- prefix.
+- Alloy needs systemd-journal group membership and /var/log/journal bind mount -- this is a cross-role dependency (base_system configures journald, logging role adds group membership)
+- Alert rules are deployed as Loki ruler files, not Grafana alerts
+- Loki retention is 30 days (720h), journald retention is 7 days (separate retention policies)
+
+### Still Open (Pre-existing, Not Introduced by This Branch)
+- BLOCKER: Config backup path mismatch in docs vs code
+- All other pre-existing gaps from prior reviews remain open
+
+---
+
 ## feat/gh-issue-62-image-pruning Branch Review (2026-02-18)
 
 ### Scope

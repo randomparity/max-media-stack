@@ -396,3 +396,56 @@ systemctl --user restart mms-open-notebook.service
 ```
 
 **Note:** Backups for Open Notebook cause brief downtime because they use a cold backup strategy (both containers are stopped during the backup).
+
+## Logging stack (Loki / Alloy / Grafana)
+
+The logging stack consists of three containers: Loki (log storage), Alloy (journal collector), and Grafana (dashboard UI).
+
+```bash
+# Check all three containers
+systemctl --user status loki.service alloy.service grafana.service
+
+# View container logs
+podman logs --tail 50 loki
+podman logs --tail 50 alloy
+podman logs --tail 50 grafana
+
+# Access Grafana UI
+# Browse to grafana.media.example.com (via Tailscale)
+```
+
+**Common issue: Alloy not collecting logs**
+
+Alloy reads the systemd journal via the `systemd-journal` group. Verify the `mms` user is in the group:
+
+```bash
+groups mms | grep systemd-journal
+```
+
+If the group membership was just added, the Alloy container needs a restart to pick it up:
+
+```bash
+systemctl --user restart alloy.service
+```
+
+**Common issue: Grafana dashboard shows no data**
+
+Check that Loki is running and healthy first -- Grafana queries Loki for all log data:
+
+```bash
+systemctl --user status loki.service
+podman logs --tail 20 loki
+
+# Test Loki API directly
+podman exec grafana curl -s http://loki:3100/ready
+```
+
+**Common issue: Loki disk usage growing**
+
+Loki retains logs based on `logging_loki_retention_period` (default: 30 days). Data is stored in `/home/mms/config/logging/loki-data/`. Check usage:
+
+```bash
+du -sh ~/config/logging/loki-data/
+```
+
+To reduce retention, update `logging_loki_retention_period` in the logging role defaults and redeploy.

@@ -1,5 +1,60 @@
 # Review Findings
 
+## 2026-02-18: Centralized Container Logging (feat/container-monitoring)
+
+Branch adds Loki + Alloy + Grafana logging stack as a new `logging` role. Alloy reads systemd
+journal entries for MMS services and ships to Loki. Grafana provides dashboards and alerting rules.
+base_system gains persistent journald config. Deploy pipeline gets logging block/rescue.
+
+### Files Changed
+- roles/logging/* (new role: defaults, handlers, meta, tasks/main+setup+containers, 10 templates)
+- roles/base_system/handlers/main.yml (added Restart journald handler)
+- roles/base_system/tasks/main.yml (added persistent journal config)
+- roles/base_system/templates/journald-mms.conf.j2 (new)
+- inventory/group_vars/all/vars.yml (Grafana link in VM description)
+- inventory/group_vars/all/vault.yml.example (Grafana admin password)
+- inventory/group_vars/mms/vars.yml (Traefik route + autodeploy group)
+- playbooks/deploy-services.yml (logging block/rescue)
+
+### Findings Summary
+Overall: **Good implementation following established patterns**. Role structure is clean. Rootless
+Podman conventions (become/become_user/environment, UserNS=keep-id, Tmpfs=/run:U) are correct.
+Image pre-pull, healthcheck waits, and dependency ordering are sound. Three issues need fixing.
+
+### High Priority
+1. **Grafana config template missing no_log: true** -- admin password from vault rendered into
+   grafana.ini will appear in Ansible diff output
+2. **Journald handler missing become: true** -- works by accident (play-level become), but handler
+   is not self-contained. Other handlers in the project are explicit.
+3. **Dashboard datasource UID mismatch** -- panels reference uid "loki" but datasource provisioning
+   does not set explicit uid field. Grafana auto-generates UID, panels will fail to load data.
+
+### Medium Priority
+4. **mms-services.sh get_tier() missing loki** -- Loki should be tier 0 (infra) since Alloy
+   depends on it. Currently falls through to tier 2 (app), causing wrong start/stop order.
+5. **No backup configuration** for Grafana data (SQLite DB) or Loki data.
+
+### Low Priority
+6. **ServiceSilence alert hardcodes service names** instead of deriving from mms_services variable
+7. **_deploy_logging string-as-boolean** -- same known anti-pattern as other _deploy_* vars (#5)
+8. **Loki ruler has no alertmanager** -- alerts evaluate but never notify (fine for first iteration)
+
+### Positive Patterns
+- Role follows standard layout with all expected directories
+- setup.yml/containers.yml split mirrors open_notebook pattern (Molecule-ready)
+- Alloy unit filter dynamically built from mms_services + special services + autodeploy groups
+- All three containers have health checks and Ansible waits with retries
+- Dependency ordering correct: Loki -> Alloy -> Grafana
+- Handlers follow established project pattern (daemon_reload + restart + become/env)
+- Quadlet files have ansible_managed, After=network-online.target, Restart=on-failure
+- Journal persistence in base_system is appropriate (OS-level config)
+- grafana.ini mode 0600 (restrictive, contains password)
+- Dashboard uses {% raw %} for Grafana template variables (correct Jinja2 escaping)
+- Loki retention configurable via defaults, compactor enabled for cleanup
+- Alert rules cover practical scenarios (crash loop, errors, disk, OOM, backup failure, silence)
+
+---
+
 ## 2026-02-18: Container Image Pruning (feat/gh-issue-62-image-pruning)
 
 Branch adds container image pruning to prevent disk exhaustion (GH issue #62). Two complementary

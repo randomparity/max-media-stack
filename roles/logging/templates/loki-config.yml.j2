@@ -42,6 +42,8 @@ ruler:
     local:
       directory: /etc/loki/rules
   rule_path: /loki/rules-temp
+  # Intentionally empty: alerts are visible in Grafana but no external
+  # notification channel (e.g., Alertmanager) is configured yet.
   alertmanager_url: ""
   ring:
     kvstore:

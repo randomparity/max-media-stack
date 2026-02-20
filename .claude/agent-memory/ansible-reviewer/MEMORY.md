@@ -19,7 +19,7 @@
 - provision-vm.yml: Play 2 (connection: local) uses Proxmox API via proxmox_vm role
 - Proxmox API token: vault_proxmox_api_user contains "user@realm!tokenname", split on "!" for api_user vs api_token_id
 
-## Roles (13)
+## Roles (14)
 - proxmox_vm: Provision VM from cloud-init template (API calls, connection: local)
 - base_system: OS config, mms user, packages, SELinux, sysctl, cloud-init wait, ~/bin/mms-services script
 - podman: Rootless config, registries, storage, quadlet dir, image prune timer
@@ -32,6 +32,7 @@
 - traefik: Reverse proxy with file provider, Host-header routing via mms_traefik_routes
 - backup: Scripts, systemd timers, retention, encryption with age
 - autodeploy: Git-based auto-deploy with systemd timer, polls repo and runs deploy-services.yml
+- logging: Loki + Alloy + Grafana centralized logging; Alloy reads journal, ships to Loki; Grafana dashboards + alert rules
 - migrate: LXC-to-VM migration with rsync, DB dump, healthchecks
 
 ## Services (13 as of 2026-02-17)
@@ -42,6 +43,7 @@
 - Photos: immich (special multi-container role)
 - AI/Research: open-notebook (lfnovo/open_notebook + SurrealDB, special multi-container role)
 - Reverse proxy: traefik (official, file provider)
+- Monitoring: logging role (Loki + Alloy + Grafana, Grafana routed via Traefik)
 
 ## Key Patterns
 - Data-driven services: services/*.yml loaded by include_vars, rendered by quadlet templates
@@ -82,7 +84,7 @@
 ## Recurring Anti-pattern: String-as-Boolean Facts
 - set_fact with Jinja2 comparison produces strings "True"/"False", NOT booleans
 - `not "False"` is False (works by accident), but `"False" | bool` is False (correct)
-- Affected: _template_exists in provision-vm.yml, _immich_secret_needs_update in immich role, _deploy_immich/_deploy_traefik/_deploy_open_notebook in deploy-services.yml
+- Affected: _template_exists in provision-vm.yml, _immich_secret_needs_update in immich role, _deploy_immich/_deploy_traefik/_deploy_open_notebook/_deploy_logging in deploy-services.yml
 - Fix: always use `| bool` filter, or test the raw condition directly
 
 ## Review History
@@ -159,3 +161,10 @@ See review-findings.md for detailed findings from all reviews.
 53. Open-notebook backup script hardcodes directory names (open-notebook, open-notebook-db) in tar command
 54. Podman prune units always deployed even when podman_prune_enabled: false (dead files on disk)
 55. No Molecule test for podman role prune timer tasks
+56. Logging role: Grafana config template missing no_log: true (admin password exposed in diff)
+57. Logging role: Grafana datasource missing explicit uid field (dashboard panels won't find datasource)
+58. base_system journald handler missing explicit become: true (works via play-level become)
+59. mms-services.sh get_tier() missing loki in tier 0 (infra) -- wrong start/stop ordering
+60. No backup configuration for Grafana data or Loki data directories
+61. ServiceSilence alert rule hardcodes service names instead of deriving from mms_services
+62. No Molecule test for logging role

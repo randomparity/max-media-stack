@@ -56,6 +56,7 @@ Secrets are stored in vault-encrypted files. Use `ansible-vault edit` to modify 
 | `vault_mms_vault_password` | Ansible vault password for VM-side deploys (see [Auto-Deploy](Auto-Deploy#vault-variables)) |
 | `vault_open_notebook_db_password` | Open Notebook SurrealDB password |
 | `vault_open_notebook_encryption_key` | Encryption key for API keys stored in Open Notebook's database |
+| `vault_logging_grafana_admin_password` | Grafana admin UI password |
 
 ### Managing vault files
 
@@ -84,4 +85,4 @@ ansible-vault encrypt inventory/group_vars/all/vault.yml
 
 - `mms_` prefix -- global project variables
 - `vault_` prefix -- encrypted secrets
-- Role-specific prefixes (e.g., `autodeploy_`, `backup_`, `podman_`) -- role defaults in `roles/<name>/defaults/main.yml`
+- Role-specific prefixes (e.g., `autodeploy_`, `backup_`, `logging_`, `podman_`) -- role defaults in `roles/<name>/defaults/main.yml`
