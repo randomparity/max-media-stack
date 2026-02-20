@@ -1,0 +1,25 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Prometheus - Metrics Storage
+After=network-online.target
+
+[Container]
+ContainerName=prometheus
+Image={{ logging_prometheus_image }}
+Network={{ mms_network_name }}.network
+Exec=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time={{ logging_prometheus_retention }} --web.listen-address=0.0.0.0:9090
+Volume={{ logging_config_dir }}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:Z,ro
+Volume={{ logging_prometheus_data_dir }}:/prometheus:Z
+UserNS=keep-id:uid=65534,gid=65534
+HealthCmd=wget -qO- http://localhost:9090/-/healthy || exit 1
+HealthInterval=30s
+Tmpfs=/run:U
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

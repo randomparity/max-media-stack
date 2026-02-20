@@ -1,7 +1,7 @@
 {{ ansible_managed | comment }}
 
 [Unit]
-Description=Grafana Alloy - Log Collector
+Description=Grafana Alloy - Log & Metrics Collector
 After=network-online.target
 After=loki.service
 
@@ -14,6 +14,9 @@ Volume={{ logging_config_dir }}/alloy/config.alloy:/etc/alloy/config.alloy:Z,ro
 Volume={{ logging_journal_path }}:/var/log/journal:ro
 Volume=/run/log/journal:/run/log/journal:ro
 Volume=/etc/machine-id:/etc/machine-id:ro
+Volume=/proc:/host/proc:ro
+Volume=/sys:/host/sys:ro
+Volume=/:/host/root:ro
 SecurityLabelDisable=true
 Volume={{ logging_config_dir }}/alloy-data:/alloy-data:Z
 UserNS=keep-id:uid=0,gid=0

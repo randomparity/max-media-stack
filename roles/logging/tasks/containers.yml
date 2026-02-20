@@ -7,6 +7,8 @@
     - "{{ logging_loki_image }}"
     - "{{ logging_alloy_image }}"
     - "{{ logging_grafana_image }}"
+    - "{{ logging_prometheus_image }}"
+    - "{{ logging_podman_exporter_image }}"
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
@@ -27,6 +29,17 @@
   environment: "{{ mms_systemd_env }}"
   changed_when: true
   timeout: 1800
+
+# Enable podman.socket for podman-exporter to connect to
+- name: Enable podman.socket for mms user
+  ansible.builtin.systemd:
+    name: podman.socket
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
 
 # Flush handlers to ensure daemon-reload happens before starting services
 - name: Flush handlers
@@ -71,6 +84,52 @@
     cmd: podman healthcheck run alloy
   register: logging_alloy_health
   until: logging_alloy_health.rc == 0
+  retries: 12
+  delay: 10
+  changed_when: false
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode
+
+- name: Enable and start Prometheus
+  ansible.builtin.systemd:
+    name: prometheus.service
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Wait for Prometheus to be ready
+  ansible.builtin.command:
+    cmd: podman healthcheck run prometheus
+  register: logging_prometheus_health
+  until: logging_prometheus_health.rc == 0
+  retries: 12
+  delay: 10
+  changed_when: false
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: not ansible_check_mode
+
+- name: Enable and start podman-exporter
+  ansible.builtin.systemd:
+    name: podman-exporter.service
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+
+- name: Wait for podman-exporter to be ready
+  ansible.builtin.command:
+    cmd: podman healthcheck run podman-exporter
+  register: logging_podman_exporter_health
+  until: logging_podman_exporter_health.rc == 0
   retries: 12
   delay: 10
   changed_when: false

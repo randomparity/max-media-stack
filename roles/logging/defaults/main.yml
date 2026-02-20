@@ -6,10 +6,20 @@ logging_alloy_image: "docker.io/grafana/alloy:v1.6.1"
 # renovate: datasource=docker depName=docker.io/grafana/grafana
 logging_grafana_image: "docker.io/grafana/grafana:11.6.0"
 
+# renovate: datasource=docker depName=docker.io/prom/prometheus
+logging_prometheus_image: "docker.io/prom/prometheus:v3.2.1"
+# renovate: datasource=docker depName=quay.io/navidys/prometheus-podman-exporter
+logging_podman_exporter_image: "quay.io/navidys/prometheus-podman-exporter:v1.14.1"
+
 # Directories
 logging_config_dir: "{{ mms_config_dir }}/logging"
 logging_loki_data_dir: "{{ mms_config_dir }}/logging/loki-data"
 logging_grafana_data_dir: "{{ mms_config_dir }}/logging/grafana-data"
+logging_prometheus_data_dir: "{{ mms_config_dir }}/logging/prometheus-data"
+
+# Prometheus
+logging_prometheus_retention: "30d"
+logging_metrics_scrape_interval: "30s"
 
 # Loki retention
 logging_loki_retention_period: "720h"  # 30 days

@@ -1,0 +1,24 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Prometheus Podman Exporter - Container Metrics
+After=network-online.target
+
+[Container]
+ContainerName=podman-exporter
+Image={{ logging_podman_exporter_image }}
+Network={{ mms_network_name }}.network
+Exec=--collector.enable-all
+Volume=/run/user/{{ mms_uid }}/podman/podman.sock:/run/podman/podman.sock:ro
+UserNS=keep-id
+SecurityLabelDisable=true
+HealthCmd=wget -qO- http://localhost:9882/healthz || exit 1
+HealthInterval=30s
+NoNewPrivileges=true
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

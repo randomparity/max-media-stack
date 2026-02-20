@@ -45,3 +45,11 @@ loki.write "default" {
     url = "http://loki:3100/loki/api/v1/push"
   }
 }
+
+// Expose host metrics for Prometheus scraping
+prometheus.exporter.unix "host" {
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+  rootfs_path = "/host/root"
+  set_collectors = ["cpu", "diskstats", "filesystem", "loadavg", "meminfo", "netdev", "vmstat"]
+}

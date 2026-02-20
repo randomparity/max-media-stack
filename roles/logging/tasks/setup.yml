@@ -6,7 +6,7 @@
       {{ (mms_services
           + ['immich-server', 'immich-ml', 'immich-postgres', 'immich-redis',
              'open-notebook', 'open-notebook-db',
-             'traefik', 'loki', 'alloy', 'grafana',
+             'traefik', 'loki', 'alloy', 'grafana', 'prometheus', 'podman-exporter',
              'mms-backup', 'mms-api-backup', 'mms-image-prune']
           + (autodeploy_groups | default({}) | dict2items
              | map(attribute='key')
@@ -54,8 +54,10 @@
     - "{{ logging_config_dir }}/grafana/provisioning/datasources"
     - "{{ logging_config_dir }}/grafana/provisioning/dashboards"
     - "{{ logging_config_dir }}/grafana/dashboards"
+    - "{{ logging_config_dir }}/prometheus"
     - "{{ logging_loki_data_dir }}"
     - "{{ logging_grafana_data_dir }}"
+    - "{{ logging_prometheus_data_dir }}"
     - "{{ logging_config_dir }}/alloy-data"
 
 # Deploy Alloy config
@@ -91,6 +93,17 @@
   become: true
   notify: Restart loki
 
+# Deploy Prometheus config
+- name: Deploy Prometheus config
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: "{{ logging_config_dir }}/prometheus/prometheus.yml"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify: Restart prometheus
+
 # Deploy Grafana config
 - name: Deploy Grafana config
   ansible.builtin.template:
@@ -106,12 +119,18 @@
 - name: Deploy Grafana datasource provisioning
   ansible.builtin.template:
     src: grafana-datasources.yml.j2
-    dest: "{{ logging_config_dir }}/grafana/provisioning/datasources/loki.yml"
+    dest: "{{ logging_config_dir }}/grafana/provisioning/datasources/datasources.yml"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
     mode: "0644"
   become: true
   notify: Restart grafana
+
+- name: Remove old datasources file
+  ansible.builtin.file:
+    path: "{{ logging_config_dir }}/grafana/provisioning/datasources/loki.yml"
+    state: absent
+  become: true
 
 - name: Deploy Grafana dashboard provider
   ansible.builtin.template:
@@ -127,6 +146,24 @@
   ansible.builtin.template:
     src: grafana-dashboard-mms-logs.json.j2
     dest: "{{ logging_config_dir }}/grafana/dashboards/mms-logs.json"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+
+- name: Deploy host metrics dashboard
+  ansible.builtin.template:
+    src: grafana-dashboard-host-metrics.json.j2
+    dest: "{{ logging_config_dir }}/grafana/dashboards/host-metrics.json"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+
+- name: Deploy container metrics dashboard
+  ansible.builtin.template:
+    src: grafana-dashboard-container-metrics.json.j2
+    dest: "{{ logging_config_dir }}/grafana/dashboards/container-metrics.json"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
     mode: "0644"
@@ -168,3 +205,27 @@
   notify:
     - Reload systemd user daemon
     - Restart grafana
+
+- name: Deploy Prometheus container quadlet
+  ansible.builtin.template:
+    src: prometheus.container.j2
+    dest: "{{ mms_quadlet_dir }}/prometheus.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart prometheus
+
+- name: Deploy podman-exporter container quadlet
+  ansible.builtin.template:
+    src: podman-exporter.container.j2
+    dest: "{{ mms_quadlet_dir }}/podman-exporter.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart podman-exporter
