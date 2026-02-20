@@ -91,6 +91,13 @@
       groupName: 'ansible galaxy collections',
     },
     {
+      description: 'Disable Python runtime updates',
+      matchPackageNames: [
+        'python',
+      ],
+      enabled: false,
+    },
+    {
       description: 'Auto-merge patch and minor updates',
       matchUpdateTypes: [
         'minor',
