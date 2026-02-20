@@ -24,6 +24,18 @@
     append: true
   become: true
 
+# Look up the numeric GID for systemd-journal (the group name doesn't exist
+# inside the container, so GroupAdd must use the numeric GID)
+- name: Look up systemd-journal GID  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.getent:
+    database: group
+    key: systemd-journal
+  become: true
+
+- name: Set systemd-journal GID fact  # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    _logging_journal_gid: "{{ ansible_facts.getent_group['systemd-journal'][1] }}"
+
 # Create directory tree
 - name: Create logging config directories
   ansible.builtin.file:
