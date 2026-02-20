@@ -13,7 +13,7 @@ Volume={{ logging_config_dir }}/grafana/grafana.ini:/etc/grafana/grafana.ini:Z,r
 Volume={{ logging_config_dir }}/grafana/provisioning:/etc/grafana/provisioning:Z,ro
 Volume={{ logging_config_dir }}/grafana/dashboards:/etc/grafana/dashboards:Z,ro
 Volume={{ logging_grafana_data_dir }}:/var/lib/grafana:Z
-UserNS=keep-id
+UserNS=keep-id:uid=472,gid=0
 HealthCmd=wget -qO- http://localhost:3000/api/health || exit 1
 HealthInterval=30s
 Tmpfs=/run:U
