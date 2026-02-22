@@ -1,6 +1,8 @@
 # Troubleshooting
 
-Common issues and debug commands for the MMS deployment. All commands below should be run as the `mms` user on the VM unless otherwise noted.
+Cross-cutting issues and debug commands for the MMS deployment. All commands below should be run as the `mms` user on the VM unless otherwise noted.
+
+For service-specific troubleshooting, see the individual service pages listed in the sidebar.
 
 ## Systemd service debugging
 
@@ -11,13 +13,13 @@ MMS services run as user-level systemd units under the `mms` user.
 systemctl --user list-units 'mms-*'
 
 # Check a specific service
-systemctl --user status mms-radarr.service
+systemctl --user status radarr.service
 
 # View recent logs for a service
-journalctl --user -u mms-radarr --since today
+journalctl --user -u radarr --since today
 
 # Follow logs in real time
-journalctl --user -u mms-radarr -f
+journalctl --user -u radarr -f
 
 # Check all timers (backups, autodeploy)
 systemctl --user list-timers
@@ -50,17 +52,17 @@ loginctl enable-linger mms
 podman ps
 
 # View container logs
-podman logs mms-radarr
-podman logs --tail 50 -f mms-radarr
+podman logs radarr
+podman logs --tail 50 -f radarr
 
 # Inspect container config (volumes, env, networking)
-podman inspect mms-radarr
+podman inspect radarr
 
 # Check container health status
-podman healthcheck run mms-radarr
+podman healthcheck run radarr
 
 # Exec into a running container
-podman exec -it mms-radarr /bin/bash
+podman exec -it radarr /bin/bash
 
 # Check resource usage
 podman stats --no-stream
@@ -71,8 +73,8 @@ podman stats --no-stream
 Check the logs for the root cause, then restart:
 
 ```bash
-podman logs mms-radarr
-systemctl --user restart mms-radarr.service
+podman logs radarr
+systemctl --user restart radarr.service
 ```
 
 If the container won't start at all, check that the image was pulled successfully:
@@ -93,13 +95,13 @@ ls ~/.config/containers/systemd/
 systemctl --user daemon-reload
 
 # Verify a unit file is valid
-systemd-analyze --user verify mms-radarr.service
+systemd-analyze --user verify radarr.service
 
 # Check what the generator produced
-systemctl --user cat mms-radarr.service
+systemctl --user cat radarr.service
 ```
 
-**Common issue: "Unit mms-foo.service not found"**
+**Common issue: "Unit foo.service not found"**
 
 After creating or modifying Quadlet files, you must run `systemctl --user daemon-reload` for systemd to pick up the changes. The Ansible deploy handles this automatically via handlers.
 
@@ -169,8 +171,6 @@ grep mms /etc/subuid /etc/subgid
 
 ## Backup and restore failures
 
-### Config backup issues
-
 ```bash
 # Check backup timer
 systemctl --user list-timers mms-backup.timer
@@ -188,17 +188,14 @@ If backups fail with age-related errors, verify the public key is set correctly:
 
 ```bash
 # Check the configured key
-grep age_public_key /home/mms/mms/inventory/group_vars/all/vars.yml
+grep age_public_key ~/mms/inventory/group_vars/all/vars.yml
 ```
-
-### Restore issues
 
 **Common issue: "age: error: no identity matched"**
 
 The identity file (private key) doesn't match the public key used for encryption. Verify you're using the correct identity file:
 
 ```bash
-# Check what public key the backup was encrypted with
 age --decrypt -i /path/to/identity.txt < backup.tar.zst.age > /dev/null
 ```
 
@@ -207,7 +204,7 @@ age --decrypt -i /path/to/identity.txt < backup.tar.zst.age > /dev/null
 The service must be stopped before restoring. The restore playbook handles this, but if restoring manually, stop the service first:
 
 ```bash
-systemctl --user stop mms-radarr.service
+systemctl --user stop radarr.service
 ```
 
 ## Auto-deploy issues
@@ -261,71 +258,6 @@ cat ~/autodeploy/.last-sha-*
 cd ~/autodeploy/repo && git fetch && git rev-parse origin/main
 ```
 
-## Traefik routing issues
-
-**404 errors**: Traefik is running but the route doesn't match.
-
-```bash
-# Check Traefik is running
-systemctl --user status mms-traefik.service
-
-# Test with explicit Host header from the VM
-curl -H "Host: radarr.media.example.com" http://localhost
-
-# Check the generated Traefik config
-cat ~/config/traefik/dynamic/*.yml
-```
-
-**Wrong backend / connection refused**: The backend container may not be running or is on a different network.
-
-```bash
-# Verify the backend container is running
-podman ps | grep radarr
-
-# Test direct connectivity to the backend
-podman exec mms-traefik curl -s http://radarr:7878
-
-# Check the container is on mms.network
-podman network inspect mms | grep radarr
-```
-
-**DNS not resolving**: The wildcard DNS record may not be configured.
-
-```bash
-# Test DNS resolution
-dig myservice.media.example.com
-
-# Workaround: use /etc/hosts on the client
-echo "<tailscale-ip> radarr.media.example.com" | sudo tee -a /etc/hosts
-```
-
-## Immich-specific issues
-
-Immich is a multi-container stack (server, ML, PostgreSQL, Redis) with specific startup ordering.
-
-```bash
-# Check all Immich containers
-podman ps | grep immich
-
-# Startup order: postgres -> redis -> server + ML
-systemctl --user status mms-immich-postgres.service
-systemctl --user status mms-immich-redis.service
-systemctl --user status mms-immich-server.service
-systemctl --user status mms-immich-ml.service
-
-# View server logs (most useful for debugging)
-podman logs --tail 100 mms-immich-server
-```
-
-**Common issue: Server won't start**
-
-Usually a database connection issue. Check that PostgreSQL is running and healthy first:
-
-```bash
-podman logs mms-immich-postgres
-podman healthcheck run mms-immich-postgres
-```
-
 ## Disk space and image pruning
 
 Container image updates leave behind old (dangling) images that accumulate over time. MMS has two cleanup mechanisms:
@@ -358,96 +290,22 @@ If the root filesystem is filling up, check whether non-dangling (tagged) images
 podman image prune -af
 ```
 
-## Open Notebook-specific issues
+## Service-specific issues
 
-Open Notebook is a two-container stack: the app container (`mms-open-notebook`) and a SurrealDB database container (`mms-open-notebook-db`). SurrealDB must be running and ready before the app can connect.
+Each service has its own wiki page with detailed troubleshooting. See:
 
-```bash
-# Check both containers
-podman ps | grep open-notebook
-
-# Check systemd unit status
-systemctl --user status mms-open-notebook.service
-systemctl --user status mms-open-notebook-db.service
-
-# View app logs
-podman logs --tail 50 mms-open-notebook
-
-# View SurrealDB logs (check here first for DB issues)
-podman logs --tail 50 mms-open-notebook-db
-
-# Test SurrealDB readiness
-podman exec mms-open-notebook-db /surreal isready -e http://localhost:8000
-```
-
-**Common issue: App won't connect to database**
-
-Check SurrealDB logs first -- the database must be fully ready before the app can connect. If SurrealDB is in a restart loop, check its logs for storage or permission errors:
-
-```bash
-podman logs mms-open-notebook-db
-```
-
-If needed, restart in order (database first, then app):
-
-```bash
-systemctl --user restart mms-open-notebook-db.service
-systemctl --user restart mms-open-notebook.service
-```
-
-**Note:** Backups for Open Notebook cause brief downtime because they use a cold backup strategy (both containers are stopped during the backup).
-
-## Observability stack (Loki / Alloy / Prometheus / Grafana / podman-exporter)
-
-The observability stack consists of five containers: Loki (log storage), Alloy (journal collector + host metrics), Prometheus (metrics storage), podman-exporter (container metrics), and Grafana (dashboard UI).
-
-```bash
-# Check all five containers
-systemctl --user status loki.service alloy.service prometheus.service podman-exporter.service grafana.service
-
-# View container logs
-podman logs --tail 50 loki
-podman logs --tail 50 alloy
-podman logs --tail 50 prometheus
-podman logs --tail 50 podman-exporter
-podman logs --tail 50 grafana
-
-# Access Grafana UI
-# Browse to grafana.media.example.com (via Tailscale)
-```
-
-**Common issue: Alloy not collecting logs**
-
-Alloy reads the systemd journal via the `systemd-journal` group. Verify the `mms` user is in the group:
-
-```bash
-groups mms | grep systemd-journal
-```
-
-If the group membership was just added, the Alloy container needs a restart to pick it up:
-
-```bash
-systemctl --user restart alloy.service
-```
-
-**Common issue: Grafana dashboard shows no data**
-
-Check that Loki is running and healthy first -- Grafana queries Loki for all log data:
-
-```bash
-systemctl --user status loki.service
-podman logs --tail 20 loki
-
-# Test Loki API directly
-podman exec grafana curl -s http://loki:3100/ready
-```
-
-**Common issue: Loki disk usage growing**
-
-Loki retains logs based on `logging_loki_retention_period` (default: 30 days). Data is stored in `/home/mms/config/logging/loki-data/`. Check usage:
-
-```bash
-du -sh ~/config/logging/loki-data/
-```
-
-To reduce retention, update `logging_loki_retention_period` in the logging role defaults and redeploy.
+- [Prowlarr](Prowlarr) -- Indexer manager
+- [Radarr](Radarr) / [Radarr 4K](Radarr-4K) -- Movie managers
+- [Sonarr](Sonarr) -- TV series manager
+- [Lidarr](Lidarr) -- Music manager
+- [SABnzbd](SABnzbd) -- Usenet downloader
+- [Jellyfin](Jellyfin) -- Media server
+- [Plex](Plex) -- Media server
+- [Tautulli](Tautulli) -- Plex analytics
+- [Kometa](Kometa) -- Plex metadata manager
+- [Channels DVR](Channels-DVR) -- Live TV and DVR
+- [Navidrome](Navidrome) -- Music streaming
+- [Immich](Immich) -- Photo management (multi-container)
+- [Open Notebook](Open-Notebook) -- AI notebook (multi-container)
+- [Traefik](Traefik) -- Reverse proxy operations
+- [Observability](Observability) -- Loki, Alloy, Prometheus, Grafana, podman-exporter
