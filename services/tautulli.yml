@@ -2,7 +2,7 @@
 tautulli:
   name: tautulli
   description: "Tautulli - Plex Analytics"
-  image: "lscr.io/linuxserver/tautulli:2.16.0"
+  image: "lscr.io/linuxserver/tautulli:2.16.1"
   after:
     - plex.service
   volumes:
