@@ -36,12 +36,12 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │      │                                       │  │  │
 │  │  │      ├── prowlarr  radarr  radarr4k          │  │  │
 │  │  │      ├── sonarr  lidarr  sabnzbd             │  │  │
-│  │  │      ├── jellyfin  plex  channels             │  │  │
+│  │  │      ├── jellyfin  plex  channels            │  │  │
 │  │  │      ├── tautulli  kometa  navidrome         │  │  │
-│  │  │      ├── open-notebook  open-notebook-db    │  │  │
-│  │  │      ├── immich-server  immich-ml             │  │  │
+│  │  │      ├── open-notebook  open-notebook-db     │  │  │
+│  │  │      ├── immich-server  immich-ml            │  │  │
 │  │  │      │   immich-postgres immich-redis        │  │  │
-│  │  │      └── grafana  loki  alloy               │  │  │
+│  │  │      └── grafana  loki  alloy                │  │  │
 │  │  │          prometheus  podman-exporter         │  │  │
 │  │  │            ┌───────────┐                     │  │  │
 │  │  │            │mms.network│                     │  │  │
