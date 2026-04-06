@@ -2,7 +2,7 @@
 jellyfin:
   name: jellyfin
   description: "Jellyfin - Media Server"
-  image: "docker.io/jellyfin/jellyfin:10.11.6"
+  image: "docker.io/jellyfin/jellyfin:10.11.8"
   tmpfs:
     - "/cache:U"
   volumes:
