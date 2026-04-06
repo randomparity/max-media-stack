@@ -2,7 +2,7 @@
 kometa:
   name: kometa
   description: "Kometa - Plex Metadata Manager"
-  image: "lscr.io/linuxserver/kometa:2.3.0"
+  image: "lscr.io/linuxserver/kometa:2.3.1"
   after:
     - plex.service
   volumes:
