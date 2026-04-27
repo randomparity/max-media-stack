@@ -1,6 +1,6 @@
 ---
 # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-immich_version: v2.6.3
+immich_version: v2.7.5
 
 # Database
 immich_db_name: immich
