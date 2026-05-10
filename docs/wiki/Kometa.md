@@ -129,10 +129,25 @@ podman unshare chown -R 0:0 /home/mms/config/kometa
 
 **Kometa can't connect to Plex**
 
-Verify Plex is running and reachable from within the network:
+First verify Plex is running and reachable from within the container network:
 
 ```bash
 podman exec kometa curl -sf http://plex:32400/identity
 ```
 
-Also verify the Plex URL in Kometa's config YAML uses the container hostname (`http://plex:32400`), not a Traefik URL.
+This checks connectivity only. Plex may return `200 OK` from `/identity` even with
+an invalid token, so do not use this endpoint to validate credentials.
+
+Validate the Plex token against an authenticated API endpoint:
+
+```bash
+podman exec kometa curl -i \
+  "http://plex:32400/library/sections?X-Plex-Token=<plex-token>"
+```
+
+A valid token returns `200 OK` with a `MediaContainer` listing libraries. An
+invalid token returns `401 Unauthorized`.
+
+Also verify the Plex URL in Kometa's config YAML uses the container hostname
+(`http://plex:32400`), not a Traefik URL. Check both the global `plex:` block
+and any per-library `plex:` overrides.
