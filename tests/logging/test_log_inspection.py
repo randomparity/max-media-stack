@@ -502,3 +502,42 @@ def test_generic_notification_sends_structured_report(tmp_path: Path) -> None:
     payload = WebhookHandler.requests[0]["payload"]
     assert payload["summary"] == {"critical": 1, "warning": 0, "info": 0}
     assert payload["findings"][0]["rule_id"] == "storage-full"
+
+
+def test_slack_notification_sends_text_payload(tmp_path: Path) -> None:
+    corpus = tmp_path / "faulty.jsonl"
+    policy = tmp_path / "policy.json"
+    report = tmp_path / "report.json"
+    write_notification_policy(policy, provider="slack")
+    server, webhook_url = webhook_server()
+
+    generated = run_command(
+        str(GENERATE_CORPUS),
+        "--scenario",
+        "faulty",
+        "--entries",
+        "40",
+        "--output",
+        str(corpus),
+    )
+    assert generated.returncode == 0, generated.stderr
+
+    try:
+        inspected = run_command(
+            str(INSPECT_LOGS),
+            "--input-jsonl",
+            str(corpus),
+            "--policy",
+            str(policy),
+            "--output-json",
+            str(report),
+            "--notify",
+            env={"MMS_TEST_WEBHOOK_URL": webhook_url},
+        )
+    finally:
+        server.shutdown()
+
+    assert inspected.returncode == 1, inspected.stderr
+    payload = WebhookHandler.requests[0]["payload"]
+    assert payload["text"].startswith("MMS log inspection found 1 issue")
+    assert "storage-full" in payload["text"]
