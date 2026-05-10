@@ -1,0 +1,15 @@
+{
+  "name": "storage-pressure",
+  "description": "Detect log messages that indicate storage exhaustion.",
+  "window_minutes": 60,
+  "rules": [
+    {
+      "id": "disk-full",
+      "severity": "critical",
+      "description": "A service reports that disk space is exhausted.",
+      "service": "*",
+      "patterns": ["no space left on device", "ENOSPC", "disk full"],
+      "threshold": 1
+    }
+  ]
+}

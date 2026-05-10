@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""Generate deterministic JSONL log corpora for log inspection tests."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Iterable
+
+
+SERVICES = ("radarr", "sonarr", "sabnzbd", "jellyfin")
+
+CLEAN_MESSAGES = (
+    "health check completed successfully",
+    "scheduled task completed",
+    "media library scan finished",
+    "configuration loaded",
+)
+
+FAULT_MESSAGES = (
+    "error opening database connection",
+    "Unhandled exception while importing metadata",
+    "authentication failed for API client",
+    "invalid api key rejected",
+    "write failed: no space left on device",
+)
+
+ADVERSARIAL_MESSAGES = (
+    "terror movie metadata imported",
+    "the authentication workflow completed",
+    "the invalid credential documentation page was viewed",
+    "spacious device path selected",
+)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--scenario",
+        choices=("clean", "faulty", "adversarial"),
+        required=True,
+        help="Corpus scenario to generate.",
+    )
+    parser.add_argument(
+        "--entries",
+        type=int,
+        default=24,
+        help="Number of log entries to write.",
+    )
+    parser.add_argument(
+        "--output",
+        required=True,
+        type=Path,
+        help="Destination JSONL file.",
+    )
+    return parser.parse_args()
+
+
+def message_pool(scenario: str) -> tuple[str, ...]:
+    if scenario == "clean":
+        return CLEAN_MESSAGES
+    if scenario == "faulty":
+        return CLEAN_MESSAGES + FAULT_MESSAGES
+    return CLEAN_MESSAGES + ADVERSARIAL_MESSAGES
+
+
+def generate_entries(scenario: str, count: int) -> Iterable[dict[str, str]]:
+    base_time = datetime(2026, 5, 10, 12, 0, tzinfo=UTC)
+    messages = message_pool(scenario)
+    for index in range(count):
+        service = SERVICES[index % len(SERVICES)]
+        timestamp = base_time + timedelta(seconds=index * 30)
+        yield {
+            "timestamp": timestamp.isoformat().replace("+00:00", "Z"),
+            "service": service,
+            "unit": f"{service}.service",
+            "message": messages[index % len(messages)],
+        }
+
+
+def main() -> int:
+    args = parse_args()
+    if args.entries < 1:
+        raise SystemExit("--entries must be greater than zero")
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for entry in generate_entries(args.scenario, args.entries):
+            handle.write(json.dumps(entry, sort_keys=True))
+            handle.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

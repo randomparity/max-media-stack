@@ -1,0 +1,15 @@
+{
+  "name": "auth-failures",
+  "description": "Detect repeated authentication or API key failures.",
+  "window_minutes": 60,
+  "rules": [
+    {
+      "id": "repeated-auth-failure",
+      "severity": "warning",
+      "description": "A service is repeatedly rejecting credentials or API keys.",
+      "service": "*",
+      "patterns": ["authentication failed", "invalid api key", "unauthorized"],
+      "threshold": 3
+    }
+  ]
+}
