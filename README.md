@@ -20,7 +20,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |
 | Open Notebook | `notebook.media.example.com` | AI research notebook           |
-| Grafana   | `grafana.media.example.com`    | Observability dashboard and alerting |
+| Grafana   | `grafana.media.example.com`    | Observability dashboard, alerting, and log inspection |
 
 ## Architecture
 

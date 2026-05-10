@@ -2,7 +2,11 @@
 
 Centralized logging and metrics stack -- Loki for log storage, Alloy for journal collection and host metrics, Prometheus for metrics storage, podman-exporter for container metrics, and Grafana for dashboards.
 
-All five containers are managed by the `logging` role. Grafana state, Prometheus TSDB, and Loki data are disposable -- Grafana is fully provisioned from Ansible templates, while Prometheus and Loki will repopulate from live data. **None require backup.**
+All five containers are managed by the `logging` role. The role also installs a
+policy-driven log inspection timer that queries Loki on a schedule and writes the
+latest JSON report to disk. Grafana state, Prometheus TSDB, and Loki data are
+disposable -- Grafana is fully provisioned from Ansible templates, while
+Prometheus and Loki will repopulate from live data. **None require backup.**
 
 ## Containers
 
@@ -23,6 +27,9 @@ All five containers are managed by the `logging` role. Grafana state, Prometheus
 | **Prometheus data** | `/home/mms/config/logging/prometheus-data` |
 | **Prometheus retention** | 30 days |
 | **Loki retention** | 30 days (720h) |
+| **Log inspection timer** | Every 15 minutes |
+| **Log inspection policies** | `/home/mms/config/logging/inspection/policies` |
+| **Latest inspection report** | `/home/mms/config/logging/inspection/latest-report.json` |
 | **Autodeploy group** | `interactive` (daily at 02:00) |
 
 ## Service Management
@@ -72,6 +79,15 @@ systemctl --user restart grafana.service
 systemctl --user status grafana.service
 ```
 
+### Log Inspection
+
+```bash
+systemctl --user start mms-log-inspect.service
+systemctl --user status mms-log-inspect.service
+systemctl --user status mms-log-inspect.timer
+systemctl --user list-timers mms-log-inspect.timer
+```
+
 ## Viewing Logs
 
 ```bash
@@ -87,13 +103,99 @@ journalctl --user -u loki --since today
 journalctl --user -u alloy --since today
 journalctl --user -u prometheus --since today
 journalctl --user -u grafana --since today
+
+# Latest policy inspection report
+python3 -m json.tool ~/config/logging/inspection/latest-report.json
 ```
+
+## Log Inspection Policies
+
+The `logging` role installs `mms-log-inspect`, a dependency-free Python CLI that
+queries Loki's local API and evaluates JSON policy files. Loki is published on
+`127.0.0.1:3100` only so the host-side timer can query it without exposing Loki
+on the LAN.
+
+Default example policies are deployed from `examples/log-policies/` to
+`~/config/logging/inspection/policies/`. Add custom `*.json` files to that
+directory and restart the timer if the schedule changed:
+
+```bash
+systemctl --user restart mms-log-inspect.timer
+```
+
+Policy files use this shape:
+
+```json
+{
+  "name": "storage-pressure",
+  "description": "Detect log messages that indicate storage exhaustion.",
+  "window_minutes": 60,
+  "rules": [
+    {
+      "id": "disk-full",
+      "severity": "critical",
+      "description": "A service reports that disk space is exhausted.",
+      "service": "*",
+      "patterns": ["no space left on device", "ENOSPC", "disk full"],
+      "threshold": 1
+    }
+  ]
+}
+```
+
+Supported severities are `info`, `warning`, and `critical`. `service` can be
+`*`, a service name such as `radarr`, or a systemd unit such as
+`radarr.service`. `patterns` are Python regular expressions evaluated
+case-insensitively against each log line. A rule becomes a finding when the
+number of matching log entries is greater than or equal to `threshold`.
+
+Run an inspection manually against Loki:
+
+```bash
+~/config/logging/bin/mms-log-inspect \
+  --loki-url http://localhost:3100 \
+  --lookback-minutes 15 \
+  --query-limit 5000 \
+  --policy ~/config/logging/inspection/policies \
+  --output-json ~/config/logging/inspection/latest-report.json \
+  --fail-on critical
+```
+
+The command exits `1` when findings at or above `--fail-on` exist. The systemd
+service uses that exit code so critical policy matches are visible through
+`systemctl --user status mms-log-inspect.service` and
+`journalctl --user -u mms-log-inspect.service`.
+
+### Testing Policies Locally
+
+Use `scripts/generate-test-corpus` to create deterministic JSONL logs, then run
+the same inspector against those files before deploying policy changes:
+
+```bash
+scripts/generate-test-corpus \
+  --scenario faulty \
+  --entries 40 \
+  --output /tmp/mms-faulty.jsonl
+
+scripts/mms-log-inspect \
+  --input-jsonl /tmp/mms-faulty.jsonl \
+  --policy examples/log-policies \
+  --output-json /tmp/mms-log-report.json \
+  --fail-on critical
+
+python3 -m json.tool /tmp/mms-log-report.json
+```
+
+Available scenarios are `clean`, `faulty`, and `adversarial`. Use `clean` to
+check false positives, `faulty` to confirm expected detections, and
+`adversarial` to review near-miss log lines that should not trigger policies.
 
 ## Health Checks
 
 ```bash
 # Loki readiness
 podman exec grafana curl -s http://loki:3100/ready
+curl -sf http://127.0.0.1:3100/ready
 
 # Prometheus targets
 curl -sf http://localhost:9090/api/v1/targets | python3 -m json.tool
