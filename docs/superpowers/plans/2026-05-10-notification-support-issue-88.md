@@ -16,8 +16,9 @@
   webhook delivery, `--notify`, and notification-aware exit handling.
 - `tests/logging/test_log_inspection.py`: add functional tests using
   `scripts/generate-test-corpus` and local HTTP webhook receivers.
-- `examples/log-policies/notification-webhooks.json`: demonstrate Discord,
-  Slack, and generic webhook targets with environment-variable references.
+- `examples/log-notification-policies/notification-webhooks.json`: demonstrate
+  Discord, Slack, and generic webhook targets with environment-variable
+  references outside the actively deployed policy directory.
 - `roles/logging/defaults/main.yml`: add notification deployment defaults.
 - `roles/logging/tasks/setup.yml`: create a private notification environment
   file without overwriting operator secrets.
@@ -66,8 +67,9 @@
 
 ### Task 4: Examples, Docs, and Adversarial Review
 
-- [ ] Add `examples/log-policies/notification-webhooks.json` with Discord,
-  Slack, and generic webhook examples using environment-variable names only.
+- [ ] Add `examples/log-notification-policies/notification-webhooks.json` with
+  Discord, Slack, and generic webhook examples using environment-variable names
+  only.
 - [ ] Update `docs/wiki/Observability.md` with policy syntax, secret setup,
   generated-corpus testing, and manual run examples.
 - [ ] Write `docs/superpowers/reviews/2026-05-10-notification-support-issue-88.md`

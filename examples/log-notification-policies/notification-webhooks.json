@@ -1,0 +1,35 @@
+{
+  "name": "notification-webhooks",
+  "description": "Example notification targets for policy findings.",
+  "window_minutes": 60,
+  "notifications": [
+    {
+      "id": "ops-discord",
+      "provider": "discord",
+      "webhook_url_env": "MMS_DISCORD_WEBHOOK_URL",
+      "min_severity": "warning"
+    },
+    {
+      "id": "ops-slack",
+      "provider": "slack",
+      "webhook_url_env": "MMS_SLACK_WEBHOOK_URL",
+      "min_severity": "critical"
+    },
+    {
+      "id": "automation-bridge",
+      "provider": "generic",
+      "webhook_url_env": "MMS_GENERIC_WEBHOOK_URL",
+      "min_severity": "critical"
+    }
+  ],
+  "rules": [
+    {
+      "id": "notifiable-storage-pressure",
+      "severity": "critical",
+      "description": "A service reports that disk space is exhausted.",
+      "service": "*",
+      "patterns": ["no space left on device", "ENOSPC", "disk full"],
+      "threshold": 1
+    }
+  ]
+}
