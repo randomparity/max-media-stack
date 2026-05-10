@@ -11,6 +11,6 @@ kometa:
     - "PUID={{ mms_uid }}"
     - "PGID={{ mms_gid }}"
     - "TZ={{ mms_timezone }}"
-    - "KOMETA_TIME=06:00"
+    - "KOMETA_TIMES=06:00"
   backup_type: "arr"
   backup_db_files: []

@@ -20,3 +20,18 @@
         path: /home/mms/.config/containers/systemd/testapp.container
       register: _quadlet_service_quadlet_file
       failed_when: not _quadlet_service_quadlet_file.stat.exists
+
+    - name: Read container quadlet file
+      ansible.builtin.slurp:
+        src: /home/mms/.config/containers/systemd/testapp.container
+      register: _quadlet_service_quadlet_content
+
+    - name: Verify PUID/PGID services run as root inside the container
+      ansible.builtin.assert:
+        that:
+          - "'UserNS=host' in _quadlet_service_quadlet_decoded"
+          - "'PUID=3000' in _quadlet_service_quadlet_decoded"
+          - "'PGID=3000' in _quadlet_service_quadlet_decoded"
+        fail_msg: "PUID/PGID services must not default to UserNS=keep-id"
+      vars:
+        _quadlet_service_quadlet_decoded: "{{ _quadlet_service_quadlet_content.content | b64decode }}"

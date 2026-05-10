@@ -23,7 +23,7 @@ systemctl --user restart kometa.service
 systemctl --user status kometa.service
 ```
 
-Kometa runs as a long-lived container that wakes at the configured time (`KOMETA_TIME=06:00`) to process metadata, then sleeps until the next run.
+Kometa runs as a long-lived container that wakes at the configured time (`KOMETA_TIMES=06:00`) to process metadata, then sleeps until the next run.
 
 ## Viewing Logs
 
@@ -46,6 +46,7 @@ systemctl --user stop kometa.service
 # Run interactively with immediate execution
 podman run --rm -it \
   --name test-kometa \
+  --userns=host \
   --network mms \
   --tmpfs /run:U \
   -e PUID=3000 \
@@ -60,6 +61,7 @@ podman run --rm -it \
 
 **LSIO image rules (these are critical for Kometa testing):**
 - Use `PUID`/`PGID` environment variables -- do **NOT** use `--userns=keep-id` (breaks s6-overlay preinit, causing `s6-overlay-suexec: fatal: unable to exec /etc/s6-overlay/s6-rc.d/init/run: Operation not permitted`)
+- Use `--userns=host` so rootless Podman maps the host `mms` user to root inside the container for s6-overlay startup
 - Use `--network mms` (the Podman network name), not `--network mms.network` (that's the Quadlet filename, not the network)
 - Use `--tmpfs /run:U` for s6-overlay compatibility (`:U` chowns to container user)
 - Use `:Z` on the config volume for SELinux private labeling
@@ -102,7 +104,7 @@ This is the most common gotcha when manually testing Kometa. LSIO images use s6-
 s6-overlay-suexec: fatal: unable to exec /etc/s6-overlay/s6-rc.d/init/run: Operation not permitted
 ```
 
-**Solution:** Remove `--userns=keep-id` and use `PUID`/`PGID` instead. The Quadlet template uses `UserNS=keep-id` by default, but the LSIO container's s6-overlay handles the user switch internally via PUID/PGID.
+**Solution:** Use `UserNS=host` with `PUID`/`PGID`. Rootless Podman still maps the host `mms` user to root inside the container, and the LSIO container's s6-overlay handles the app user switch internally via PUID/PGID.
 
 **"Network mms.network not found"**
 
