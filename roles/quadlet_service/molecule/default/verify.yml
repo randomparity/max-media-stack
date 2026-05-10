@@ -26,12 +26,12 @@
         src: /home/mms/.config/containers/systemd/testapp.container
       register: _quadlet_service_quadlet_content
 
-    - name: Verify PUID/PGID services run as root inside the container
+    - name: Verify PUID/PGID services map writes to the host user
       ansible.builtin.assert:
         that:
           - "'UserNS=host' in _quadlet_service_quadlet_decoded"
-          - "'PUID=3000' in _quadlet_service_quadlet_decoded"
-          - "'PGID=3000' in _quadlet_service_quadlet_decoded"
-        fail_msg: "PUID/PGID services must not default to UserNS=keep-id"
+          - "'PUID=0' in _quadlet_service_quadlet_decoded"
+          - "'PGID=0' in _quadlet_service_quadlet_decoded"
+        fail_msg: "Rootless PUID/PGID services must write files as the host user"
       vars:
         _quadlet_service_quadlet_decoded: "{{ _quadlet_service_quadlet_content.content | b64decode }}"

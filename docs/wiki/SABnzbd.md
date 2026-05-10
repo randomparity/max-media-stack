@@ -46,8 +46,8 @@ podman run --rm -it \
   --name test-sabnzbd \
   --network mms \
   --tmpfs /run:U \
-  -e PUID=3000 \
-  -e PGID=3000 \
+  -e PUID=0 \
+  -e PGID=0 \
   -e TZ=America/New_York \
   -v /home/mms/config/sabnzbd:/config:Z \
   -v /data:/data \

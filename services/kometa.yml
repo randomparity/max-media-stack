@@ -8,8 +8,8 @@ kometa:
   volumes:
     - "{{ mms_config_dir }}/kometa:/config:Z"
   environment:
-    - "PUID={{ mms_uid }}"
-    - "PGID={{ mms_gid }}"
+    - "PUID=0"
+    - "PGID=0"
     - "TZ={{ mms_timezone }}"
     - "KOMETA_TIMES=06:00"
   backup_type: "arr"
