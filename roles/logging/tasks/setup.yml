@@ -90,6 +90,20 @@
     mode: "0644"
   become: true
 
+- name: Create log inspection notification environment file
+  ansible.builtin.copy:
+    dest: "{{ logging_inspection_environment_file }}"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+    force: false
+    content: |
+      # Add webhook URLs referenced by policy notification targets.
+      # Example:
+      # MMS_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+  become: true
+  when: logging_inspection_notifications_enabled | bool
+
 - name: Deploy log inspection service
   ansible.builtin.template:
     src: mms-log-inspect.service.j2

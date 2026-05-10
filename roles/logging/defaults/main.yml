@@ -47,3 +47,5 @@ logging_inspection_query_limit: 5000
 logging_inspection_fail_on: critical
 logging_inspection_policy_dir: "{{ logging_config_dir }}/inspection/policies"
 logging_inspection_output_file: "{{ logging_config_dir }}/inspection/latest-report.json"
+logging_inspection_notifications_enabled: false
+logging_inspection_environment_file: "{{ logging_config_dir }}/inspection/notifications.env"
