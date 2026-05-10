@@ -29,5 +29,8 @@ Thumbs.db
 # Collections installed locally
 collections/
 
+# Local implementation worktrees
+.worktrees/
+
 # Claude Code per-user settings
 .claude/settings.local.json
