@@ -45,6 +45,30 @@ Ensure lingering is enabled so the user session starts at boot:
 loginctl enable-linger mms
 ```
 
+## Log inspection troubleshooting
+
+```bash
+# Timer and service status
+systemctl --user status mms-log-inspect.timer
+systemctl --user status mms-log-inspect.service
+journalctl --user -u mms-log-inspect.service --since today
+
+# Loki loopback health from the host
+curl -sf http://127.0.0.1:3100/ready
+
+# Latest report
+python3 -m json.tool ~/config/logging/inspection/latest-report.json
+```
+
+Status `1` from `mms-log-inspect.service` means findings met the configured
+`--fail-on` threshold. Status `2` means the inspector failed before completing
+or notification delivery failed. Invalid policy JSON, unsupported severity
+values, missing webhook environment variables, and Loki query failures are the
+most common causes.
+
+For policy schema details and notification examples, see
+[Observability](Observability#log-inspection-policies).
+
 ## Container issues
 
 ```bash

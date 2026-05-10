@@ -33,6 +33,42 @@ Prometheus and Loki will repopulate from live data. **None require backup.**
 | **Notification env file** | `/home/mms/config/logging/inspection/notifications.env` |
 | **Autodeploy group** | `interactive` (daily at 02:00) |
 
+## Log Inspection Architecture
+
+Alloy ships user journal entries to Loki with the `job="mms"` label. The logging
+role publishes Loki on `127.0.0.1:3100` so host-side tools can query it without
+exposing Loki to the LAN. `mms-log-inspect.timer` starts
+`mms-log-inspect.service` every 15 minutes by default.
+
+The service runs:
+
+```bash
+~/config/logging/bin/mms-log-inspect \
+  --loki-url http://localhost:3100 \
+  --lookback-minutes 60 \
+  --query-limit 5000 \
+  --policy ~/config/logging/inspection/policies \
+  --output-json ~/config/logging/inspection/latest-report.json \
+  --fail-on critical
+```
+
+When notifications are enabled, systemd also loads
+`~/config/logging/inspection/notifications.env` and appends `--notify`.
+
+## Configuration Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `logging_inspection_enabled` | `true` | Enables and starts `mms-log-inspect.timer`. |
+| `logging_inspection_schedule` | `*-*-* *:00/15:00` | User systemd calendar schedule. |
+| `logging_inspection_lookback_minutes` | `60` | Loki lookback window per scheduled run. |
+| `logging_inspection_query_limit` | `5000` | Maximum Loki entries requested per run. |
+| `logging_inspection_fail_on` | `critical` | Severity threshold that makes the service exit `1`. |
+| `logging_inspection_policy_dir` | `{{ logging_config_dir }}/inspection/policies` | Active policy directory. |
+| `logging_inspection_output_file` | `{{ logging_config_dir }}/inspection/latest-report.json` | Latest report path. |
+| `logging_inspection_notifications_enabled` | `false` | Adds `--notify` and loads the env file. |
+| `logging_inspection_environment_file` | `{{ logging_config_dir }}/inspection/notifications.env` | Private secret file. |
+
 ## Service Management
 
 ### Loki
@@ -150,6 +186,27 @@ Supported severities are `info`, `warning`, and `critical`. `service` can be
 case-insensitively against each log line. A rule becomes a finding when the
 number of matching log entries is greater than or equal to `threshold`.
 
+### Policy Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | yes | Stable policy name shown in reports and generic webhook payloads. |
+| `description` | yes | Operator-facing description of the policy intent. |
+| `window_minutes` | yes | Intended review window; keep it at or below the configured lookback. |
+| `notifications` | no | Webhook targets evaluated only when `--notify` is set. |
+| `rules` | yes | Non-empty array of rule objects. |
+
+### Rule Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | yes | Stable rule identifier shown in reports and notification text. |
+| `severity` | yes | `info`, `warning`, or `critical`. |
+| `description` | yes | Finding description shown in reports. |
+| `service` | yes | `*`, a service label such as `radarr`, or a unit such as `radarr.service`. |
+| `patterns` | yes | Non-empty array of Python regular expressions, matched case-insensitively. |
+| `threshold` | yes | Positive integer match count required to create a finding. |
+
 Run an inspection manually against Loki:
 
 ```bash
@@ -166,6 +223,47 @@ The command exits `1` when findings at or above `--fail-on` exist. The systemd
 service uses that exit code so critical policy matches are visible through
 `systemctl --user status mms-log-inspect.service` and
 `journalctl --user -u mms-log-inspect.service`.
+
+## Reports And Exit Codes
+
+The report is always written before notification delivery. It has this shape:
+
+```json
+{
+  "generated_at": "2026-05-10T12:00:00Z",
+  "summary": {
+    "critical": 1,
+    "warning": 2,
+    "info": 0
+  },
+  "findings": [
+    {
+      "policy": "storage-pressure",
+      "rule_id": "disk-full",
+      "severity": "critical",
+      "description": "A service reports that disk space is exhausted.",
+      "match_count": 1,
+      "threshold": 1,
+      "matches": [
+        {
+          "timestamp": "2026-05-10T12:00:00Z",
+          "service": "sabnzbd",
+          "unit": "sabnzbd.service",
+          "message": "write failed: no space left on device"
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | Inspection completed and no findings met `--fail-on`. |
+| `1` | Inspection completed and findings met or exceeded `--fail-on`. |
+| `2` | Input, policy, Loki query, report write, or notification delivery failed. |
+
+Only the first 10 matching log entries are included per finding.
 
 ### Notifications
 
@@ -230,6 +328,126 @@ Supported providers are:
 Use `generic` for automation bridges, including services that forward webhook
 payloads to WhatsApp.
 
+### Notification Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | yes | Stable notification target identifier. |
+| `provider` | yes | `discord`, `slack`, or `generic`. |
+| `webhook_url_env` | yes | Environment variable containing the webhook URL. |
+| `min_severity` | yes | Lowest severity sent to this target. |
+
+### Discord Setup
+
+Create a Discord incoming webhook for a specific text channel:
+
+1. In Discord, open the target server.
+2. Open **Server Settings**.
+3. Open **Integrations**.
+4. Open **Webhooks**.
+5. Create a webhook.
+6. Choose the channel that should receive MMS alerts.
+7. Name the webhook, for example `MMS Log Inspection`.
+8. Copy the webhook URL.
+
+Store the URL on the MMS host:
+
+```bash
+mkdir -p ~/config/logging/inspection
+touch ~/config/logging/inspection/notifications.env
+chmod 0600 ~/config/logging/inspection/notifications.env
+$EDITOR ~/config/logging/inspection/notifications.env
+```
+
+Add:
+
+```bash
+MMS_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
+
+Then reference that variable from a policy:
+
+```json
+{
+  "id": "ops-discord",
+  "provider": "discord",
+  "webhook_url_env": "MMS_DISCORD_WEBHOOK_URL",
+  "min_severity": "warning"
+}
+```
+
+See the Discord webhook docs at
+<https://docs.discord.com/developers/platform/webhooks> and the Discord support
+guide at <https://support.discord.com/hc/en-us/articles/228383668>.
+
+### Slack Setup
+
+Create a Slack incoming webhook:
+
+1. Create or open a Slack app for the workspace.
+2. Open **Incoming Webhooks** in the app configuration.
+3. Turn on **Activate Incoming Webhooks**.
+4. Select **Add New Webhook to Workspace**.
+5. Choose the channel that should receive MMS alerts.
+6. Copy the generated webhook URL.
+
+Store the URL on the MMS host:
+
+```bash
+mkdir -p ~/config/logging/inspection
+touch ~/config/logging/inspection/notifications.env
+chmod 0600 ~/config/logging/inspection/notifications.env
+$EDITOR ~/config/logging/inspection/notifications.env
+```
+
+Add:
+
+```bash
+MMS_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+```
+
+Then reference that variable from a policy:
+
+```json
+{
+  "id": "ops-slack",
+  "provider": "slack",
+  "webhook_url_env": "MMS_SLACK_WEBHOOK_URL",
+  "min_severity": "critical"
+}
+```
+
+See the Slack incoming webhook docs at
+<https://api.slack.com/messaging/webhooks>.
+
+### Generic Webhook Setup
+
+Use `generic` for services that accept arbitrary JSON over HTTP, including
+automation bridges and notification relays.
+
+1. Create the destination webhook in the receiving service.
+2. Confirm it accepts `POST` requests with `Content-Type: application/json`.
+3. Copy the destination URL.
+4. Store it in `~/config/logging/inspection/notifications.env`.
+
+```bash
+MMS_GENERIC_WEBHOOK_URL=https://example.invalid/mms-alert-bridge
+```
+
+Then reference that variable from a policy:
+
+```json
+{
+  "id": "automation-bridge",
+  "provider": "generic",
+  "webhook_url_env": "MMS_GENERIC_WEBHOOK_URL",
+  "min_severity": "critical"
+}
+```
+
+The generic provider sends structured JSON with `notification_id`, `summary`,
+`findings`, and `generated_at`.
+
 A complete example is available at
 `examples/log-notification-policies/notification-webhooks.json`. Copy it into
 `~/config/logging/inspection/policies/` only after setting the referenced
@@ -254,6 +472,31 @@ set +a
 
 Notification failures exit `2` after writing the JSON report. Missing webhook
 environment variables are reported by variable name only.
+
+## Policy Deployment Workflow
+
+1. Edit or add a policy under `examples/log-policies/` in the repository.
+2. Validate it locally with `scripts/generate-test-corpus` and
+   `scripts/mms-log-inspect`.
+3. Deploy the logging service:
+
+```bash
+ansible-playbook playbooks/deploy-service.yml -e service_name=logging
+```
+
+4. On the host, confirm the policy exists:
+
+```bash
+ls -l ~/config/logging/inspection/policies/
+```
+
+5. Run one inspection immediately:
+
+```bash
+systemctl --user start mms-log-inspect.service
+systemctl --user status mms-log-inspect.service
+python3 -m json.tool ~/config/logging/inspection/latest-report.json
+```
 
 ### Testing Policies Locally
 
@@ -314,6 +557,37 @@ curl -sf http://grafana.media.drc.nz/api/health
 | Grafana -> Prometheus | `prometheus` | `http://prometheus:9090` | Query metrics |
 
 ## Common Issues
+
+### Log inspection service exits with status 1
+
+Status `1` means the inspector ran successfully and found policy matches at or
+above `logging_inspection_fail_on`. Read the report first:
+
+```bash
+python3 -m json.tool ~/config/logging/inspection/latest-report.json
+```
+
+### Log inspection service exits with status 2
+
+Status `2` means execution failed. Check stderr in the user journal:
+
+```bash
+journalctl --user -u mms-log-inspect.service --since today
+```
+
+Common causes are invalid JSON, unsupported severity or provider names, missing
+policy files, Loki query failures, and missing webhook environment variables.
+
+### Notifications are not sent
+
+Verify scheduled notifications are enabled, the environment file is loaded, and
+the policy has findings at or above the target's `min_severity`:
+
+```bash
+systemctl --user cat mms-log-inspect.service
+grep -E '^[A-Z0-9_]+=' ~/config/logging/inspection/notifications.env | cut -d= -f1
+python3 -m json.tool ~/config/logging/inspection/latest-report.json
+```
 
 ### Alloy not collecting logs
 
