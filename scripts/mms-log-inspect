@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+"""Inspect MMS logs with JSON policy files."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, Iterable
+
+
+SEVERITY_ORDER = {"info": 0, "warning": 1, "critical": 2}
+
+
+class PolicyError(ValueError):
+    """Raised when a policy file cannot be evaluated safely."""
+
+
+@dataclass(frozen=True)
+class Rule:
+    id: str
+    severity: str
+    description: str
+    service: str
+    patterns: tuple[re.Pattern[str], ...]
+    threshold: int
+
+
+@dataclass(frozen=True)
+class Policy:
+    name: str
+    description: str
+    window_minutes: int
+    rules: tuple[Rule, ...]
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input-jsonl", type=Path, help="Local JSONL log corpus.")
+    parser.add_argument("--policy", action="append", type=Path, required=True)
+    parser.add_argument("--output-json", type=Path, required=True)
+    parser.add_argument("--loki-url", help="Base URL for Loki.")
+    parser.add_argument(
+        "--lookback-minutes",
+        type=int,
+        default=15,
+        help="Minutes of Loki logs to inspect.",
+    )
+    parser.add_argument(
+        "--query-limit",
+        type=int,
+        default=5000,
+        help="Maximum Loki log entries to query.",
+    )
+    parser.add_argument(
+        "--fail-on",
+        choices=tuple(SEVERITY_ORDER),
+        default="critical",
+        help="Exit 1 when findings at this severity or above exist.",
+    )
+    return parser.parse_args()
+
+
+def require_mapping(value: object, context: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise PolicyError(f"Invalid policy: {context} must be an object")
+    return value
+
+
+def require_string(mapping: dict[str, Any], key: str, context: str) -> str:
+    value = mapping.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise PolicyError(f"Invalid policy: {context} requires string field {key}")
+    return value
+
+
+def require_positive_int(mapping: dict[str, Any], key: str, context: str) -> int:
+    value = mapping.get(key)
+    if not isinstance(value, int) or value < 1:
+        raise PolicyError(f"Invalid policy: {context} requires positive integer {key}")
+    return value
+
+
+def load_rule(raw_rule: object, index: int) -> Rule:
+    rule = require_mapping(raw_rule, f"rules[{index}]")
+    rule_id = require_string(rule, "id", f"rules[{index}]")
+    context = f"rule {rule_id}"
+    severity = require_string(rule, "severity", context)
+    if severity not in SEVERITY_ORDER:
+        raise PolicyError(f"Invalid policy: {context} has unsupported severity {severity}")
+
+    raw_patterns = rule.get("patterns")
+    if not isinstance(raw_patterns, list) or not raw_patterns:
+        raise PolicyError(f"Invalid policy: {context} requires non-empty patterns")
+
+    patterns = []
+    for pattern in raw_patterns:
+        if not isinstance(pattern, str) or not pattern:
+            raise PolicyError(f"Invalid policy: {context} has an empty pattern")
+        try:
+            patterns.append(re.compile(pattern, re.IGNORECASE))
+        except re.error as error:
+            raise PolicyError(f"Invalid policy: {context} has invalid regex {pattern}") from error
+
+    return Rule(
+        id=rule_id,
+        severity=severity,
+        description=require_string(rule, "description", context),
+        service=require_string(rule, "service", context),
+        patterns=tuple(patterns),
+        threshold=require_positive_int(rule, "threshold", context),
+    )
+
+
+def load_policy(path: Path) -> Policy:
+    try:
+        raw_policy = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise PolicyError(f"Invalid policy: {path} is not valid JSON") from error
+
+    policy = require_mapping(raw_policy, str(path))
+    raw_rules = policy.get("rules")
+    if not isinstance(raw_rules, list) or not raw_rules:
+        raise PolicyError(f"Invalid policy: {path} requires non-empty rules")
+
+    return Policy(
+        name=require_string(policy, "name", str(path)),
+        description=require_string(policy, "description", str(path)),
+        window_minutes=require_positive_int(policy, "window_minutes", str(path)),
+        rules=tuple(load_rule(rule, index) for index, rule in enumerate(raw_rules)),
+    )
+
+
+def expand_policy_paths(paths: Iterable[Path]) -> list[Path]:
+    expanded = []
+    for path in paths:
+        if path.is_dir():
+            expanded.extend(sorted(path.glob("*.json")))
+        else:
+            expanded.append(path)
+    if not expanded:
+        raise PolicyError("Invalid policy: no policy files found")
+    return expanded
+
+
+def load_policies(paths: Iterable[Path]) -> list[Policy]:
+    return [load_policy(path) for path in expand_policy_paths(paths)]
+
+
+def load_entries(path: Path) -> list[dict[str, Any]]:
+    entries = []
+    with path.open(encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError as error:
+                message = f"{path}:{line_number} is not valid JSONL"
+                raise ValueError(message) from error
+            if isinstance(entry, dict):
+                entries.append(entry)
+    return entries
+
+
+def loki_time_range(lookback_minutes: int) -> tuple[str, str]:
+    if lookback_minutes < 1:
+        raise ValueError("--lookback-minutes must be greater than zero")
+    end = datetime.now(tz=timezone.utc)
+    start = end - timedelta(minutes=lookback_minutes)
+    return str(int(start.timestamp() * 1_000_000_000)), str(int(end.timestamp() * 1_000_000_000))
+
+
+def build_loki_url(base_url: str, lookback_minutes: int, query_limit: int) -> str:
+    if query_limit < 1:
+        raise ValueError("--query-limit must be greater than zero")
+    start, end = loki_time_range(lookback_minutes)
+    query = urllib.parse.urlencode(
+        {
+            "query": '{job="mms"}',
+            "start": start,
+            "end": end,
+            "limit": str(query_limit),
+            "direction": "backward",
+        }
+    )
+    return f"{base_url.rstrip('/')}/loki/api/v1/query_range?{query}"
+
+
+def load_loki_entries(base_url: str, lookback_minutes: int, query_limit: int) -> list[dict[str, Any]]:
+    url = build_loki_url(base_url, lookback_minutes, query_limit)
+    request = urllib.request.Request(url, headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode())
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise ValueError(f"Loki query failed: {error}") from error
+    return parse_loki_payload(payload)
+
+
+def parse_loki_payload(payload: object) -> list[dict[str, Any]]:
+    data = require_mapping(require_mapping(payload, "Loki response").get("data"), "Loki data")
+    result = data.get("result")
+    if not isinstance(result, list):
+        raise ValueError("Loki query failed: response data.result must be a list")
+
+    entries = []
+    for stream in result:
+        stream_data = require_mapping(stream, "Loki stream")
+        labels = require_mapping(stream_data.get("stream"), "Loki stream labels")
+        values = stream_data.get("values")
+        if not isinstance(values, list):
+            continue
+        for value in values:
+            if isinstance(value, list) and len(value) == 2:
+                entries.append(loki_value_to_entry(labels, value))
+    return entries
+
+
+def loki_value_to_entry(labels: dict[str, Any], value: list[object]) -> dict[str, str]:
+    timestamp, message = value
+    service = str(labels.get("service_name") or labels.get("container") or "")
+    unit = str(labels.get("unit") or labels.get("__journal__systemd_user_unit") or "")
+    return {
+        "timestamp": str(timestamp),
+        "service": service,
+        "unit": unit,
+        "message": str(message),
+    }
+
+
+def service_matches(rule_service: str, entry: dict[str, Any]) -> bool:
+    if rule_service == "*":
+        return True
+    return rule_service in {entry.get("service"), entry.get("unit")}
+
+
+def matching_entries(rule: Rule, entries: Iterable[dict[str, Any]]) -> list[dict[str, str]]:
+    matches = []
+    for entry in entries:
+        message = str(entry.get("message", ""))
+        if service_matches(rule.service, entry) and any(p.search(message) for p in rule.patterns):
+            matches.append(
+                {
+                    "timestamp": str(entry.get("timestamp", "")),
+                    "service": str(entry.get("service", "")),
+                    "unit": str(entry.get("unit", "")),
+                    "message": message,
+                }
+            )
+    return matches
+
+
+def evaluate_policies(
+    policies: Iterable[Policy],
+    entries: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    findings = []
+    for policy in policies:
+        for rule in policy.rules:
+            matches = matching_entries(rule, entries)
+            if len(matches) >= rule.threshold:
+                findings.append(
+                    {
+                        "policy": policy.name,
+                        "rule_id": rule.id,
+                        "severity": rule.severity,
+                        "description": rule.description,
+                        "match_count": len(matches),
+                        "threshold": rule.threshold,
+                        "matches": matches[:10],
+                    }
+                )
+    return findings
+
+
+def summarize(findings: Iterable[dict[str, Any]]) -> dict[str, int]:
+    summary = {"critical": 0, "warning": 0, "info": 0}
+    for finding in findings:
+        severity = str(finding["severity"])
+        summary[severity] += 1
+    return summary
+
+
+def write_report(path: Path, findings: list[dict[str, Any]]) -> None:
+    report = {
+        "generated_at": datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
+        "summary": summarize(findings),
+        "findings": findings,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def has_failure(findings: Iterable[dict[str, Any]], fail_on: str) -> bool:
+    minimum = SEVERITY_ORDER[fail_on]
+    return any(SEVERITY_ORDER[str(finding["severity"])] >= minimum for finding in findings)
+
+
+def main() -> int:
+    args = parse_args()
+    if bool(args.input_jsonl) == bool(args.loki_url):
+        print("Provide exactly one of --input-jsonl or --loki-url", file=sys.stderr)
+        return 2
+
+    try:
+        policies = load_policies(args.policy)
+        if args.input_jsonl:
+            entries = load_entries(args.input_jsonl)
+        else:
+            entries = load_loki_entries(args.loki_url, args.lookback_minutes, args.query_limit)
+        findings = evaluate_policies(policies, entries)
+    except (OSError, PolicyError, ValueError) as error:
+        print(error, file=sys.stderr)
+        return 2
+
+    write_report(args.output_json, findings)
+    return 1 if has_failure(findings, args.fail_on) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

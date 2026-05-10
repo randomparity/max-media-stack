@@ -1,0 +1,15 @@
+{
+  "name": "error-patterns",
+  "description": "Detect repeated application errors in MMS service logs.",
+  "window_minutes": 60,
+  "rules": [
+    {
+      "id": "application-errors",
+      "severity": "warning",
+      "description": "A service is repeatedly logging errors, exceptions, or fatal failures.",
+      "service": "*",
+      "patterns": ["\\berror\\b", "exception", "fatal", "panic"],
+      "threshold": 3
+    }
+  ]
+}
