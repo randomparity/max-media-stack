@@ -6,8 +6,8 @@ prowlarr:
   volumes:
     - "{{ mms_config_dir }}/prowlarr:/config:Z"
   environment:
-    - "PUID={{ mms_uid }}"
-    - "PGID={{ mms_gid }}"
+    - "PUID=0"
+    - "PGID=0"
     - "TZ={{ mms_timezone }}"
   health_cmd: "curl -sf http://localhost:9696/ping || exit 1"
   health_interval: "60s"

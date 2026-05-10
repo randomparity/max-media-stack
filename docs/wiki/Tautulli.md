@@ -46,8 +46,8 @@ podman run --rm -it \
   --name test-tautulli \
   --network mms \
   --tmpfs /run:U \
-  -e PUID=3000 \
-  -e PGID=3000 \
+  -e PUID=0 \
+  -e PGID=0 \
   -e TZ=America/New_York \
   -v /home/mms/config/tautulli:/config:Z \
   -v "/home/mms/config/plex/Library/Application Support/Plex Media Server/Logs:/plex-logs:ro" \

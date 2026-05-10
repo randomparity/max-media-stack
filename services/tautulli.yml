@@ -9,8 +9,8 @@ tautulli:
     - "{{ mms_config_dir }}/tautulli:/config:Z"
     - "{{ mms_config_dir }}/plex/Library/Application Support/Plex Media Server/Logs:/plex-logs:ro"
   environment:
-    - "PUID={{ mms_uid }}"
-    - "PGID={{ mms_gid }}"
+    - "PUID=0"
+    - "PGID=0"
     - "TZ={{ mms_timezone }}"
   health_cmd: "curl -sf http://localhost:8181/status || exit 1"
   health_interval: "60s"

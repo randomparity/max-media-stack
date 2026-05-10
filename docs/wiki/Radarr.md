@@ -57,8 +57,8 @@ podman run --rm -it \
   --name test-radarr \
   --network mms \
   --tmpfs /run:U \
-  -e PUID=3000 \
-  -e PGID=3000 \
+  -e PUID=0 \
+  -e PGID=0 \
   -e TZ=America/New_York \
   -v /home/mms/config/radarr:/config:Z \
   -v /data:/data \

@@ -23,7 +23,7 @@ systemctl --user restart kometa.service
 systemctl --user status kometa.service
 ```
 
-Kometa runs as a long-lived container that wakes at the configured time (`KOMETA_TIME=06:00`) to process metadata, then sleeps until the next run.
+Kometa runs as a long-lived container that wakes at the configured time (`KOMETA_TIMES=06:00`) to process metadata, then sleeps until the next run.
 
 ## Viewing Logs
 
@@ -46,10 +46,11 @@ systemctl --user stop kometa.service
 # Run interactively with immediate execution
 podman run --rm -it \
   --name test-kometa \
+  --userns=host \
   --network mms \
   --tmpfs /run:U \
-  -e PUID=3000 \
-  -e PGID=3000 \
+  -e PUID=0 \
+  -e PGID=0 \
   -e TZ=America/New_York \
   -e KOMETA_RUN=true \
   -v /home/mms/config/kometa:/config:Z \
@@ -60,16 +61,18 @@ podman run --rm -it \
 
 **LSIO image rules (these are critical for Kometa testing):**
 - Use `PUID`/`PGID` environment variables -- do **NOT** use `--userns=keep-id` (breaks s6-overlay preinit, causing `s6-overlay-suexec: fatal: unable to exec /etc/s6-overlay/s6-rc.d/init/run: Operation not permitted`)
+- Use `--userns=host` so rootless Podman maps the host `mms` user to root inside the container for s6-overlay startup
+- Use `PUID=0`/`PGID=0` so files written by Kometa remain editable by the host `mms` user
 - Use `--network mms` (the Podman network name), not `--network mms.network` (that's the Quadlet filename, not the network)
 - Use `--tmpfs /run:U` for s6-overlay compatibility (`:U` chowns to container user)
 - Use `:Z` on the config volume for SELinux private labeling
 
 **Fix file ownership after manual runs:**
 
-If you ran a test container with different user mappings (or accidentally with `--userns=keep-id`), config files may end up owned by the wrong user inside the namespace. Fix with:
+If you ran a test container with different user mappings (or accidentally with `PUID=3000`), config files may end up owned by a rootless Podman subuid such as `592823`. Fix with:
 
 ```bash
-podman unshare chown -R 3000:3000 /home/mms/config/kometa
+podman unshare chown -R 0:0 /home/mms/config/kometa
 ```
 
 ## Backup & Restore
@@ -102,7 +105,7 @@ This is the most common gotcha when manually testing Kometa. LSIO images use s6-
 s6-overlay-suexec: fatal: unable to exec /etc/s6-overlay/s6-rc.d/init/run: Operation not permitted
 ```
 
-**Solution:** Remove `--userns=keep-id` and use `PUID`/`PGID` instead. The Quadlet template uses `UserNS=keep-id` by default, but the LSIO container's s6-overlay handles the user switch internally via PUID/PGID.
+**Solution:** Use `UserNS=host` with `PUID=0` and `PGID=0`. Rootless Podman still maps container root to the host `mms` user, so s6-overlay can start and Kometa-written files stay editable from the host.
 
 **"Network mms.network not found"**
 
@@ -121,15 +124,30 @@ podman run --network mms ...
 After a manual run, files in `/home/mms/config/kometa` may be owned by a different UID inside the user namespace. Fix ownership:
 
 ```bash
-podman unshare chown -R 3000:3000 /home/mms/config/kometa
+podman unshare chown -R 0:0 /home/mms/config/kometa
 ```
 
 **Kometa can't connect to Plex**
 
-Verify Plex is running and reachable from within the network:
+First verify Plex is running and reachable from within the container network:
 
 ```bash
 podman exec kometa curl -sf http://plex:32400/identity
 ```
 
-Also verify the Plex URL in Kometa's config YAML uses the container hostname (`http://plex:32400`), not a Traefik URL.
+This checks connectivity only. Plex may return `200 OK` from `/identity` even with
+an invalid token, so do not use this endpoint to validate credentials.
+
+Validate the Plex token against an authenticated API endpoint:
+
+```bash
+podman exec kometa curl -i \
+  "http://plex:32400/library/sections?X-Plex-Token=<plex-token>"
+```
+
+A valid token returns `200 OK` with a `MediaContainer` listing libraries. An
+invalid token returns `401 Unauthorized`.
+
+Also verify the Plex URL in Kometa's config YAML uses the container hostname
+(`http://plex:32400`), not a Traefik URL. Check both the global `plex:` block
+and any per-library `plex:` overrides.

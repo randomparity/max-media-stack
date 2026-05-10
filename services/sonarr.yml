@@ -7,8 +7,8 @@ sonarr:
     - "{{ mms_config_dir }}/sonarr:/config:Z"
     - "{{ mms_data_dir }}:/data"
   environment:
-    - "PUID={{ mms_uid }}"
-    - "PGID={{ mms_gid }}"
+    - "PUID=0"
+    - "PGID=0"
     - "TZ={{ mms_timezone }}"
   health_cmd: "curl -sf http://localhost:8989/ping || exit 1"
   health_interval: "60s"
