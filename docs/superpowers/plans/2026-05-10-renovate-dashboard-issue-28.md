@@ -158,7 +158,7 @@ Run:
 ```bash
 source .venv/bin/activate
 ansible-playbook playbooks/deploy-service.yml -e service_name=tautulli --check --diff
-ansible-playbook playbooks/site.yml --check --diff --tags immich
+ansible-playbook playbooks/deploy-services.yml --check --diff -e '{"deploy_services":["immich"]}'
 ```
 
 Expected:
