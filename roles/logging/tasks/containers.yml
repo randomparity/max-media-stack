@@ -160,3 +160,25 @@
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
   when: not ansible_check_mode
+
+- name: Enable and start log inspection timer
+  ansible.builtin.systemd:
+    name: mms-log-inspect.timer
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: logging_inspection_enabled | bool
+
+- name: Disable log inspection timer
+  ansible.builtin.systemd:
+    name: mms-log-inspect.timer
+    enabled: false
+    state: stopped
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: not logging_inspection_enabled | bool

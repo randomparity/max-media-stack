@@ -1,0 +1,9 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Inspect MMS container logs for policy matches
+After=loki.service
+
+[Service]
+Type=oneshot
+ExecStart={{ logging_config_dir }}/bin/mms-log-inspect --loki-url http://localhost:3100 --lookback-minutes {{ logging_inspection_lookback_minutes }} --query-limit {{ logging_inspection_query_limit }} --policy {{ logging_inspection_policy_dir }} --output-json {{ logging_inspection_output_file }} --fail-on {{ logging_inspection_fail_on }}

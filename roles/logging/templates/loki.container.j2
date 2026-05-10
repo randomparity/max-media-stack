@@ -8,6 +8,7 @@ After=network-online.target
 ContainerName=loki
 Image={{ logging_loki_image }}
 Network={{ mms_network_name }}.network
+PublishPort=127.0.0.1:3100:3100
 Exec=-config.file=/etc/loki/loki-config.yml
 Volume={{ logging_config_dir }}/loki/loki-config.yml:/etc/loki/loki-config.yml:Z,ro
 Volume={{ logging_config_dir }}/loki/rules:/etc/loki/rules:Z,ro

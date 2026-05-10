@@ -55,10 +55,54 @@
     - "{{ logging_config_dir }}/grafana/provisioning/dashboards"
     - "{{ logging_config_dir }}/grafana/dashboards"
     - "{{ logging_config_dir }}/prometheus"
+    - "{{ logging_config_dir }}/bin"
+    - "{{ logging_config_dir }}/inspection"
+    - "{{ logging_inspection_policy_dir }}"
     - "{{ logging_loki_data_dir }}"
     - "{{ logging_grafana_data_dir }}"
     - "{{ logging_prometheus_data_dir }}"
     - "{{ logging_config_dir }}/alloy-data"
+
+- name: Deploy log inspection script
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../scripts/mms-log-inspect"
+    dest: "{{ logging_config_dir }}/bin/mms-log-inspect"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy example log inspection policies
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../examples/log-policies/"
+    dest: "{{ logging_inspection_policy_dir }}/"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+
+- name: Deploy log inspection service
+  ansible.builtin.template:
+    src: mms-log-inspect.service.j2
+    dest: "{{ mms_quadlet_dir }}/mms-log-inspect.service"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+
+- name: Deploy log inspection timer
+  ansible.builtin.template:
+    src: mms-log-inspect.timer.j2
+    dest: "{{ mms_quadlet_dir }}/mms-log-inspect.timer"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd user daemon
+    - Restart log inspection timer
 
 # Deploy Alloy config
 - name: Deploy Alloy config

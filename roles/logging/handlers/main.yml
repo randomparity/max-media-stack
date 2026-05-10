@@ -51,3 +51,13 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
+
+- name: Restart log inspection timer
+  ansible.builtin.systemd:
+    name: mms-log-inspect.timer
+    state: restarted
+    scope: user
+  become: true
+  become_user: "{{ mms_user }}"
+  environment: "{{ mms_systemd_env }}"
+  when: logging_inspection_enabled | bool
