@@ -7,6 +7,9 @@
     'before 6am on Monday',
   ],
   timezone: 'America/New_York',
+  ignoreDeps: [
+    'python',
+  ],
   ignorePaths: [
     'roles/quadlet_service/molecule/**',
   ],
