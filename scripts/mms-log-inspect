@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -34,10 +35,19 @@ class Rule:
 
 
 @dataclass(frozen=True)
+class NotificationTarget:
+    id: str
+    provider: str
+    webhook_url_env: str
+    min_severity: str
+
+
+@dataclass(frozen=True)
 class Policy:
     name: str
     description: str
     window_minutes: int
+    notifications: tuple[NotificationTarget, ...]
     rules: tuple[Rule, ...]
 
 
@@ -64,6 +74,11 @@ def parse_args() -> argparse.Namespace:
         choices=tuple(SEVERITY_ORDER),
         default="critical",
         help="Exit 1 when findings at this severity or above exist.",
+    )
+    parser.add_argument(
+        "--notify",
+        action="store_true",
+        help="Send policy-defined webhook notifications for matching findings.",
     )
     return parser.parse_args()
 
@@ -119,6 +134,40 @@ def load_rule(raw_rule: object, index: int) -> Rule:
     )
 
 
+def load_notification(raw_notification: object, index: int) -> NotificationTarget:
+    notification = require_mapping(raw_notification, f"notifications[{index}]")
+    notification_id = require_string(notification, "id", f"notifications[{index}]")
+    context = f"notification {notification_id}"
+    provider = require_string(notification, "provider", context)
+    if provider not in {"discord", "slack", "generic"}:
+        raise PolicyError(f"Invalid policy: {context} has unsupported provider {provider}")
+
+    min_severity = require_string(notification, "min_severity", context)
+    if min_severity not in SEVERITY_ORDER:
+        raise PolicyError(
+            f"Invalid policy: {context} has unsupported min_severity {min_severity}"
+        )
+
+    return NotificationTarget(
+        id=notification_id,
+        provider=provider,
+        webhook_url_env=require_string(notification, "webhook_url_env", context),
+        min_severity=min_severity,
+    )
+
+
+def load_notifications(policy: dict[str, Any]) -> tuple[NotificationTarget, ...]:
+    raw_notifications = policy.get("notifications", [])
+    if raw_notifications is None:
+        return ()
+    if not isinstance(raw_notifications, list):
+        raise PolicyError("Invalid policy: notifications must be a list")
+    return tuple(
+        load_notification(notification, index)
+        for index, notification in enumerate(raw_notifications)
+    )
+
+
 def load_policy(path: Path) -> Policy:
     try:
         raw_policy = json.loads(path.read_text(encoding="utf-8"))
@@ -134,6 +183,7 @@ def load_policy(path: Path) -> Policy:
         name=require_string(policy, "name", str(path)),
         description=require_string(policy, "description", str(path)),
         window_minutes=require_positive_int(policy, "window_minutes", str(path)),
+        notifications=load_notifications(policy),
         rules=tuple(load_rule(rule, index) for index, rule in enumerate(raw_rules)),
     )
 
@@ -287,12 +337,15 @@ def summarize(findings: Iterable[dict[str, Any]]) -> dict[str, int]:
     return summary
 
 
-def write_report(path: Path, findings: list[dict[str, Any]]) -> None:
-    report = {
+def build_report(findings: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
         "generated_at": datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
         "summary": summarize(findings),
         "findings": findings,
     }
+
+
+def write_report(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
 
@@ -300,6 +353,91 @@ def write_report(path: Path, findings: list[dict[str, Any]]) -> None:
 def has_failure(findings: Iterable[dict[str, Any]], fail_on: str) -> bool:
     minimum = SEVERITY_ORDER[fail_on]
     return any(SEVERITY_ORDER[str(finding["severity"])] >= minimum for finding in findings)
+
+
+def filtered_findings(
+    findings: Iterable[dict[str, Any]],
+    min_severity: str,
+) -> list[dict[str, Any]]:
+    minimum = SEVERITY_ORDER[min_severity]
+    return [
+        finding
+        for finding in findings
+        if SEVERITY_ORDER[str(finding["severity"])] >= minimum
+    ]
+
+
+def notification_text(target: NotificationTarget, findings: list[dict[str, Any]]) -> str:
+    count = len(findings)
+    noun = "issue" if count == 1 else "issues"
+    rule_ids = ", ".join(str(finding["rule_id"]) for finding in findings[:5])
+    suffix = "" if len(findings) <= 5 else f", +{len(findings) - 5} more"
+    return (
+        f"MMS log inspection found {count} {noun} at or above "
+        f"{target.min_severity}: {rule_ids}{suffix}"
+    )
+
+
+def notification_payload(
+    target: NotificationTarget,
+    report: dict[str, Any],
+    findings: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if target.provider == "generic":
+        return {
+            "notification_id": target.id,
+            "summary": report["summary"],
+            "findings": findings,
+            "generated_at": report["generated_at"],
+        }
+
+    text = notification_text(target, findings)
+    if target.provider == "discord":
+        return {"content": text}
+    if target.provider == "slack":
+        return {"text": text}
+    raise PolicyError(f"Invalid policy: unsupported provider {target.provider}")
+
+
+def send_webhook(target: NotificationTarget, payload: dict[str, Any]) -> None:
+    webhook_url = os.environ.get(target.webhook_url_env, "")
+    if not webhook_url:
+        raise ValueError(
+            f"Notification {target.id} requires environment variable "
+            f"{target.webhook_url_env}"
+        )
+
+    body = json.dumps(payload).encode()
+    request = urllib.request.Request(
+        webhook_url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            if response.status >= 400:
+                raise ValueError(
+                    f"Notification {target.id} failed with HTTP {response.status}"
+                )
+    except urllib.error.HTTPError as error:
+        raise ValueError(
+            f"Notification {target.id} failed with HTTP {error.code}"
+        ) from error
+    except urllib.error.URLError as error:
+        raise ValueError(f"Notification {target.id} failed: {error.reason}") from error
+
+
+def notify_findings(policies: Iterable[Policy], report: dict[str, Any]) -> None:
+    findings = report["findings"]
+    for policy in policies:
+        policy_findings = [
+            finding for finding in findings if finding["policy"] == policy.name
+        ]
+        for target in policy.notifications:
+            matches = filtered_findings(policy_findings, target.min_severity)
+            if matches:
+                send_webhook(target, notification_payload(target, report, matches))
 
 
 def main() -> int:
@@ -319,7 +457,14 @@ def main() -> int:
         print(error, file=sys.stderr)
         return 2
 
-    write_report(args.output_json, findings)
+    report = build_report(findings)
+    write_report(args.output_json, report)
+    if args.notify:
+        try:
+            notify_findings(policies, report)
+        except (OSError, PolicyError, ValueError) as error:
+            print(error, file=sys.stderr)
+            return 2
     return 1 if has_failure(findings, args.fail_on) else 0
 
 

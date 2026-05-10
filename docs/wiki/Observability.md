@@ -30,6 +30,7 @@ Prometheus and Loki will repopulate from live data. **None require backup.**
 | **Log inspection timer** | Every 15 minutes |
 | **Log inspection policies** | `/home/mms/config/logging/inspection/policies` |
 | **Latest inspection report** | `/home/mms/config/logging/inspection/latest-report.json` |
+| **Notification env file** | `/home/mms/config/logging/inspection/notifications.env` |
 | **Autodeploy group** | `interactive` (daily at 02:00) |
 
 ## Service Management
@@ -166,6 +167,94 @@ service uses that exit code so critical policy matches are visible through
 `systemctl --user status mms-log-inspect.service` and
 `journalctl --user -u mms-log-inspect.service`.
 
+### Notifications
+
+Policies can notify webhook-compatible services when findings are present.
+Notifications are disabled by default. Enable scheduled notifications in
+inventory or role defaults:
+
+```yaml
+logging_inspection_notifications_enabled: true
+```
+
+When enabled, the logging role creates
+`~/config/logging/inspection/notifications.env` with mode `0600` if it does not
+already exist. Add webhook URLs there using the environment-variable names from
+your policy files:
+
+```bash
+MMS_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+MMS_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+MMS_GENERIC_WEBHOOK_URL=https://example.invalid/mms-alert-bridge
+```
+
+Do not commit real webhook URLs. Keep them in Ansible Vault or edit the
+deployed `notifications.env` on the host.
+
+Add a `notifications` array to any policy file:
+
+```json
+{
+  "name": "storage-pressure",
+  "description": "Detect log messages that indicate storage exhaustion.",
+  "window_minutes": 60,
+  "notifications": [
+    {
+      "id": "ops-discord",
+      "provider": "discord",
+      "webhook_url_env": "MMS_DISCORD_WEBHOOK_URL",
+      "min_severity": "warning"
+    }
+  ],
+  "rules": [
+    {
+      "id": "disk-full",
+      "severity": "critical",
+      "description": "A service reports that disk space is exhausted.",
+      "service": "*",
+      "patterns": ["no space left on device", "ENOSPC", "disk full"],
+      "threshold": 1
+    }
+  ]
+}
+```
+
+Supported providers are:
+
+| Provider | Payload |
+|----------|---------|
+| `discord` | `{"content": "..."}` |
+| `slack` | `{"text": "..."}` |
+| `generic` | Structured JSON with `summary`, `findings`, and `generated_at` |
+
+Use `generic` for automation bridges, including services that forward webhook
+payloads to WhatsApp.
+
+A complete example is available at
+`examples/log-notification-policies/notification-webhooks.json`. Copy it into
+`~/config/logging/inspection/policies/` only after setting the referenced
+environment variables.
+
+Run a notification-enabled inspection manually:
+
+```bash
+set -a
+source ~/config/logging/inspection/notifications.env
+set +a
+
+~/config/logging/bin/mms-log-inspect \
+  --loki-url http://localhost:3100 \
+  --lookback-minutes 60 \
+  --query-limit 5000 \
+  --policy ~/config/logging/inspection/policies \
+  --output-json ~/config/logging/inspection/latest-report.json \
+  --fail-on critical \
+  --notify
+```
+
+Notification failures exit `2` after writing the JSON report. Missing webhook
+environment variables are reported by variable name only.
+
 ### Testing Policies Locally
 
 Use `scripts/generate-test-corpus` to create deterministic JSONL logs, then run
@@ -189,6 +278,9 @@ python3 -m json.tool /tmp/mms-log-report.json
 Available scenarios are `clean`, `faulty`, and `adversarial`. Use `clean` to
 check false positives, `faulty` to confirm expected detections, and
 `adversarial` to review near-miss log lines that should not trigger policies.
+For notification tests, point policy `webhook_url_env` values at a local webhook
+receiver or a disposable test channel before using production destinations,
+then add `--notify` to the inspection command.
 
 ## Health Checks
 
