@@ -85,7 +85,8 @@ Full documentation is in the **[Wiki](https://github.com/randomparity/max-media-
 ## Security
 
 - **Tailscale only** — default firewalld zone is `drop`; only `tailscale0` is trusted
-- **Minimal port exposure** — only Traefik (port 80) and Plex (port 32400) publish host ports
+- **Minimal port exposure** — only Traefik (port 80) and Plex (port 32400) are
+  externally reachable; Loki binds `127.0.0.1:3100` for host-local inspection only
 - **Minimal socket exposure** — only `podman-exporter` mounts the rootless Podman socket (read-only) for container metrics; Traefik uses the file provider
 - **Rootless Podman** — no containers run as root
 - **SELinux enforcing** — config volumes use `:Z` for private labeling

@@ -5,7 +5,10 @@ MMS follows a defense-in-depth approach with multiple layers of isolation and ac
 ## Network isolation
 
 - **Tailscale only**: The default firewalld zone is `drop`; only the `tailscale0` interface is in the `trusted` zone. The VM is not reachable from the LAN.
-- **Minimal port exposure**: Only Traefik (port 80) and Plex (port 32400) publish host ports. All other services are internal to the container network (`mms.network`).
+- **Minimal port exposure**: Only Traefik (port 80) and Plex (port 32400) are
+  externally reachable. Loki binds `127.0.0.1:3100` only for host-local
+  inspection; it is not LAN-exposed. Other services are internal to the
+  container network (`mms.network`).
 - **HTTP only**: There is no TLS at Traefik -- the Tailscale WireGuard tunnel provides end-to-end encryption for all traffic. Adding TLS would be redundant and add certificate management complexity.
 
 ## Container security
@@ -17,5 +20,9 @@ MMS follows a defense-in-depth approach with multiple layers of isolation and ac
 ## Secrets management
 
 - **Ansible Vault**: All sensitive values (API tokens, database passwords, deploy keys) are stored in `ansible-vault` encrypted files.
+- **Webhook URLs**: Log-inspection notification webhooks belong in Ansible Vault
+  or in the deployed `~/config/logging/inspection/notifications.env` file. The
+  logging role creates that file with mode `0600` and does not overwrite it on
+  redeploy.
 - **Vault password file**: Stored at `~/.vault_pass_mms` with `0600` permissions on the Ansible control machine.
 - **Backup encryption**: Config backups are encrypted with `age` before storage. The private key (identity file) is kept off the MMS server. See [Backup & Restore](Backup-and-Restore#backup-encryption-with-age) for details.

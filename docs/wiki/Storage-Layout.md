@@ -39,6 +39,12 @@ MMS splits storage between NFS (bulk media on TrueNAS) and local SSD (per-servic
 /home/mms/config/open-notebook/     # Open Notebook app config + data
 /home/mms/config/open-notebook-db/  # SurrealDB data (separate for cold backup)
 /home/mms/config/logging/           # Observability stack config
+├── bin/                            #   Host-side helper scripts
+│   └── mms-log-inspect             #   Policy-driven log inspector
+├── inspection/                     #   Log inspection runtime state
+│   ├── policies/                   #   Active JSON inspection policies
+│   ├── latest-report.json          #   Most recent inspection report
+│   └── notifications.env           #   Optional webhook URLs, mode 0600
 ├── loki/                           #   Loki config + alert rules
 ├── alloy/                          #   Alloy collector config
 ├── grafana/                        #   Grafana config + provisioning

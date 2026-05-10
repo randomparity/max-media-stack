@@ -54,7 +54,12 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 └──────────────────────────────────────────────────────────┘
 ```
 
-Traefik and Plex are the only containers that publish host ports (80 and 32400 respectively). All other backend services are reached via the shared `mms.network` bridge using container-name DNS. Traffic is HTTP only -- the Tailscale WireGuard tunnel already encrypts everything end-to-end.
+Traefik and Plex are the only services reachable through externally bound host
+ports (80 and 32400 respectively). Loki also publishes `127.0.0.1:3100` for
+host-local log inspection, but it is bound to loopback only and is not reachable
+from the LAN or Tailscale peers. All other backend services are reached via the
+shared `mms.network` bridge using container-name DNS. Traffic is HTTP only --
+the Tailscale WireGuard tunnel already encrypts user-facing traffic end-to-end.
 
 ## Inter-Container Access
 
