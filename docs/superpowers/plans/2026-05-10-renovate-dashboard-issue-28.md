@@ -203,7 +203,7 @@ Expected: Molecule converge and verify steps pass. If Docker or Podman backend a
 
 ```bash
 source .venv/bin/activate
-ansible-playbook playbooks/site.yml --check --diff --tags traefik
+ansible-playbook playbooks/deploy-services.yml --check --diff -e '{"deploy_services":["traefik"]}'
 ```
 
 - [ ] **Step 3: Run lint**
