@@ -16,6 +16,7 @@ logging_config_dir: "{{ mms_config_dir }}/logging"
 logging_loki_data_dir: "{{ mms_config_dir }}/logging/loki-data"
 logging_grafana_data_dir: "{{ mms_config_dir }}/logging/grafana-data"
 logging_prometheus_data_dir: "{{ mms_config_dir }}/logging/prometheus-data"
+logging_systemd_user_dir: "{{ mms_home }}/.config/systemd/user"
 
 # Prometheus
 logging_prometheus_retention: "30d"
@@ -41,7 +42,7 @@ logging_alert_restart_count: 3           # restarts in 15m = crash loop
 # Periodic log inspection
 logging_inspection_enabled: true
 logging_inspection_schedule: "*-*-* *:00/15:00"
-logging_inspection_lookback_minutes: 15
+logging_inspection_lookback_minutes: 60
 logging_inspection_query_limit: 5000
 logging_inspection_fail_on: critical
 logging_inspection_policy_dir: "{{ logging_config_dir }}/inspection/policies"

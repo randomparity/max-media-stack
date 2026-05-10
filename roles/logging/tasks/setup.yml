@@ -63,6 +63,15 @@
     - "{{ logging_prometheus_data_dir }}"
     - "{{ logging_config_dir }}/alloy-data"
 
+- name: Create logging systemd user directory
+  ansible.builtin.file:
+    path: "{{ logging_systemd_user_dir }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
 - name: Deploy log inspection script
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../scripts/mms-log-inspect"
@@ -84,7 +93,7 @@
 - name: Deploy log inspection service
   ansible.builtin.template:
     src: mms-log-inspect.service.j2
-    dest: "{{ mms_quadlet_dir }}/mms-log-inspect.service"
+    dest: "{{ logging_systemd_user_dir }}/mms-log-inspect.service"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
     mode: "0644"
@@ -95,7 +104,7 @@
 - name: Deploy log inspection timer
   ansible.builtin.template:
     src: mms-log-inspect.timer.j2
-    dest: "{{ mms_quadlet_dir }}/mms-log-inspect.timer"
+    dest: "{{ logging_systemd_user_dir }}/mms-log-inspect.timer"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"
     mode: "0644"

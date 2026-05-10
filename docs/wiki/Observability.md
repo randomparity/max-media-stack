@@ -154,7 +154,7 @@ Run an inspection manually against Loki:
 ```bash
 ~/config/logging/bin/mms-log-inspect \
   --loki-url http://localhost:3100 \
-  --lookback-minutes 15 \
+  --lookback-minutes 60 \
   --query-limit 5000 \
   --policy ~/config/logging/inspection/policies \
   --output-json ~/config/logging/inspection/latest-report.json \
