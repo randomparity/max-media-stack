@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,11 +15,15 @@ GENERATE_CORPUS = REPO_ROOT / "scripts" / "generate-test-corpus"
 INSPECT_LOGS = REPO_ROOT / "scripts" / "mms-log-inspect"
 
 
-def run_command(*args: str) -> subprocess.CompletedProcess[str]:
+def run_command(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    command_env = os.environ.copy()
+    if env:
+        command_env.update(env)
     return subprocess.run(
         [sys.executable, *args],
         cwd=REPO_ROOT,
         check=False,
+        env=command_env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -55,6 +60,33 @@ def write_policy(path: Path) -> None:
                 "patterns": ["\\berror\\b", "exception", "fatal"],
                 "threshold": 2,
             },
+        ],
+    }
+    path.write_text(json.dumps(policy), encoding="utf-8")
+
+
+def write_notification_policy(path: Path, provider: str = "discord") -> None:
+    policy = {
+        "name": "functional-notification-policy",
+        "description": "Detect common failures and notify operators.",
+        "window_minutes": 60,
+        "notifications": [
+            {
+                "id": f"ops-{provider}",
+                "provider": provider,
+                "webhook_url_env": "MMS_TEST_WEBHOOK_URL",
+                "min_severity": "warning",
+            }
+        ],
+        "rules": [
+            {
+                "id": "storage-full",
+                "severity": "critical",
+                "description": "Storage exhaustion blocks writes.",
+                "service": "*",
+                "patterns": ["no space left on device", "ENOSPC"],
+                "threshold": 1,
+            }
         ],
     }
     path.write_text(json.dumps(policy), encoding="utf-8")
@@ -101,12 +133,40 @@ class LokiHandler(BaseHTTPRequestHandler):
         return
 
 
+class WebhookHandler(BaseHTTPRequestHandler):
+    requests: list[dict[str, object]] = []
+
+    def do_POST(self) -> None:  # noqa: N802
+        body = self.rfile.read(int(self.headers["Content-Length"]))
+        WebhookHandler.requests.append(
+            {
+                "path": self.path,
+                "content_type": self.headers.get("Content-Type"),
+                "payload": json.loads(body.decode()),
+            }
+        )
+        self.send_response(204)
+        self.end_headers()
+
+    def log_message(self, _format: str, *_args: object) -> None:
+        return
+
+
 def loki_server() -> tuple[ThreadingHTTPServer, str]:
     server = ThreadingHTTPServer(("127.0.0.1", 0), LokiHandler)
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()
     host, port = server.server_address
     return server, f"http://{host}:{port}"
+
+
+def webhook_server() -> tuple[ThreadingHTTPServer, str]:
+    WebhookHandler.requests = []
+    server = ThreadingHTTPServer(("127.0.0.1", 0), WebhookHandler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    host, port = server.server_address
+    return server, f"http://{host}:{port}/webhook"
 
 
 def test_clean_corpus_has_no_findings(tmp_path: Path) -> None:
@@ -291,3 +351,154 @@ def test_loki_mode_evaluates_query_range_results(tmp_path: Path) -> None:
     finding_ids = {finding["rule_id"] for finding in result["findings"]}
     assert finding_ids == {"application-error", "storage-full"}
     assert LokiHandler.requested_query == '{job="mms"}'
+
+
+def test_faulty_corpus_sends_discord_notification_when_enabled(tmp_path: Path) -> None:
+    corpus = tmp_path / "faulty.jsonl"
+    policy = tmp_path / "policy.json"
+    report = tmp_path / "report.json"
+    write_notification_policy(policy)
+    server, webhook_url = webhook_server()
+
+    generated = run_command(
+        str(GENERATE_CORPUS),
+        "--scenario",
+        "faulty",
+        "--entries",
+        "40",
+        "--output",
+        str(corpus),
+    )
+    assert generated.returncode == 0, generated.stderr
+
+    try:
+        inspected = run_command(
+            str(INSPECT_LOGS),
+            "--input-jsonl",
+            str(corpus),
+            "--policy",
+            str(policy),
+            "--output-json",
+            str(report),
+            "--fail-on",
+            "critical",
+            "--notify",
+            env={"MMS_TEST_WEBHOOK_URL": webhook_url},
+        )
+    finally:
+        server.shutdown()
+
+    assert inspected.returncode == 1, inspected.stderr
+    assert len(WebhookHandler.requests) == 1
+    payload = WebhookHandler.requests[0]["payload"]
+    assert payload["content"].startswith("MMS log inspection found 1 issue")
+    assert "storage-full" in payload["content"]
+
+
+def test_clean_corpus_does_not_send_notification(tmp_path: Path) -> None:
+    corpus = tmp_path / "clean.jsonl"
+    policy = tmp_path / "policy.json"
+    report = tmp_path / "report.json"
+    write_notification_policy(policy)
+    server, webhook_url = webhook_server()
+
+    generated = run_command(
+        str(GENERATE_CORPUS),
+        "--scenario",
+        "clean",
+        "--entries",
+        "24",
+        "--output",
+        str(corpus),
+    )
+    assert generated.returncode == 0, generated.stderr
+
+    try:
+        inspected = run_command(
+            str(INSPECT_LOGS),
+            "--input-jsonl",
+            str(corpus),
+            "--policy",
+            str(policy),
+            "--output-json",
+            str(report),
+            "--notify",
+            env={"MMS_TEST_WEBHOOK_URL": webhook_url},
+        )
+    finally:
+        server.shutdown()
+
+    assert inspected.returncode == 0, inspected.stderr
+    assert WebhookHandler.requests == []
+
+
+def test_missing_notification_webhook_env_returns_actionable_error(tmp_path: Path) -> None:
+    corpus = tmp_path / "faulty.jsonl"
+    policy = tmp_path / "policy.json"
+    report = tmp_path / "report.json"
+    write_notification_policy(policy)
+
+    generated = run_command(
+        str(GENERATE_CORPUS),
+        "--scenario",
+        "faulty",
+        "--entries",
+        "40",
+        "--output",
+        str(corpus),
+    )
+    assert generated.returncode == 0, generated.stderr
+
+    inspected = run_command(
+        str(INSPECT_LOGS),
+        "--input-jsonl",
+        str(corpus),
+        "--policy",
+        str(policy),
+        "--output-json",
+        str(report),
+        "--notify",
+        env={"MMS_TEST_WEBHOOK_URL": ""},
+    )
+
+    assert inspected.returncode == 2
+    assert "MMS_TEST_WEBHOOK_URL" in inspected.stderr
+
+
+def test_generic_notification_sends_structured_report(tmp_path: Path) -> None:
+    corpus = tmp_path / "faulty.jsonl"
+    policy = tmp_path / "policy.json"
+    report = tmp_path / "report.json"
+    write_notification_policy(policy, provider="generic")
+    server, webhook_url = webhook_server()
+
+    generated = run_command(
+        str(GENERATE_CORPUS),
+        "--scenario",
+        "faulty",
+        "--entries",
+        "40",
+        "--output",
+        str(corpus),
+    )
+    assert generated.returncode == 0, generated.stderr
+
+    try:
+        inspected = run_command(
+            str(INSPECT_LOGS),
+            "--input-jsonl",
+            str(corpus),
+            "--policy",
+            str(policy),
+            "--output-json",
+            str(report),
+            "--notify",
+            env={"MMS_TEST_WEBHOOK_URL": webhook_url},
+        )
+    finally:
+        server.shutdown()
+
+    assert inspected.returncode == 1, inspected.stderr
+    payload = WebhookHandler.requests[0]["payload"]
+    assert payload["summary"] == {"critical": 1, "warning": 0, "info": 0}
+    assert payload["findings"][0]["rule_id"] == "storage-full"
