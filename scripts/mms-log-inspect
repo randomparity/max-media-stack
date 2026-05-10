@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -171,7 +171,7 @@ def load_entries(path: Path) -> list[dict[str, Any]]:
 def loki_time_range(lookback_minutes: int) -> tuple[str, str]:
     if lookback_minutes < 1:
         raise ValueError("--lookback-minutes must be greater than zero")
-    end = datetime.now(tz=UTC)
+    end = datetime.now(tz=timezone.utc)
     start = end - timedelta(minutes=lookback_minutes)
     return str(int(start.timestamp() * 1_000_000_000)), str(int(end.timestamp() * 1_000_000_000))
 
@@ -289,7 +289,7 @@ def summarize(findings: Iterable[dict[str, Any]]) -> dict[str, int]:
 
 def write_report(path: Path, findings: list[dict[str, Any]]) -> None:
     report = {
-        "generated_at": datetime.now(tz=UTC).isoformat().replace("+00:00", "Z"),
+        "generated_at": datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
         "summary": summarize(findings),
         "findings": findings,
     }
