@@ -7,6 +7,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Service   | URL                              | Description                    |
 |-----------|----------------------------------|--------------------------------|
 | Prowlarr  | `prowlarr.media.example.com`     | Indexer manager                |
+| Profilarr | `profilarr.media.example.com`    | Quality profile & custom format manager |
 | Radarr    | `radarr.media.example.com`       | Movie automation               |
 | Radarr 4K | `radarr4k.media.example.com`     | 4K movie automation            |
 | Sonarr    | `sonarr.media.example.com`       | TV show automation             |
@@ -34,8 +35,8 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 │  │  │                                              │  │  │
 │  │  │  traefik (:80) ─── Host header routing       │  │  │
 │  │  │      │                                       │  │  │
-│  │  │      ├── prowlarr  radarr  radarr4k          │  │  │
-│  │  │      ├── sonarr  lidarr  sabnzbd             │  │  │
+│  │  │      ├── prowlarr  profilarr  radarr         │  │  │
+│  │  │      ├── radarr4k  sonarr  lidarr  sabnzbd   │  │  │
 │  │  │      ├── jellyfin  plex  channels            │  │  │
 │  │  │      ├── tautulli  kometa  navidrome         │  │  │
 │  │  │      ├── open-notebook  open-notebook-db     │  │  │

@@ -3,10 +3,31 @@
 # MMS Restore Script - Decrypt and restore service backups
 set -euo pipefail
 
+{#- Map backup_type -> bash restore function. Services whose backup_type is
+    not in this map are deliberately excluded from the case statement, which
+    preserves today's behavior for services like channels and navidrome that
+    have no restore handler. -#}
+{%- set _restore_function_for_type = {
+    'arr': 'restore_arr',
+    'sabnzbd': 'restore_sabnzbd',
+    'jellyfin': 'restore_jellyfin',
+    'plex': 'restore_plex',
+    'open-notebook': 'restore_open_notebook',
+} -%}
+{#- Build a single list of (service_name, backup_type) tuples from regular
+    services and mms_special_services so the case statement is one loop. -#}
+{%- set _restore_targets = [] -%}
+{%- for svc in mms_services -%}
+{%-   set _ = _restore_targets.append({'name': svc, 'backup_type': backup_service_defs_by_name[svc].backup_type | default('')}) -%}
+{%- endfor -%}
+{%- for svc in mms_special_services | default([]) -%}
+{%-   set _ = _restore_targets.append({'name': svc.name, 'backup_type': svc.backup_type}) -%}
+{%- endfor %}
+
 usage() {
     echo "Usage: $0 <service_name> <backup_file>"
     echo ""
-    echo "Services: {% for svc in mms_services %}{{ svc }}, {% endfor %}traefik, immich, open-notebook"
+    echo "Services: {% for t in _restore_targets %}{{ t.name }}{{ ", " if not loop.last else "" }}{% endfor %}"
     echo ""
     echo "Examples:"
     echo "  $0 radarr /home/{{ backup_user }}/backups/radarr/radarr-2025-01-15.tar.zst.age"
@@ -157,31 +178,21 @@ restore_immich_config() {
 }
 
 case "$SERVICE" in
-    prowlarr|radarr|radarr4k|sonarr|lidarr|tautulli|kometa)
-        restore_arr
-        ;;
-    sabnzbd)
-        restore_sabnzbd
-        ;;
-    jellyfin)
-        restore_jellyfin
-        ;;
-    plex)
-        restore_plex
-        ;;
-    traefik)
-        restore_arr
-        ;;
-    immich)
+{%- for t in _restore_targets %}
+{%-   if t.backup_type == 'immich' %}
+    {{ t.name }})
         if [[ "$BACKUP_FILE" == *db* ]]; then
             restore_immich_db
         else
             restore_immich_config
         fi
         ;;
-    open-notebook)
-        restore_open_notebook
+{%-   elif t.backup_type in _restore_function_for_type %}
+    {{ t.name }})
+        {{ _restore_function_for_type[t.backup_type] }}
         ;;
+{%-   endif %}
+{%- endfor %}
     *)
         echo "Unknown service: $SERVICE"
         usage

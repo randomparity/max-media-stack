@@ -12,6 +12,7 @@
 
 **Services**
 - [Prowlarr](Prowlarr)
+- [Profilarr](Profilarr)
 - [Radarr](Radarr)
 - [Radarr 4K](Radarr-4K)
 - [Sonarr](Sonarr)

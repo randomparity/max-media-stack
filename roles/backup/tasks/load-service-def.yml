@@ -1,0 +1,15 @@
+---
+# Helper: load services/<backup_svc_name>.yml and append it to
+# backup_service_defs_by_name. Called by main.yml in a loop over
+# mms_services so the restore template can read each service's
+# backup_type at render time.
+
+- name: "Load service definition ({{ backup_svc_name }})"
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/../services/{{ backup_svc_name }}.yml"
+    name: backup_loaded_service_def
+
+- name: "Index service definition ({{ backup_svc_name }})"
+  ansible.builtin.set_fact:
+    backup_service_defs_by_name: >-
+      {{ backup_service_defs_by_name | combine({backup_svc_name: backup_loaded_service_def[backup_svc_name]}) }}

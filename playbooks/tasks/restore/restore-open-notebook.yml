@@ -1,0 +1,46 @@
+---
+# Open Notebook restore: cold restore of both the app and the SurrealDB
+# container directories. Stop both, extract, fix ownership on both dirs,
+# then start db first followed by the app.
+- name: Stop open-notebook services before restore
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    scope: user
+  environment: "{{ mms_systemd_env }}"
+  loop:
+    - open-notebook
+    - open-notebook-db
+  failed_when: false
+
+- name: "Restore open-notebook"  # noqa: no-relative-paths
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+  vars:
+    _restore_label: open-notebook
+    _restore_tmp_ext: tar.zst
+    _restore_service: ""
+    _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+
+- name: Fix ownership after open-notebook restore
+  ansible.builtin.file:
+    path: "{{ mms_config_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    recurse: true
+  become: true
+  become_user: root
+  loop:
+    - open-notebook
+    - open-notebook-db
+
+- name: Start open-notebook services after restore
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    scope: user
+  environment: "{{ mms_systemd_env }}"
+  loop:
+    - open-notebook-db
+    - open-notebook

@@ -1,4 +1,16 @@
 ---
+# Build an index of services/<name>.yml definitions so mms-restore.sh.j2
+# can dispatch by each service's backup_type instead of hard-coding the case.
+- name: Initialize service definitions index
+  ansible.builtin.set_fact:
+    backup_service_defs_by_name: {}
+
+- name: Index each service definition
+  ansible.builtin.include_tasks: load-service-def.yml
+  loop: "{{ mms_services }}"
+  loop_control:
+    loop_var: backup_svc_name
+
 - name: Ensure backup directory exists
   ansible.builtin.file:
     path: "{{ backup_dir }}"

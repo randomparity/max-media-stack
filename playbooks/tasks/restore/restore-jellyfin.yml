@@ -1,0 +1,5 @@
+---
+# Jellyfin restore. The current playbook treats jellyfin as arr-style
+# (the bash mms-restore.sh additionally preserves the cache directory).
+- name: "Dispatch jellyfin restore via arr-style extract"  # noqa: no-relative-paths
+  ansible.builtin.include_tasks: restore-arr.yml

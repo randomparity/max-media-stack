@@ -1,0 +1,6 @@
+---
+# Plex restore. Uses the same arr-style extract path as the playbook
+# applies to other services (the bash mms-restore.sh additionally preserves
+# the Plex Cache directory).
+- name: "Dispatch plex restore via arr-style extract"  # noqa: no-relative-paths
+  ansible.builtin.include_tasks: restore-arr.yml

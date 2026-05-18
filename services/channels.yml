@@ -13,5 +13,5 @@ channels:
     - "TZ={{ mms_timezone }}"
   health_cmd: "curl -sf http://localhost:8089 || exit 1"
   health_interval: "60s"
-  backup_type: "channels"
+  backup_type: "arr"
   backup_db_files: []
