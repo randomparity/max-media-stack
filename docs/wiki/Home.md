@@ -15,7 +15,7 @@ Ansible project to provision and manage a full homelab media stack on a Fedora V
 | Jellyfin  | `jellyfin.media.example.com`     | Media server                   |
 | Plex      | `plex.media.example.com`         | Media server                   |
 | Tautulli  | `tautulli.media.example.com`     | Plex analytics/monitoring      |
-| Kometa    | ---                              | Plex metadata manager (no UI)  |
+| Kometa    | —                                | Plex metadata manager (no UI)  |
 | Immich    | `immich.media.example.com`       | Photo/video management         |
 | Channels  | `channels.media.example.com`     | Live TV and DVR                |
 | Navidrome | `navidrome.media.example.com`    | Music streaming server         |

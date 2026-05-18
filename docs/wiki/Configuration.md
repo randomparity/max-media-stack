@@ -29,6 +29,7 @@ Service-level configuration:
 
 - NFS mount definitions
 - Services list (`mms_services`)
+- Special services registry (`mms_special_services`) -- non-`services/` deployments (traefik, immich, open-notebook) with their `backup_type` for restore dispatch
 - Traefik routes (`mms_traefik_routes`)
 - Autodeploy config (`mms_autodeploy_repo_url`, `autodeploy_groups`)
 

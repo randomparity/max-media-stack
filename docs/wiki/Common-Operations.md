@@ -1,6 +1,6 @@
 # Common Operations
 
-Day-to-day commands for managing the media stack.
+Day-to-day commands for managing the media stack. Sections below cover deployment (single service, all services, full site), backup, restore, migration from existing LXC containers, lint, image pruning, log inspection, and dry-run/check-mode workflows.
 
 ## Deploy a single service
 

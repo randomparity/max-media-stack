@@ -4,7 +4,7 @@ Live TV and DVR server -- records TV from HDHomeRun tuners and streaming sources
 
 | Property | Value |
 |----------|-------|
-| **Image** | `fancybits/channels-dvr` (Official, digest-pinned) |
+| **Image** | `fancybits/channels-dvr` (vendor image, digest-pinned) |
 | **Container name** | `channels` |
 | **Internal port** | 8089 |
 | **Published port** | 8089 (host) -> 8089 (container) |

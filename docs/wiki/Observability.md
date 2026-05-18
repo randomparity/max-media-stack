@@ -27,7 +27,7 @@ Prometheus and Loki will repopulate from live data. **None require backup.**
 | **Prometheus data** | `/home/mms/config/logging/prometheus-data` |
 | **Prometheus retention** | 30 days |
 | **Loki retention** | 30 days (720h) |
-| **Log inspection timer** | Every 15 minutes |
+| **Log inspection timer** | Every 15 minutes (configurable via `logging_inspection_schedule`) |
 | **Log inspection policies** | `/home/mms/config/logging/inspection/policies` |
 | **Latest inspection report** | `/home/mms/config/logging/inspection/latest-report.json` |
 | **Notification env file** | `/home/mms/config/logging/inspection/notifications.env` |
