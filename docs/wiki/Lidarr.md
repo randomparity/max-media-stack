@@ -7,7 +7,7 @@ Music collection manager -- monitors for new releases, searches indexers, and se
 | **Image** | `lscr.io/linuxserver/lidarr` (LSIO) |
 | **Container name** | `lidarr` |
 | **Internal port** | 8686 |
-| **Traefik subdomain** | `lidarr.media.drc.nz` |
+| **Traefik subdomain** | `lidarr.media.example.com` |
 | **Config directory** | `/home/mms/config/lidarr` |
 | **Data directory** | `/data` (NFS -- music, usenet) |
 | **Health endpoint** | `http://localhost:8686/ping` |
@@ -36,7 +36,7 @@ podman logs --tail 50 lidarr
 ```bash
 podman healthcheck run lidarr
 podman exec lidarr curl -sf http://localhost:8686/ping
-curl -sf http://lidarr.media.drc.nz/ping
+curl -sf http://lidarr.media.example.com/ping
 ```
 
 ## Manual Testing

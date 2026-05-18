@@ -8,7 +8,7 @@ Live TV and DVR server -- records TV from HDHomeRun tuners and streaming sources
 | **Container name** | `channels` |
 | **Internal port** | 8089 |
 | **Published port** | 8089 (host) -> 8089 (container) |
-| **Traefik subdomain** | `channels.media.drc.nz` |
+| **Traefik subdomain** | `channels.media.example.com` |
 | **Config directory** | `/home/mms/config/channels` |
 | **Recordings directory** | `/data/recordings` (NFS) |
 | **Health endpoint** | `http://localhost:8089` |
@@ -37,7 +37,7 @@ podman logs --tail 50 channels
 ```bash
 podman healthcheck run channels
 podman exec channels curl -sf http://localhost:8089
-curl -sf http://channels.media.drc.nz
+curl -sf http://channels.media.example.com
 
 # Also accessible on the published port
 curl -sf http://localhost:8089

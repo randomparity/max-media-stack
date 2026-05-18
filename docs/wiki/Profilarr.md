@@ -7,7 +7,7 @@ Quality Profile and Custom Format manager for Radarr/Sonarr/Lidarr. Profilarr v2
 | **Image** | `ghcr.io/dictionarry-hub/profilarr` |
 | **Container name** | `profilarr` |
 | **Internal port** | 6868 |
-| **Traefik subdomain** | `profilarr.media.drc.nz` |
+| **Traefik subdomain** | `profilarr.media.example.com` |
 | **Config directory** | `/home/mms/config/profilarr` |
 | **Health endpoint** | `http://localhost:6868/api/v1/health` |
 | **Backup type** | `arr` (config backup) |
@@ -37,7 +37,7 @@ podman logs -f profilarr
 ```bash
 podman healthcheck run profilarr
 podman exec profilarr curl -sf http://localhost:6868/api/v1/health
-curl -sf http://profilarr.media.drc.nz/api/v1/health
+curl -sf http://profilarr.media.example.com/api/v1/health
 ```
 
 ## Backup & Restore

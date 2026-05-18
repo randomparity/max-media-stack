@@ -9,7 +9,7 @@ Second Radarr instance for managing 4K movie downloads separately from the stand
 | **Image** | `lscr.io/linuxserver/radarr` (LSIO) -- same image as Radarr |
 | **Container name** | `radarr4k` |
 | **Internal port** | 7878 |
-| **Traefik subdomain** | `radarr4k.media.drc.nz` |
+| **Traefik subdomain** | `radarr4k.media.example.com` |
 | **Config directory** | `/home/mms/config/radarr4k` |
 | **Data directory** | `/data` (NFS) |
 | **Health endpoint** | `http://localhost:7878/ping` |
@@ -29,7 +29,7 @@ systemctl --user status radarr4k.service
 
 - **Container name**: `radarr4k` (not `radarr`)
 - **Config directory**: `/home/mms/config/radarr4k` (separate database and config)
-- **Traefik subdomain**: `radarr4k.media.drc.nz`
+- **Traefik subdomain**: `radarr4k.media.example.com`
 - **Quality profiles**: Configured for 4K/UHD content
 - **Root folder**: Typically points to a separate 4K movies directory under `/data`
 

@@ -2,6 +2,8 @@
 
 MMS uses Ansible inventory variables and vault-encrypted secrets to configure the deployment.
 
+Examples throughout the wiki use `media.example.com` as the placeholder domain; replace it with your own `mms_traefik_domain` (set in `inventory/group_vars/all/vars.yml`).
+
 ## Inventory files
 
 ### `inventory/group_vars/all/vars.yml`

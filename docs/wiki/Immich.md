@@ -11,7 +11,7 @@ Self-hosted photo and video management -- provides Google Photos-like features w
 
 | Property | Value |
 |----------|-------|
-| **Traefik subdomain** | `immich.media.drc.nz` |
+| **Traefik subdomain** | `immich.media.example.com` |
 | **Config directory** | `/home/mms/config/immich` |
 | **Local media directory** | `/home/mms/config/immich/media` (SSD, generated content) |
 | **NFS upload directory** | `/data/photos` (user content) |
@@ -76,7 +76,7 @@ journalctl --user -u immich-server --since today
 ```bash
 # Server health
 podman healthcheck run immich-server
-curl -sf http://immich.media.drc.nz/api/server/ping
+curl -sf http://immich.media.example.com/api/server/ping
 
 # PostgreSQL health
 podman healthcheck run immich-postgres

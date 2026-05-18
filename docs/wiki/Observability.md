@@ -20,7 +20,7 @@ Prometheus and Loki will repopulate from live data. **None require backup.**
 
 | Property | Value |
 |----------|-------|
-| **Traefik subdomain** | `grafana.media.drc.nz` (Grafana only) |
+| **Traefik subdomain** | `grafana.media.example.com` (Grafana only) |
 | **Config directory** | `/home/mms/config/logging` |
 | **Loki data** | `/home/mms/config/logging/loki-data` |
 | **Grafana data** | `/home/mms/config/logging/grafana-data` |
@@ -536,7 +536,7 @@ curl -sf http://127.0.0.1:3100/ready
 curl -sf http://localhost:9090/api/v1/targets | python3 -m json.tool
 
 # Grafana UI
-curl -sf http://grafana.media.drc.nz/api/health
+curl -sf http://grafana.media.example.com/api/health
 ```
 
 ## Backup & Restore

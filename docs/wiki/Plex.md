@@ -8,7 +8,7 @@ Media server with rich client support -- streams movies, TV shows, and music. Th
 | **Container name** | `plex` |
 | **Internal port** | 32400 |
 | **Published port** | 32400 (host) -> 32400 (container) |
-| **Traefik subdomain** | `plex.media.drc.nz` |
+| **Traefik subdomain** | `plex.media.example.com` |
 | **Config directory** | `/home/mms/config/plex` |
 | **Media directories** | `/data/media/movies`, `/data/media/series`, `/data/media/music` (NFS, read-only) |
 | **Health endpoint** | `http://localhost:32400/identity` |
@@ -37,7 +37,7 @@ podman logs --tail 50 plex
 ```bash
 podman healthcheck run plex
 podman exec plex curl -sf http://localhost:32400/identity
-curl -sf http://plex.media.drc.nz/identity
+curl -sf http://plex.media.example.com/identity
 
 # Also accessible directly on the published port
 curl -sf http://localhost:32400/identity
@@ -111,7 +111,7 @@ Plex also publishes port 32400 directly for client compatibility (some Plex clie
 
 **Plex not accessible via Traefik**
 
-Plex works via both Traefik (`plex.media.drc.nz`) and direct port 32400. If Traefik routing fails but direct access works, the issue is with Traefik configuration. See [Traefik](Traefik).
+Plex works via both Traefik (`plex.media.example.com`) and direct port 32400. If Traefik routing fails but direct access works, the issue is with Traefik configuration. See [Traefik](Traefik).
 
 **"Not authorized" after restore**
 

@@ -7,7 +7,7 @@ Free and open-source media server -- streams movies, TV shows, and music to clie
 | **Image** | `docker.io/jellyfin/jellyfin` (Official) |
 | **Container name** | `jellyfin` |
 | **Internal port** | 8096 |
-| **Traefik subdomain** | `jellyfin.media.drc.nz` |
+| **Traefik subdomain** | `jellyfin.media.example.com` |
 | **Config directory** | `/home/mms/config/jellyfin` |
 | **Media directory** | `/data/media` (NFS, read-only) |
 | **Health endpoint** | `http://localhost:8096/health` |
@@ -36,7 +36,7 @@ podman logs --tail 50 jellyfin
 ```bash
 podman healthcheck run jellyfin
 podman exec jellyfin curl -sf http://localhost:8096/health
-curl -sf http://jellyfin.media.drc.nz/health
+curl -sf http://jellyfin.media.example.com/health
 ```
 
 ## Manual Testing
