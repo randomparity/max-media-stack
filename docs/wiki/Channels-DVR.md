@@ -12,7 +12,7 @@ Live TV and DVR server -- records TV from HDHomeRun tuners and streaming sources
 | **Config directory** | `/home/mms/config/channels` |
 | **Recordings directory** | `/data/recordings` (NFS) |
 | **Health endpoint** | `http://localhost:8089` |
-| **Backup type** | `channels` (config backup only) |
+| **Backup type** | `arr` (config backup only) |
 | **Autodeploy group** | `interactive` (daily at 02:00) |
 
 ## Service Management
