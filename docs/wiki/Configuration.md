@@ -2,6 +2,8 @@
 
 MMS uses Ansible inventory variables and vault-encrypted secrets to configure the deployment.
 
+Examples throughout the wiki use `media.example.com` as the placeholder domain; replace it with your own `mms_traefik_domain` (set in `inventory/group_vars/all/vars.yml`).
+
 ## Inventory files
 
 ### `inventory/group_vars/all/vars.yml`
@@ -29,6 +31,7 @@ Service-level configuration:
 
 - NFS mount definitions
 - Services list (`mms_services`)
+- Special services registry (`mms_special_services`) -- non-`services/` deployments (traefik, immich, open-notebook) with their `backup_type` for restore dispatch
 - Traefik routes (`mms_traefik_routes`)
 - Autodeploy config (`mms_autodeploy_repo_url`, `autodeploy_groups`)
 

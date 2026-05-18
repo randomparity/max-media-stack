@@ -20,14 +20,14 @@ Prometheus and Loki will repopulate from live data. **None require backup.**
 
 | Property | Value |
 |----------|-------|
-| **Traefik subdomain** | `grafana.media.drc.nz` (Grafana only) |
+| **Traefik subdomain** | `grafana.media.example.com` (Grafana only) |
 | **Config directory** | `/home/mms/config/logging` |
 | **Loki data** | `/home/mms/config/logging/loki-data` |
 | **Grafana data** | `/home/mms/config/logging/grafana-data` |
 | **Prometheus data** | `/home/mms/config/logging/prometheus-data` |
 | **Prometheus retention** | 30 days |
 | **Loki retention** | 30 days (720h) |
-| **Log inspection timer** | Every 15 minutes |
+| **Log inspection timer** | Every 15 minutes (configurable via `logging_inspection_schedule`) |
 | **Log inspection policies** | `/home/mms/config/logging/inspection/policies` |
 | **Latest inspection report** | `/home/mms/config/logging/inspection/latest-report.json` |
 | **Notification env file** | `/home/mms/config/logging/inspection/notifications.env` |
@@ -536,7 +536,7 @@ curl -sf http://127.0.0.1:3100/ready
 curl -sf http://localhost:9090/api/v1/targets | python3 -m json.tool
 
 # Grafana UI
-curl -sf http://grafana.media.drc.nz/api/health
+curl -sf http://grafana.media.example.com/api/health
 ```
 
 ## Backup & Restore

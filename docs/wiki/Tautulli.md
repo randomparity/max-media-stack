@@ -7,7 +7,7 @@ Plex analytics and monitoring -- tracks viewing history, provides notifications,
 | **Image** | `lscr.io/linuxserver/tautulli` (LSIO) |
 | **Container name** | `tautulli` |
 | **Internal port** | 8181 |
-| **Traefik subdomain** | `tautulli.media.drc.nz` |
+| **Traefik subdomain** | `tautulli.media.example.com` |
 | **Config directory** | `/home/mms/config/tautulli` |
 | **Health endpoint** | `http://localhost:8181/status` |
 | **Backup type** | `arr` (config backup only, no API backup) |
@@ -36,7 +36,7 @@ podman logs --tail 50 tautulli
 ```bash
 podman healthcheck run tautulli
 podman exec tautulli curl -sf http://localhost:8181/status
-curl -sf http://tautulli.media.drc.nz/status
+curl -sf http://tautulli.media.example.com/status
 ```
 
 ## Manual Testing

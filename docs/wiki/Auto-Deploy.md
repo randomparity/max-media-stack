@@ -157,6 +157,7 @@ autodeploy_groups:
     schedule: "*-*-* *:00/30:00"
     services:
       - prowlarr
+      - profilarr
       - radarr
       - radarr4k
       - sonarr
@@ -178,3 +179,9 @@ autodeploy_groups:
 ```
 
 When `services` is omitted from a group, the playbook deploys everything. When specified, only the listed services are deployed when the group's timer fires.
+
+## Renovate dependency dashboard
+
+Renovate maintains a single "Dependency Dashboard" issue per repository (filed by `renovate[bot]`) that summarises all detected updates, the schedule each is on, any rate-limited PRs, and pending major bumps that need manual review. It is the fastest way to see what Renovate is about to do — or why it is not doing something you expected.
+
+To find it, filter the repository's **Issues** by author `renovate[bot]`, or browse to the open issue titled `Dependency Dashboard`. Each line links to the PR Renovate will open (or has already opened); checking a box requests that Renovate create the corresponding PR immediately rather than waiting for its next schedule slot.

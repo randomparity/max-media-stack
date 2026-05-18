@@ -7,7 +7,7 @@ Movie collection manager -- monitors for new releases, searches indexers, and se
 | **Image** | `lscr.io/linuxserver/radarr` (LSIO) |
 | **Container name** | `radarr` |
 | **Internal port** | 7878 |
-| **Traefik subdomain** | `radarr.media.drc.nz` |
+| **Traefik subdomain** | `radarr.media.example.com` |
 | **Config directory** | `/home/mms/config/radarr` |
 | **Data directory** | `/data` (NFS -- movies, usenet) |
 | **Health endpoint** | `http://localhost:7878/ping` |
@@ -45,7 +45,7 @@ podman healthcheck run radarr
 podman exec radarr curl -sf http://localhost:7878/ping
 
 # Via Traefik
-curl -sf http://radarr.media.drc.nz/ping
+curl -sf http://radarr.media.example.com/ping
 ```
 
 ## Manual Testing

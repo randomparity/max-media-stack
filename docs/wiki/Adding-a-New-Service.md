@@ -4,23 +4,27 @@ MMS uses a data-driven approach -- each service is defined in a YAML file and re
 
 ## 1. Create the service definition
 
-Create `services/<name>.yml` with the service configuration:
+Create `services/<name>.yml` as a nested map keyed by the service name. The `quadlet_service` role reads this top-level key when rendering the Quadlet template.
 
 ```yaml
+---
 # services/myservice.yml
-service_image: "lscr.io/linuxserver/myservice:1.2.3"
-service_port: 8080
-service_volumes:
-  - "{{ mms_config_dir }}/myservice:/config:Z"
-  - "/data/media:/media"
-service_healthcheck:
-  test: "curl -f http://localhost:8080 || exit 1"
-  interval: "30s"
-  timeout: "10s"
-  retries: 3
+myservice:
+  name: myservice
+  description: "MyService - short description"
+  image: "ghcr.io/example/myservice:1.2.3"
+  volumes:
+    - "{{ mms_config_dir }}/myservice:/config:Z"
+    - "/data/media:/media"
+  environment:
+    - "TZ={{ mms_timezone }}"
+  health_cmd: "curl -sf http://localhost:8080/ || exit 1"
+  health_interval: "60s"
+  backup_type: "arr"
+  backup_db_files: []
 ```
 
-Look at existing files in `services/` for examples of the full set of available options (environment variables, tmpfs mounts, labels, etc.).
+Look at existing files in `services/` for examples of the full set of available options (`publish_ports`, `userns`, `user`, additional `tmpfs` entries, `no_new_privileges`, etc.). `services/profilarr.yml` is a good minimal template.
 
 ## 2. Add to the services list
 
@@ -72,12 +76,15 @@ The data-driven `quadlet_service` pattern works for single-container services. M
 
 ## Backup and restore
 
-Declare `backup_type` in the service file. Both `mms-backup.sh` and `mms-restore.sh` dispatch on this value, as does `playbooks/restore.yml`. Currently understood values:
+Declare `backup_type` in the service file. Both `mms-backup.sh` and `mms-restore.sh` dispatch on this value, as does `playbooks/restore.yml`. The supported values, and the services that currently use each, are:
 
-- `arr` — generic stop/tar/start. Use for any *arr-family service or anything with a single config directory.
-- `sabnzbd` — extracts into the service's own subdirectory.
-- `jellyfin` / `plex` — bash restore preserves the cache directory.
-- `immich` — multi-container; backup includes a PostgreSQL dump.
-- `open-notebook` — cold backup of both the app and SurrealDB directories.
+- `arr` — generic stop/tar/start. Used by prowlarr, profilarr, radarr, radarr4k, sonarr, lidarr, tautulli, kometa, channels, navidrome, and traefik (via `mms_special_services`). Reuse this for any service with a single config directory.
+- `sabnzbd` — used by sabnzbd; extracts into the service's own subdirectory.
+- `jellyfin` — used by jellyfin; bash restore excludes the cache directory.
+- `plex` — used by plex; stops the service and excludes regenerable directories (Cache, Crash Reports, Updates, Codecs).
+- `immich` — used by immich; multi-container restore including a PostgreSQL dump.
+- `open-notebook` — used by open-notebook (via `mms_special_services`); cold backup of both the app and SurrealDB directories.
+
+The whitelist is enforced in `playbooks/restore.yml`; declaring a value outside this list causes the restore playbook to fail before dispatch.
 
 Adding a new value requires adding the corresponding restore function in `roles/backup/templates/mms-restore.sh.j2` (bash side) and a `playbooks/tasks/restore/restore-<type>.yml` (playbook side). Existing values just work; e.g. `backup_type: arr` for a new *arr-family service needs no additional code.

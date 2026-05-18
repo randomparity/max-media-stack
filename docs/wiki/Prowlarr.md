@@ -7,7 +7,7 @@ Indexer manager for Usenet and torrent trackers -- provides unified search acros
 | **Image** | `lscr.io/linuxserver/prowlarr` (LSIO) |
 | **Container name** | `prowlarr` |
 | **Internal port** | 9696 |
-| **Traefik subdomain** | `prowlarr.media.drc.nz` |
+| **Traefik subdomain** | `prowlarr.media.example.com` |
 | **Config directory** | `/home/mms/config/prowlarr` |
 | **Health endpoint** | `http://localhost:9696/ping` |
 | **Backup type** | `arr` (API backup + config backup) |
@@ -44,7 +44,7 @@ podman healthcheck run prowlarr
 podman exec prowlarr curl -sf http://localhost:9696/ping
 
 # Via Traefik
-curl -sf http://prowlarr.media.drc.nz/ping
+curl -sf http://prowlarr.media.example.com/ping
 ```
 
 ## Manual Testing

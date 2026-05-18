@@ -67,7 +67,9 @@ See the **[Getting Started](https://github.com/randomparity/max-media-stack/wiki
 
 ## Documentation
 
-Full documentation is in the **[Wiki](https://github.com/randomparity/max-media-stack/wiki)** (source: [`docs/wiki/`](docs/wiki/), synced on merge to `main`):
+Full documentation is in the **[Wiki](https://github.com/randomparity/max-media-stack/wiki)** (source: [`docs/wiki/`](docs/wiki/), synced on merge to `main`). Per-service runbooks (Profilarr, Channels DVR, Navidrome, Open Notebook, Observability, etc.) are linked from the wiki sidebar.
+
+See [AGENTS.md](AGENTS.md) for the contributor / agent-facing summary (Codex CLI compatible).
 
 | Topic | Description |
 |-------|-------------|

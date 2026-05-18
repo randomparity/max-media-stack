@@ -7,7 +7,7 @@ Usenet download client -- receives NZB files from Radarr, Sonarr, and Lidarr and
 | **Image** | `lscr.io/linuxserver/sabnzbd` (LSIO) |
 | **Container name** | `sabnzbd` |
 | **Internal port** | 8080 |
-| **Traefik subdomain** | `sabnzbd.media.drc.nz` |
+| **Traefik subdomain** | `sabnzbd.media.example.com` |
 | **Config directory** | `/home/mms/config/sabnzbd` |
 | **Data directory** | `/data` (NFS -- usenet downloads) |
 | **Health endpoint** | `http://localhost:8080/api?mode=version` |
@@ -36,7 +36,7 @@ podman logs --tail 50 sabnzbd
 ```bash
 podman healthcheck run sabnzbd
 podman exec sabnzbd curl -sf http://localhost:8080/api?mode=version
-curl -sf http://sabnzbd.media.drc.nz/api?mode=version
+curl -sf http://sabnzbd.media.example.com/api?mode=version
 ```
 
 ## Manual Testing
@@ -93,10 +93,10 @@ SABnzbd restricts access by hostname. The MMS deployment uses an INI stop-then-a
 
 ```ini
 [misc]
-host_whitelist = sabnzbd.media.drc.nz,sabnzbd
+host_whitelist = sabnzbd.media.example.com,sabnzbd
 ```
 
-The whitelist must include **both** the Traefik FQDN (`sabnzbd.media.drc.nz`) and the bare container hostname (`sabnzbd`). The bare hostname is needed for inter-container connections from the *arr services.
+The whitelist must include **both** the Traefik FQDN (`sabnzbd.media.example.com`) and the bare container hostname (`sabnzbd`). The bare hostname is needed for inter-container connections from the *arr services.
 
 If you see access denied errors after a manual config change:
 

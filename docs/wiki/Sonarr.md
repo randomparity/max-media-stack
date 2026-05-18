@@ -7,7 +7,7 @@ TV series collection manager -- monitors for new episodes, searches indexers, an
 | **Image** | `lscr.io/linuxserver/sonarr` (LSIO) |
 | **Container name** | `sonarr` |
 | **Internal port** | 8989 |
-| **Traefik subdomain** | `sonarr.media.drc.nz` |
+| **Traefik subdomain** | `sonarr.media.example.com` |
 | **Config directory** | `/home/mms/config/sonarr` |
 | **Data directory** | `/data` (NFS -- series, usenet) |
 | **Health endpoint** | `http://localhost:8989/ping` |
@@ -36,7 +36,7 @@ podman logs --tail 50 sonarr
 ```bash
 podman healthcheck run sonarr
 podman exec sonarr curl -sf http://localhost:8989/ping
-curl -sf http://sonarr.media.drc.nz/ping
+curl -sf http://sonarr.media.example.com/ping
 ```
 
 ## Manual Testing

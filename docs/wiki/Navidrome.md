@@ -7,11 +7,11 @@ Music streaming server -- provides a Subsonic-compatible API for music playback 
 | **Image** | `deluan/navidrome` (Official) |
 | **Container name** | `navidrome` |
 | **Internal port** | 4533 |
-| **Traefik subdomain** | `navidrome.media.drc.nz` |
+| **Traefik subdomain** | `navidrome.media.example.com` |
 | **Config directory** | `/home/mms/config/navidrome` |
 | **Music directory** | `/data/media/music` (NFS, read-only) |
 | **Health endpoint** | `http://localhost:4533/ping` |
-| **Backup type** | `navidrome` (config backup) |
+| **Backup type** | `arr` (config backup only) |
 | **Autodeploy group** | `interactive` (daily at 02:00) |
 
 ## Service Management
@@ -42,7 +42,7 @@ podman healthcheck run navidrome
 podman exec navidrome wget -q --spider http://localhost:4533/ping
 
 # Via Traefik
-curl -sf http://navidrome.media.drc.nz/ping
+curl -sf http://navidrome.media.example.com/ping
 ```
 
 ## Manual Testing

@@ -38,8 +38,8 @@ podman logs --tail 50 traefik
 curl -s -o /dev/null -w "%{http_code}" http://localhost
 
 # Test a specific route
-curl -sf -H "Host: radarr.media.drc.nz" http://localhost
-curl -sf http://radarr.media.drc.nz
+curl -sf -H "Host: radarr.media.example.com" http://localhost
+curl -sf http://radarr.media.example.com
 ```
 
 ## Manual Testing
@@ -85,7 +85,7 @@ cat ~/config/traefik/dynamic/*.yml
 # Test each service route
 for svc in prowlarr radarr radarr4k sonarr lidarr sabnzbd jellyfin plex tautulli channels navidrome immich notebook grafana; do
   echo -n "$svc: "
-  curl -s -o /dev/null -w "%{http_code}" -H "Host: ${svc}.media.drc.nz" http://localhost
+  curl -s -o /dev/null -w "%{http_code}" -H "Host: ${svc}.media.example.com" http://localhost
   echo
 done
 
@@ -105,11 +105,11 @@ Traefik is running but the route doesn't match the `Host` header. Check:
    ```
 2. DNS resolves correctly:
    ```bash
-   dig radarr.media.drc.nz
+   dig radarr.media.example.com
    ```
 3. The `Host` header matches exactly:
    ```bash
-   curl -v -H "Host: radarr.media.drc.nz" http://localhost
+   curl -v -H "Host: radarr.media.example.com" http://localhost
    ```
 
 **502 Bad Gateway / connection refused to backend**
@@ -133,7 +133,7 @@ The wildcard DNS record may not be configured. See [Traefik Reverse Proxy](Traef
 
 ```bash
 # Add to /etc/hosts on the client
-echo "<tailscale-ip> radarr.media.drc.nz sonarr.media.drc.nz" | sudo tee -a /etc/hosts
+echo "<tailscale-ip> radarr.media.example.com sonarr.media.example.com" | sudo tee -a /etc/hosts
 ```
 
 **Routes not updating after deploy**

@@ -9,7 +9,7 @@ AI-powered notebook application -- provides a web interface for note-taking with
 
 | Property | Value |
 |----------|-------|
-| **Traefik subdomain** | `notebook.media.drc.nz` |
+| **Traefik subdomain** | `notebook.media.example.com` |
 | **App config directory** | `/home/mms/config/open-notebook` |
 | **DB config directory** | `/home/mms/config/open-notebook-db` |
 | **Backup type** | Cold backup (both containers stopped) |

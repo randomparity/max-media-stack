@@ -9,6 +9,7 @@
 - [Storage Layout](Storage-Layout)
 - [Traefik Reverse Proxy](Traefik-Reverse-Proxy)
 - [Security](Security)
+- [Observability](Observability)
 
 **Services**
 - [Prowlarr](Prowlarr)
@@ -27,7 +28,6 @@
 - [Immich](Immich)
 - [Open Notebook](Open-Notebook)
 - [Traefik](Traefik)
-- [Observability](Observability)
 
 **Operations**
 - [Common Operations](Common-Operations)
