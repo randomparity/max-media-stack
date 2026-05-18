@@ -69,3 +69,15 @@ ansible-playbook playbooks/deploy-service.yml -e service_name=myservice
 ## Multi-container services
 
 The data-driven `quadlet_service` pattern works for single-container services. Multi-container services like Immich (server, ML, PostgreSQL, Redis) and Open Notebook (app, SurrealDB) need their own dedicated role under `roles/` with explicit Quadlet templates for each container and handler-based service ordering.
+
+## Backup and restore
+
+Declare `backup_type` in the service file. Both `mms-backup.sh` and `mms-restore.sh` dispatch on this value, as does `playbooks/restore.yml`. Currently understood values:
+
+- `arr` — generic stop/tar/start. Use for any *arr-family service or anything with a single config directory.
+- `sabnzbd` — extracts into the service's own subdirectory.
+- `jellyfin` / `plex` — bash restore preserves the cache directory.
+- `immich` — multi-container; backup includes a PostgreSQL dump.
+- `open-notebook` — cold backup of both the app and SurrealDB directories.
+
+Adding a new value requires adding the corresponding restore function in `roles/backup/templates/mms-restore.sh.j2` (bash side) and a `playbooks/tasks/restore/restore-<type>.yml` (playbook side). Existing values just work; e.g. `backup_type: arr` for a new *arr-family service needs no additional code.

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Max Media Stack (MMS)** — Ansible project to provision and manage a full homelab media stack on a Fedora VM (Proxmox 9.x), using rootless Podman with Quadlet systemd integration.
 
-**Services:** Prowlarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome, Open Notebook, Grafana, Prometheus
+**Services:** Prowlarr, Profilarr, Radarr, Radarr 4K, Sonarr, Lidarr, SABnzbd, Jellyfin, Plex, Tautulli, Kometa, Immich, Channels DVR, Navidrome, Open Notebook, Grafana, Prometheus
 **Storage:** TrueNAS NFS exports mounted at `/data`
 **Access:** Traefik reverse proxy on port 80, Tailscale only (no LAN exposure)
 
@@ -75,6 +75,7 @@ ansible-playbook playbooks/migrate.yml -e source_host=lxc-hostname
 - Inter-container `host_whitelist` must include the bare container hostname (e.g., `sabnzbd`) in addition to the Traefik subdomain FQDN
 - Plex backup type (`backup_type: "plex"`) stops the service and excludes regenerable directories (Cache, Crash Reports, Updates, Codecs) — similar pattern to Jellyfin's cache exclusion
 - Backup role uses `backup_*` prefix for all variables; API backup variables use `backup_api_*`
+- Restore dispatch is data-driven: both `mms-restore.sh` and `playbooks/restore.yml` read `backup_type` from each `services/<name>.yml` (and from `mms_special_services` for traefik/immich/open-notebook) to route to the matching `restore_<type>` function (bash) or `playbooks/tasks/restore/restore-<type>.yml` (Ansible) — adding a new service only requires declaring `backup_type` once
 - Logging role uses `logging_*` prefix for all defaults; Grafana state and Prometheus TSDB are fully provisioned/retention-managed and disposable (no backup needed); `podman-exporter` requires `podman.socket` enabled for the mms user
 - Multi-container role testability: roles like `open_notebook` split into `setup.yml` (files/templates, testable without Podman) and `containers.yml` (runtime: image pull, start, healthcheck); Molecule tests target `setup.yml` only
 - Molecule shared pre-tasks: `molecule/shared/prepare_mms_user.yml` creates the mms user/group/quadlet directory; all role converge playbooks include it via `include_tasks`

@@ -1,0 +1,10 @@
+---
+# SABnzbd-style restore: extract into sabnzbd's config subdirectory.
+- name: "Restore sabnzbd"  # noqa: no-relative-paths
+  ansible.builtin.include_tasks:
+    file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+  vars:
+    _restore_label: sabnzbd
+    _restore_tmp_ext: tar.zst
+    _restore_service: sabnzbd
+    _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}/sabnzbd"

@@ -31,95 +31,50 @@
         fail_msg: "backup_age_identity_file is required for encrypted backups. Use -e backup_age_identity_file=/path/to/key"
       when: backup_file is match('.*\\.age$')
 
+    # Resolve backup_type so the dispatcher below can route to the right
+    # per-type task file. Look in services/<name>.yml first; fall back to
+    # the mms_special_services registry (traefik / immich / open-notebook).
+    - name: Load service definition for restore dispatch  # noqa: no-relative-paths
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../services/{{ service_name }}.yml"
+        name: _service_def
+      when: service_name in mms_services
+
+    - name: Set backup_type from service definition
+      ansible.builtin.set_fact:
+        _restore_backup_type: "{{ _service_def[service_name].backup_type }}"
+      when: service_name in mms_services
+
+    - name: Set backup_type from mms_special_services
+      ansible.builtin.set_fact:
+        _restore_backup_type: >-
+          {{ (mms_special_services | selectattr('name', 'equalto', service_name) | first).backup_type }}
+      when:
+        - service_name not in mms_services
+        - service_name in (mms_special_services | map(attribute='name') | list)
+
+    - name: Assert service is known to MMS
+      ansible.builtin.assert:
+        that:
+          - _restore_backup_type is defined
+          - _restore_backup_type | length > 0
+        fail_msg: >-
+          Service '{{ service_name }}' is not declared in mms_services or
+          mms_special_services. Add it to the inventory before restoring.
+
+    - name: Assert backup_type has a known restore handler
+      ansible.builtin.assert:
+        that:
+          - _restore_backup_type in ['arr', 'sabnzbd', 'jellyfin', 'plex', 'immich', 'open-notebook']
+        fail_msg: >-
+          backup_type '{{ _restore_backup_type }}' for service '{{ service_name }}'
+          has no restore handler. Supported types: arr, sabnzbd, jellyfin, plex,
+          immich, open-notebook. Either change backup_type in services/{{ service_name }}.yml
+          or add playbooks/tasks/restore/restore-{{ _restore_backup_type }}.yml.
+
   tasks:
-    - name: Restore standard service  # noqa: no-relative-paths
-      ansible.builtin.include_tasks:
-        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
-      vars:
-        _restore_label: "{{ service_name }}"
-        _restore_tmp_ext: tar.zst
-        _restore_service: "{{ service_name }}"
-        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
-      when: service_name in ['prowlarr', 'radarr', 'radarr4k', 'sonarr', 'lidarr', 'jellyfin']
-
-    - name: Restore sabnzbd  # noqa: no-relative-paths
-      ansible.builtin.include_tasks:
-        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
-      vars:
-        _restore_label: sabnzbd
-        _restore_tmp_ext: tar.zst
-        _restore_service: sabnzbd
-        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}/sabnzbd"
-      when: service_name == 'sabnzbd'
-
-    - name: Restore immich database  # noqa: no-relative-paths
-      ansible.builtin.include_tasks:
-        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
-      vars:
-        _restore_label: immich-db
-        _restore_tmp_ext: sql.zst
-        _restore_service: ""
-        _restore_cmd: >-
-          zstd -d {{ backup_restore_file }} --stdout |
-          podman exec -i immich-postgres psql -U postgres
-      when: service_name == 'immich' and 'db' in backup_file
-
-    - name: Restore immich config  # noqa: no-relative-paths
-      ansible.builtin.include_tasks:
-        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
-      vars:
-        _restore_label: immich-config
-        _restore_tmp_ext: tar.zst
-        _restore_service: ""
-        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
-      when: service_name == 'immich' and 'config' in backup_file
-
-    - name: Stop open-notebook services before restore
-      ansible.builtin.systemd:
-        name: "{{ item }}"
-        state: stopped
-        scope: user
-      environment: "{{ mms_systemd_env }}"
-      loop:
-        - open-notebook
-        - open-notebook-db
-      when: service_name == 'open-notebook'
-      failed_when: false
-
-    - name: Restore open-notebook  # noqa: no-relative-paths
-      ansible.builtin.include_tasks:
-        file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
-      vars:
-        _restore_label: open-notebook
-        _restore_tmp_ext: tar.zst
-        _restore_service: ""
-        _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
-      when: service_name == 'open-notebook'
-
-    - name: Fix ownership after open-notebook restore
-      ansible.builtin.file:
-        path: "{{ mms_config_dir }}/{{ item }}"
-        state: directory
-        owner: "{{ mms_user }}"
-        group: "{{ mms_user }}"
-        recurse: true
-      become: true
-      become_user: root
-      loop:
-        - open-notebook
-        - open-notebook-db
-      when: service_name == 'open-notebook'
-
-    - name: Start open-notebook services after restore
-      ansible.builtin.systemd:
-        name: "{{ item }}"
-        state: started
-        scope: user
-      environment: "{{ mms_systemd_env }}"
-      loop:
-        - open-notebook-db
-        - open-notebook
-      when: service_name == 'open-notebook'
+    - name: "Dispatch restore via backup_type {{ _restore_backup_type }}"
+      ansible.builtin.include_tasks: "tasks/restore/restore-{{ _restore_backup_type }}.yml"
 
     - name: Fix ownership after restore
       ansible.builtin.file:

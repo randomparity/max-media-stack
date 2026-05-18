@@ -15,5 +15,5 @@ navidrome:
     - "ND_ENABLEEXTERNALSERVICES=false"
   health_cmd: "wget -q --spider http://localhost:4533/ping || exit 1"
   health_interval: "60s"
-  backup_type: "navidrome"
+  backup_type: "arr"
   backup_db_files: ["navidrome.db"]

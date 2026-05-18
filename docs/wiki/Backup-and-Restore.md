@@ -67,6 +67,8 @@ ansible-playbook playbooks/restore.yml \
 
 Multi-container services like Open Notebook use the same restore command -- the playbook handles stopping/starting both containers and restoring both directories from the single archive automatically.
 
+The restore playbook and the `mms-restore.sh` script both dispatch from each service's `backup_type` (declared in `services/<name>.yml`) plus the `mms_special_services` registry in `inventory/group_vars/mms/vars.yml` (covering traefik, immich, and open-notebook). Adding a new *arr-family service is therefore zero-touch on the restore side -- it picks up `restore_arr` automatically once `backup_type: arr` is set.
+
 ## Backup encryption with age
 
 MMS encrypts config backups using `age`, a simple file encryption tool. Encryption uses a public key (safe to store in config); decryption requires the corresponding private key (identity file), which should be kept offline or in a secure location -- never on the backup server itself.

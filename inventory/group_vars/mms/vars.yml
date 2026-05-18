@@ -27,6 +27,7 @@ mms_nfs_mounts:
 # Services to deploy (matches filenames in services/)
 mms_services:
   - prowlarr
+  - profilarr
   - radarr
   - radarr4k
   - sonarr
@@ -39,12 +40,28 @@ mms_services:
   - channels
   - navidrome
 
+# Special services that aren't in services/*.yml but participate in backup/restore.
+# These are deployed by their own roles (immich, open_notebook) or by traefik role,
+# not by quadlet_service. Listing them here so the restore dispatcher knows their
+# backup_type without forcing them into the services/ schema.
+mms_special_services:
+  - name: traefik
+    backup_type: arr
+  - name: immich
+    backup_type: immich
+  - name: open-notebook
+    backup_type: open-notebook
+
 # Traefik reverse proxy (mms_traefik_domain is in group_vars/all)
 mms_traefik_routes:
   prowlarr:
     subdomain: prowlarr
     container: prowlarr
     port: 9696
+  profilarr:
+    subdomain: profilarr
+    container: profilarr
+    port: 6868
   radarr:
     subdomain: radarr
     container: radarr
@@ -107,6 +124,7 @@ autodeploy_groups:
     schedule: "*-*-* *:00/30:00"
     services:
       - prowlarr
+      - profilarr
       - radarr
       - radarr4k
       - sonarr
