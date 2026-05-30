@@ -1,24 +1,26 @@
 ---
 # Immich restore: branches on the backup filename. A file containing
 # "db" restores the PostgreSQL dump; otherwise restore the config tar.
-- name: "Restore immich database"  # noqa: no-relative-paths
-  ansible.builtin.include_tasks:
-    file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+- name: "Restore immich database"
+  ansible.builtin.include_role:
+    name: backup
+    tasks_from: restore_service
   vars:
-    _restore_label: immich-db
-    _restore_tmp_ext: sql.zst
-    _restore_service: ""
-    _restore_cmd: >-
+    backup_restore_label: immich-db
+    backup_restore_tmp_ext: sql.zst
+    backup_restore_service: ""
+    backup_restore_cmd: >-
       zstd -d {{ backup_restore_file }} --stdout |
       podman exec -i immich-postgres psql -U postgres
   when: "'db' in backup_file"
 
-- name: "Restore immich config"  # noqa: no-relative-paths
-  ansible.builtin.include_tasks:
-    file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+- name: "Restore immich config"
+  ansible.builtin.include_role:
+    name: backup
+    tasks_from: restore_service
   vars:
-    _restore_label: immich-config
-    _restore_tmp_ext: tar.zst
-    _restore_service: ""
-    _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+    backup_restore_label: immich-config
+    backup_restore_tmp_ext: tar.zst
+    backup_restore_service: ""
+    backup_restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
   when: "'db' not in backup_file"

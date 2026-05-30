@@ -1,44 +1,44 @@
 ---
 # Common restore task file, included via include_tasks with these vars:
-#   _restore_label   — identifier for temp file naming (e.g. "radarr", "immich-db")
-#   _restore_tmp_ext — temp file extension: "tar.zst" or "sql.zst"
-#   _restore_service — systemd user service to stop/start (empty string to skip)
-#   _restore_cmd     — shell command for extract/restore (may reference {{ backup_restore_file }})
+#   backup_restore_label   — identifier for temp file naming (e.g. "radarr", "immich-db")
+#   backup_restore_tmp_ext — temp file extension: "tar.zst" or "sql.zst"
+#   backup_restore_service — systemd user service to stop/start (empty string to skip)
+#   backup_restore_cmd     — shell command for extract/restore (may reference {{ backup_restore_file }})
 
-- name: "Stop service before restore — {{ _restore_label }}"
+- name: "Stop service before restore — {{ backup_restore_label }}"
   ansible.builtin.systemd:
-    name: "{{ _restore_service }}"
+    name: "{{ backup_restore_service }}"
     state: stopped
     scope: user
   environment: "{{ mms_systemd_env }}"
-  when: _restore_service | length > 0
+  when: backup_restore_service | length > 0
 
-- name: "Decrypt backup — {{ _restore_label }}"
+- name: "Decrypt backup — {{ backup_restore_label }}"
   ansible.builtin.command:
-    cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-{{ _restore_label }}.{{ _restore_tmp_ext }} {{ backup_file }}"
+    cmd: "age -d -i {{ backup_age_identity_file }} -o /tmp/restore-{{ backup_restore_label }}.{{ backup_restore_tmp_ext }} {{ backup_file }}"
   changed_when: true
   when: backup_file is match('.*\.age$') and not ansible_check_mode
 
-- name: "Set restore file path — {{ _restore_label }}"
+- name: "Set restore file path — {{ backup_restore_label }}"
   ansible.builtin.set_fact:
-    backup_restore_file: "{{ '/tmp/restore-' + _restore_label + '.' + _restore_tmp_ext if backup_file is match('.*\\.age$') else backup_file }}"
+    backup_restore_file: "{{ '/tmp/restore-' + backup_restore_label + '.' + backup_restore_tmp_ext if backup_file is match('.*\\.age$') else backup_file }}"
 
-- name: "Restore data — {{ _restore_label }}"
+- name: "Restore data — {{ backup_restore_label }}"
   ansible.builtin.shell:  # noqa: command-instead-of-shell
-    cmd: "{{ _restore_cmd }}"
+    cmd: "{{ backup_restore_cmd }}"
   changed_when: true
   when: not ansible_check_mode
 
-- name: "Start service after restore — {{ _restore_label }}"
+- name: "Start service after restore — {{ backup_restore_label }}"
   ansible.builtin.systemd:
-    name: "{{ _restore_service }}"
+    name: "{{ backup_restore_service }}"
     state: started
     scope: user
   environment: "{{ mms_systemd_env }}"
-  when: _restore_service | length > 0
+  when: backup_restore_service | length > 0
 
-- name: "Clean up temp file — {{ _restore_label }}"
+- name: "Clean up temp file — {{ backup_restore_label }}"
   ansible.builtin.file:
-    path: "/tmp/restore-{{ _restore_label }}.{{ _restore_tmp_ext }}"
+    path: "/tmp/restore-{{ backup_restore_label }}.{{ backup_restore_tmp_ext }}"
     state: absent
   when: backup_file is match('.*\.age$')

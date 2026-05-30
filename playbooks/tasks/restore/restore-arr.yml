@@ -1,11 +1,12 @@
 ---
 # Generic "stop, extract tar to config dir, start" restore.
 # Used for backup_type=arr services (prowlarr, profilarr, *arr, tautulli, kometa, traefik).
-- name: "Restore standard service ({{ service_name }})"  # noqa: no-relative-paths
-  ansible.builtin.include_tasks:
-    file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+- name: "Restore standard service ({{ service_name }})"
+  ansible.builtin.include_role:
+    name: backup
+    tasks_from: restore_service
   vars:
-    _restore_label: "{{ service_name }}"
-    _restore_tmp_ext: tar.zst
-    _restore_service: "{{ service_name }}"
-    _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+    backup_restore_label: "{{ service_name }}"
+    backup_restore_tmp_ext: tar.zst
+    backup_restore_service: "{{ service_name }}"
+    backup_restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"

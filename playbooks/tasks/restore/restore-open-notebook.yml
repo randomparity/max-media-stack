@@ -13,14 +13,15 @@
     - open-notebook-db
   failed_when: false
 
-- name: "Restore open-notebook"  # noqa: no-relative-paths
-  ansible.builtin.include_tasks:
-    file: "{{ playbook_dir }}/../roles/backup/tasks/restore_service.yml"
+- name: "Restore open-notebook"
+  ansible.builtin.include_role:
+    name: backup
+    tasks_from: restore_service
   vars:
-    _restore_label: open-notebook
-    _restore_tmp_ext: tar.zst
-    _restore_service: ""
-    _restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
+    backup_restore_label: open-notebook
+    backup_restore_tmp_ext: tar.zst
+    backup_restore_service: ""
+    backup_restore_cmd: "zstd -d {{ backup_restore_file }} --stdout | tar -xf - -C {{ mms_config_dir }}"
 
 - name: Fix ownership after open-notebook restore
   ansible.builtin.file:
