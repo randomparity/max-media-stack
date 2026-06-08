@@ -2,7 +2,7 @@
 profilarr:
   name: profilarr
   description: "Profilarr - Quality Profile & Custom Format Manager (v2)"
-  image: "ghcr.io/dictionarry-hub/profilarr:2.0.7"
+  image: "ghcr.io/dictionarry-hub/profilarr:2.0.8"
   volumes:
     - "{{ mms_config_dir }}/profilarr:/config:Z"
   environment:
