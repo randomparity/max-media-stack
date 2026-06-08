@@ -73,6 +73,10 @@
       matchPackageNames: [
         '/^lscr\\.io/linuxserver//',
       ],
+      // LinuxServer tags are <version>[-ls<build>]; default docker versioning
+      // treats -ls<build> as an immutable compatibility suffix and never
+      // updates it. Parse the -ls build as a numeric version part instead.
+      versioning: 'regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:\\.(?<build>\\d+))?(?:-ls(?<revision>\\d+))?$',
     },
     {
       description: 'Group Immich images',
