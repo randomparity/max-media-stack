@@ -1,0 +1,84 @@
+---
+# Filesystem, user, and systemd configuration. These tasks are independent of
+# the target being a real VM, so they are verifiable in isolation (Molecule
+# converges setup.yml only); host/OS provisioning lives in provision.yml.
+- name: Create mms group
+  ansible.builtin.group:
+    name: "{{ base_system_user }}"
+    gid: "{{ base_system_gid }}"
+    state: present
+
+- name: Create mms user
+  ansible.builtin.user:
+    name: "{{ base_system_user }}"
+    uid: "{{ base_system_uid }}"
+    group: "{{ base_system_user }}"
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Create mms user bin directory
+  ansible.builtin.file:
+    path: "{{ base_system_home }}/bin"
+    state: directory
+    owner: "{{ base_system_user }}"
+    group: "{{ base_system_user }}"
+    mode: "0755"
+
+- name: Deploy mms-services maintenance script
+  ansible.builtin.template:
+    src: mms-services.sh.j2
+    dest: "{{ base_system_home }}/bin/mms-services"
+    owner: "{{ base_system_user }}"
+    group: "{{ base_system_user }}"
+    mode: "0755"
+
+- name: Enable loginctl linger for mms user
+  ansible.builtin.command:
+    cmd: loginctl enable-linger {{ base_system_user }}
+    creates: /var/lib/systemd/linger/{{ base_system_user }}
+
+- name: Create systemd user service drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/user@.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Delegate cgroup controllers to user sessions
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/user@.service.d/delegate.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Service]
+      Delegate=cpu cpuset io memory pids
+  notify: Reload systemd daemon
+
+# Persistent journal for centralized logging (Loki reads from /var/log/journal)
+- name: Create persistent journal directory
+  ansible.builtin.file:
+    path: /var/log/journal
+    state: directory
+    owner: root
+    group: systemd-journal
+    mode: "2755"
+
+- name: Create journald config directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy journald persistent storage config
+  ansible.builtin.template:
+    src: journald-mms.conf.j2
+    dest: /etc/systemd/journald.conf.d/mms.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart journald

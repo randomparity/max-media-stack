@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: backup
   author: MMS
   description: Backup and restore MMS services with encryption and retention

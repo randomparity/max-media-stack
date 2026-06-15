@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: autodeploy
   author: MMS
   description: Git-based auto-deploy with systemd timer for MMS services

@@ -43,7 +43,7 @@
 
 - name: Deploy mms.network quadlet
   ansible.builtin.template:
-    src: "{{ playbook_dir }}/../templates/quadlet/network.j2"
+    src: quadlet/network.j2
     dest: "{{ mms_quadlet_dir }}/mms.network"
     owner: "{{ mms_user }}"
     group: "{{ mms_user }}"

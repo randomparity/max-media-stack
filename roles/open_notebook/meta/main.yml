@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: open_notebook
   description: Deploy Open Notebook AI research notebook with SurrealDB
   author: MMS

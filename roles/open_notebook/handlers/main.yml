@@ -6,21 +6,3 @@
   become: true
   become_user: "{{ mms_user }}"
   environment: "{{ mms_systemd_env }}"
-
-- name: Restart open-notebook-db
-  ansible.builtin.systemd:
-    name: open-notebook-db.service
-    state: restarted
-    scope: user
-  become: true
-  become_user: "{{ mms_user }}"
-  environment: "{{ mms_systemd_env }}"
-
-- name: Restart open-notebook
-  ansible.builtin.systemd:
-    name: open-notebook.service
-    state: restarted
-    scope: user
-  become: true
-  become_user: "{{ mms_user }}"
-  environment: "{{ mms_systemd_env }}"

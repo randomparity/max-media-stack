@@ -3,6 +3,7 @@
   hosts: all
   become: true
   tasks:
-    - name: Include base_system role
+    - name: Include base_system role (setup only)
       ansible.builtin.include_role:
         name: base_system
+        tasks_from: setup.yml

@@ -1,0 +1,72 @@
+---
+# Load the service definition and render its config + quadlet files. These
+# tasks need no running container, so they are verifiable on their own
+# (Molecule converges setup.yml only); runtime lives in containers.yml.
+- name: "Load service definition ({{ service_name }})"
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/../services/{{ service_name }}.yml"
+
+- name: "Validate service definition key matches service_name ({{ service_name }})"
+  ansible.builtin.assert:
+    that:
+      - lookup('vars', service_name, default='__missing__') != '__missing__'
+    fail_msg: >-
+      Service definition file services/{{ service_name }}.yml does not contain
+      a top-level key '{{ service_name }}'. Check the file contents.
+
+- name: "Set service variable ({{ service_name }})"
+  ansible.builtin.set_fact:
+    quadlet_service_def: "{{ lookup('vars', service_name) }}"
+
+- name: "Create config directory ({{ service_name }})"
+  ansible.builtin.file:
+    path: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: "Deploy environment file ({{ service_name }})"
+  ansible.builtin.copy:
+    content: |
+      {% for env in quadlet_service_def.environment %}
+      {{ env }}
+      {% endfor %}
+    dest: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/{{ quadlet_service_def.name }}.env"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0600"
+  become: true
+  register: quadlet_service_env_file
+
+- name: "Deploy Plex run script override ({{ service_name }})"
+  ansible.builtin.template:
+    src: plex-run.sh.j2
+    dest: "{{ mms_config_dir }}/{{ quadlet_service_def.name }}/plex-run.sh"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+  register: quadlet_service_plex_script
+  when: service_name == 'plex'
+
+- name: "Deploy container quadlet ({{ service_name }})"
+  ansible.builtin.template:
+    src: quadlet/container.j2
+    dest: "{{ mms_quadlet_dir }}/{{ quadlet_service_def.name }}.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  register: quadlet_service_container_file
+
+# Record config changes so containers.yml restarts only what changed. Restarts
+# live in the runtime path; setup.yml notifies only the Podman-free
+# daemon-reload, so a setup-only run never touches a running container.
+- name: "Record whether configuration changed ({{ service_name }})"
+  ansible.builtin.set_fact:
+    quadlet_service_config_changed: "{{
+      quadlet_service_env_file is changed or
+      quadlet_service_plex_script is changed or
+      quadlet_service_container_file is changed }}"

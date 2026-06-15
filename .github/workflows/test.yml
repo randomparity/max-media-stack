@@ -1,0 +1,60 @@
+---
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        run: pytest
+
+  molecule:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Gate is converge/idempotence/verify; destroy is best-effort
+        # (teardown of privileged systemd containers reaps unreliably).
+        role: [base_system, open_notebook, quadlet_service, traefik]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Install Galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Run Molecule (converge, idempotence, verify)
+        working-directory: roles/${{ matrix.role }}
+        run: molecule test -s default --destroy=never
+
+      - name: Clean up Molecule instance (best-effort)
+        if: always()
+        working-directory: roles/${{ matrix.role }}
+        continue-on-error: true
+        run: molecule destroy -s default

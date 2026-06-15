@@ -1,0 +1,24 @@
+# Molecule test baseline: fedora with systemd as PID 1 so role handlers
+# that call `systemctl` (including rootless `--user` scope) work in CI.
+# Base fedora images ship no systemd, so it is installed here.
+FROM {{ item.image }}
+
+RUN dnf -y install \
+        systemd \
+        systemd-pam \
+        dbus-broker \
+        python3 \
+        sudo \
+        podman \
+        shadow-utils \
+        procps-ng \
+    && dnf clean all \
+    && systemctl mask \
+        systemd-remount-fs.service \
+        dev-hugepages.mount \
+        sys-fs-fuse-connections.mount \
+        getty.target \
+        console-getty.service
+
+VOLUME ["/sys/fs/cgroup"]
+CMD ["/usr/lib/systemd/systemd"]

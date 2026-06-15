@@ -13,17 +13,6 @@
         cmd: getent passwd mms
       changed_when: false
 
-    - name: Check required packages are installed
-      ansible.builtin.dnf:
-        name:
-          - nfs-utils
-          - curl
-          - sqlite
-        state: present
-      check_mode: true
-      register: _base_system_packages
-      failed_when: _base_system_packages.changed
-
     - name: Check mms-services script is deployed and executable
       ansible.builtin.stat:
         path: /home/mms/bin/mms-services
@@ -31,3 +20,31 @@
       failed_when: >-
         not base_system_mms_services_script.stat.exists or
         not base_system_mms_services_script.stat.executable
+
+    - name: Check linger is enabled for mms user
+      ansible.builtin.stat:
+        path: /var/lib/systemd/linger/mms
+      register: base_system_linger
+      failed_when: not base_system_linger.stat.exists
+
+    - name: Check cgroup delegation drop-in is deployed
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/user@.service.d/delegate.conf
+      register: base_system_delegate
+
+    - name: Verify cgroup delegation content
+      ansible.builtin.assert:
+        that:
+          - "'Delegate=cpu cpuset io memory pids' in (base_system_delegate.content | b64decode)"
+        fail_msg: cgroup delegation drop-in is missing the expected controllers
+
+    - name: Check journald persistent storage config is deployed
+      ansible.builtin.slurp:
+        src: /etc/systemd/journald.conf.d/mms.conf
+      register: base_system_journald_conf
+
+    - name: Verify journald config sets persistent storage
+      ansible.builtin.assert:
+        that:
+          - "'Storage=persistent' in (base_system_journald_conf.content | b64decode)"
+        fail_msg: journald config does not enable persistent storage

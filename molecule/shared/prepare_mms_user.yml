@@ -17,3 +17,21 @@
     owner: mms
     group: mms
     mode: "0755"
+
+# Rootless `systemctl --user` (used by role handlers) needs the mms user
+# manager running. Enabling linger starts user@3000.service via logind so
+# the manager is up without an interactive login session.
+- name: Enable linger for the mms user
+  ansible.builtin.command:
+    cmd: loginctl enable-linger mms
+    creates: /var/lib/systemd/linger/mms
+
+- name: Wait for the mms user systemd manager to be ready
+  ansible.builtin.command:
+    cmd: systemctl --user --machine=mms@.host is-system-running
+  register: _mms_user_manager
+  until: _mms_user_manager.rc == 0 or 'degraded' in _mms_user_manager.stdout
+  retries: 30
+  delay: 2
+  changed_when: false
+  failed_when: false

@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: traefik
   description: Deploy Traefik reverse proxy using Podman Quadlet
   author: MMS

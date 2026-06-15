@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: migrate
   author: MMS
   description: Migrate services from LXC containers to MMS VM

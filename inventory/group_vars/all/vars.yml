@@ -19,6 +19,7 @@ mms_vm_nameserver: 192.168.20.1
 mms_vm_ssh_pubkeys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJcHskfClJmLyP6fnzrdDmHZ4vLz/mXgqpxVguGMHbP+ dave@dilbert"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfM/NNXzwgAWWSHDhrxCKDoAJaav+ovtr28YU0Ykxz dave@titan"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPQ8W7wkNHNLqYZM7q11bDvA8Z33XwuB/QmQTh83SvwJ dave@homer.pdx.drc.nz"
 
 # Service user
 mms_user: mms

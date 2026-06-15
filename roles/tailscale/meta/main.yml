@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: tailscale
   author: MMS
   description: Install and configure Tailscale with serve mappings

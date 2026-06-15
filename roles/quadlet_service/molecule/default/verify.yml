@@ -26,12 +26,25 @@
         src: /home/mms/.config/containers/systemd/testapp.container
       register: _quadlet_service_quadlet_content
 
-    - name: Verify PUID/PGID services map writes to the host user
+    - name: Verify the quadlet runs in the host user namespace
       ansible.builtin.assert:
         that:
           - "'UserNS=host' in _quadlet_service_quadlet_decoded"
-          - "'PUID=0' in _quadlet_service_quadlet_decoded"
-          - "'PGID=0' in _quadlet_service_quadlet_decoded"
-        fail_msg: "Rootless PUID/PGID services must write files as the host user"
+          - "'EnvironmentFile=/opt/mms/config/testapp/testapp.env' in _quadlet_service_quadlet_decoded"
+        fail_msg: "Rootless PUID/PGID services must run with UserNS=host and an EnvironmentFile"
       vars:
         _quadlet_service_quadlet_decoded: "{{ _quadlet_service_quadlet_content.content | b64decode }}"
+
+    - name: Read environment file
+      ansible.builtin.slurp:
+        src: /opt/mms/config/testapp/testapp.env
+      register: _quadlet_service_env_content
+
+    - name: Verify PUID/PGID services map writes to the host user
+      ansible.builtin.assert:
+        that:
+          - "'PUID=0' in _quadlet_service_env_decoded"
+          - "'PGID=0' in _quadlet_service_env_decoded"
+        fail_msg: "Rootless PUID/PGID services must write files as the host user (uid 0)"
+      vars:
+        _quadlet_service_env_decoded: "{{ _quadlet_service_env_content.content | b64decode }}"

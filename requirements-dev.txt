@@ -1,4 +1,8 @@
-ansible-core>=2.21,<2.22
+# Held at 2.18.x: ansible-core >=2.19 arg finalization rejects the
+# molecule-plugins docker driver (item.invocation.module_args.dest in its
+# create.yml), failing every Molecule scenario at the create step. Lift once
+# molecule-plugins supports ansible-core >=2.19; renovate.json5 pins the range.
+ansible-core>=2.18.12,<2.19
 ansible-lint>=24.0
 yamllint>=1.33
 molecule>=24.0
