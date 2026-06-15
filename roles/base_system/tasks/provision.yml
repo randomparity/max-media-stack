@@ -1,0 +1,47 @@
+---
+# OS package installation and VM/kernel/SELinux provisioning. These require the
+# real target host (a Fedora VM) and are not exercised by Molecule.
+- name: Wait for cloud-init to finish
+  ansible.builtin.command:
+    cmd: cloud-init status --wait
+  changed_when: false
+  failed_when: false
+
+- name: Clean stale dnf cache
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: false
+
+- name: Install required packages
+  ansible.builtin.dnf:
+    name: "{{ base_system_packages }}"
+    state: present
+
+- name: Enable and start QEMU guest agent
+  ansible.builtin.systemd:
+    name: qemu-guest-agent
+    enabled: true
+    state: started
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ base_system_timezone }}"
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ base_system_hostname }}"
+
+- name: Set SELinux booleans
+  ansible.posix.seboolean:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    persistent: true
+  loop: "{{ base_system_seboolean }}"
+
+- name: Allow unprivileged port binding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_unprivileged_port_start
+    value: "{{ base_system_sysctl_unprivileged_port_start }}"
+    sysctl_file: /etc/sysctl.d/99-mms.conf
+    reload: true
+    state: present
