@@ -31,12 +31,14 @@
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
-# Enable and start services in dependency order
-- name: Enable and start SurrealDB
+# Enable and start services in dependency order. A config change recorded in
+# setup.yml triggers a restart so the new env/quadlet takes effect; otherwise
+# the service is only ensured started (idempotent no-op when already running).
+- name: Enable and start (or restart on change) SurrealDB
   ansible.builtin.systemd:
     name: open-notebook-db.service
     enabled: true
-    state: started
+    state: "{{ 'restarted' if open_notebook_db_config_changed | default(false) else 'started' }}"
     scope: user
   become: true
   become_user: "{{ mms_user }}"
@@ -55,11 +57,11 @@
   environment: "{{ mms_systemd_env }}"
   when: not ansible_check_mode
 
-- name: Enable and start Open Notebook
+- name: Enable and start (or restart on change) Open Notebook
   ansible.builtin.systemd:
     name: open-notebook.service
     enabled: true
-    state: started
+    state: "{{ 'restarted' if open_notebook_app_config_changed | default(false) else 'started' }}"
     scope: user
   become: true
   become_user: "{{ mms_user }}"

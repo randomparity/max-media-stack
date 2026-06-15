@@ -35,7 +35,7 @@
     mode: "0600"
   become: true
   no_log: true
-  notify: Restart open-notebook-db
+  register: _open_notebook_db_env
 
 - name: Deploy Open Notebook environment file
   ansible.builtin.template:
@@ -46,7 +46,7 @@
     mode: "0600"
   become: true
   no_log: true
-  notify: Restart open-notebook
+  register: _open_notebook_app_env
 
 - name: Deploy SurrealDB container quadlet
   ansible.builtin.template:
@@ -56,9 +56,8 @@
     group: "{{ mms_user }}"
     mode: "0644"
   become: true
-  notify:
-    - Reload systemd user daemon
-    - Restart open-notebook-db
+  register: _open_notebook_db_quadlet
+  notify: Reload systemd user daemon
 
 - name: Deploy Open Notebook container quadlet
   ansible.builtin.template:
@@ -68,6 +67,17 @@
     group: "{{ mms_user }}"
     mode: "0644"
   become: true
-  notify:
-    - Reload systemd user daemon
-    - Restart open-notebook
+  register: _open_notebook_app_quadlet
+  notify: Reload systemd user daemon
+
+# Record config changes so containers.yml can restart only what changed.
+# Restarts live in the runtime path (containers.yml), keeping setup.yml
+# free of any task that needs a running container — so it is testable on
+# its own (Molecule converges setup.yml only).
+- name: Record whether SurrealDB configuration changed
+  ansible.builtin.set_fact:
+    open_notebook_db_config_changed: "{{ _open_notebook_db_env is changed or _open_notebook_db_quadlet is changed }}"
+
+- name: Record whether Open Notebook configuration changed
+  ansible.builtin.set_fact:
+    open_notebook_app_config_changed: "{{ _open_notebook_app_env is changed or _open_notebook_app_quadlet is changed }}"
