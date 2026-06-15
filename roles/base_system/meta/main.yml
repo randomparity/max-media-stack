@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: base_system
   author: MMS
   description: Base system configuration for MMS host

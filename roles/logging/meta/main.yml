@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: logging
   description: Deploy centralized logging stack (Loki, Alloy, Grafana)
   author: MMS

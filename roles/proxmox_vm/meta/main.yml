@@ -1,5 +1,6 @@
 ---
 galaxy_info:
+  namespace: mms
   role_name: proxmox_vm
   author: MMS
   description: Provision a Proxmox VM from a cloud-init template
