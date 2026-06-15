@@ -33,7 +33,7 @@ jobs:
       matrix:
         # Only scenarios verified to pass end to end are listed here.
         # Add others as they are fixed (see molecule-scenarios status).
-        role: [open_notebook]
+        role: [open_notebook, quadlet_service]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
