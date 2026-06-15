@@ -2,7 +2,7 @@
 radarr:
   name: radarr
   description: "Radarr - Movie Manager"
-  image: "lscr.io/linuxserver/radarr:6.0.4.10291-ls291"
+  image: "lscr.io/linuxserver/radarr:6.2.1.10461-ls306"
   volumes:
     - "{{ mms_config_dir }}/radarr:/config:Z"
     - "{{ mms_data_dir }}:/data"
