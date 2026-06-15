@@ -31,9 +31,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Only scenarios verified to pass end to end are listed here.
-        # Add others as they are fixed (see molecule-scenarios status).
-        role: [open_notebook, quadlet_service, traefik]
+        # Gate is converge/idempotence/verify; destroy is best-effort
+        # (teardown of privileged systemd containers reaps unreliably).
+        role: [base_system, open_notebook, quadlet_service, traefik]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -49,6 +49,12 @@ jobs:
       - name: Install Galaxy collections
         run: ansible-galaxy collection install -r requirements.yml
 
-      - name: Run Molecule
+      - name: Run Molecule (converge, idempotence, verify)
         working-directory: roles/${{ matrix.role }}
-        run: molecule test -s default
+        run: molecule test -s default --destroy=never
+
+      - name: Clean up Molecule instance (best-effort)
+        if: always()
+        working-directory: roles/${{ matrix.role }}
+        continue-on-error: true
+        run: molecule destroy -s default
