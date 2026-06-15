@@ -2,7 +2,7 @@
 lidarr:
   name: lidarr
   description: "Lidarr - Music Manager"
-  image: "lscr.io/linuxserver/lidarr:3.1.0.4875-ls19"
+  image: "lscr.io/linuxserver/lidarr:3.1.0.4875-ls30"
   volumes:
     - "{{ mms_config_dir }}/lidarr:/config:Z"
     - "{{ mms_data_dir }}:/data"
