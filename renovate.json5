@@ -105,6 +105,21 @@
       enabled: false,
     },
     {
+      // ansible-core >=2.19 arg finalization breaks the molecule-plugins
+      // docker driver (item.invocation.module_args.dest in create.yml),
+      // failing every Molecule scenario at create. Hold at 2.18.x until
+      // molecule-plugins supports ansible-core >=2.19, then lift here and in
+      // requirements-dev.txt.
+      description: 'Hold ansible-core at 2.18.x (molecule-plugins incompatible with >=2.19)',
+      matchDatasources: [
+        'pypi',
+      ],
+      matchPackageNames: [
+        'ansible-core',
+      ],
+      allowedVersions: '<2.19',
+    },
+    {
       description: 'Auto-merge patch and minor updates',
       matchUpdateTypes: [
         'minor',
