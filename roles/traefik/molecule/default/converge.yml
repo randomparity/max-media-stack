@@ -6,6 +6,7 @@
     - name: Prepare mms user and directories
       ansible.builtin.include_tasks: "{{ playbook_dir }}/../../../../molecule/shared/prepare_mms_user.yml"
   tasks:
-    - name: Include traefik role
+    - name: Include traefik role (setup only)
       ansible.builtin.include_role:
         name: traefik
+        tasks_from: setup.yml

@@ -1,0 +1,72 @@
+---
+# Validate routes and render Traefik config + quadlet files. No running
+# container required, so this is verifiable on its own (Molecule converges
+# setup.yml only); runtime lives in containers.yml.
+- name: Validate traefik route entries
+  ansible.builtin.assert:
+    that:
+      - item.value.subdomain is defined
+      - item.value.container is defined
+      - item.value.port is defined
+    fail_msg: >-
+      Route '{{ item.key }}' is missing required keys.
+      Each route needs: subdomain, container, port.
+  loop: "{{ traefik_routes | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Create Traefik config directory
+  ansible.builtin.file:
+    path: "{{ traefik_config_dir }}"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Create Traefik dynamic config directory
+  ansible.builtin.file:
+    path: "{{ traefik_config_dir }}/dynamic"
+    state: directory
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy Traefik static config
+  ansible.builtin.template:
+    src: traefik-static.yml.j2
+    dest: "{{ traefik_config_dir }}/traefik.yml"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  register: traefik_static_config
+
+# Routes are served by Traefik's file provider, which hot-reloads the dynamic
+# directory; a change here needs no restart, so it is not tracked below.
+- name: Deploy Traefik dynamic config
+  ansible.builtin.template:
+    src: traefik-dynamic.yml.j2
+    dest: "{{ traefik_config_dir }}/dynamic/mms-routes.yml"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+
+- name: Deploy Traefik container quadlet
+  ansible.builtin.template:
+    src: traefik.container.j2
+    dest: "{{ mms_quadlet_dir }}/traefik.container"
+    owner: "{{ mms_user }}"
+    group: "{{ mms_user }}"
+    mode: "0644"
+  become: true
+  register: traefik_quadlet_file
+
+# Record changes that require a restart (static config or the quadlet unit) so
+# containers.yml restarts only when needed. setup.yml itself never touches a
+# running container.
+- name: Record whether a restart is needed
+  ansible.builtin.set_fact:
+    traefik_config_changed: "{{ traefik_static_config is changed or traefik_quadlet_file is changed }}"
