@@ -25,3 +25,30 @@ jobs:
 
       - name: Run pytest
         run: pytest
+
+  molecule:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Only scenarios verified to pass end to end are listed here.
+        # Add others as they are fixed (see molecule-scenarios status).
+        role: [open_notebook]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Install Galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Run Molecule
+        working-directory: roles/${{ matrix.role }}
+        run: molecule test -s default
