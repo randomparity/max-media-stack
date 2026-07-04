@@ -20,6 +20,8 @@ mms_vm_ssh_pubkeys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJcHskfClJmLyP6fnzrdDmHZ4vLz/mXgqpxVguGMHbP+ dave@dilbert"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJlfM/NNXzwgAWWSHDhrxCKDoAJaav+ovtr28YU0Ykxz dave@titan"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPQ8W7wkNHNLqYZM7q11bDvA8Z33XwuB/QmQTh83SvwJ dave@homer.pdx.drc.nz"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDuFcCTn268OL7DQuyE6l6pUDP2Vq/DyGLg8THLT/Xso dave@maximus.pdx.drc.nz"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFGsDsMSXu6cnhPuTgiHkfj6YAG+nLPU5HvDF80pxTkJ dave@ipad"
 
 # Service user
 mms_user: mms

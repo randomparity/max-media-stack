@@ -2,7 +2,7 @@
 prowlarr:
   name: prowlarr
   description: "Prowlarr - Indexer Manager"
-  image: "lscr.io/linuxserver/prowlarr:2.4.0.5397-ls149"
+  image: "lscr.io/linuxserver/prowlarr:2.4.0.5397-ls150"
   volumes:
     - "{{ mms_config_dir }}/prowlarr:/config:Z"
   environment:
