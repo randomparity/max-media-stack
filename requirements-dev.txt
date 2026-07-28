@@ -11,3 +11,6 @@ pre-commit>=3.0
 proxmoxer>=2.3.0
 requests>=2.30
 pytest==9.1.1
+# Pinned exactly so a new release cannot turn a fresh audit rule into a
+# surprise CI failure; renovate proposes bumps as reviewable PRs.
+zizmor==1.28.0
