@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
+      - name: Run zizmor
+        run: zizmor --min-severity high .github/workflows/
+
       - name: Install Galaxy collections
         run: ansible-galaxy collection install -r requirements.yml
 
