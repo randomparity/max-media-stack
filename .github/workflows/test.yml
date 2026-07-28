@@ -24,6 +24,8 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
@@ -49,9 +51,21 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
+
+      # Key is deliberately not matrix-dependent: all four legs install the
+      # same requirements.yml and share one cache entry.
+      - name: Cache Galaxy collections
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.ansible/collections
+          key: ${{ runner.os }}-galaxy-${{ hashFiles('requirements.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-galaxy-
 
       - name: Install Galaxy collections
         run: ansible-galaxy collection install -r requirements.yml
