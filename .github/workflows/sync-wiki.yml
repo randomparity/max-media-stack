@@ -16,8 +16,17 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # This checkout is only read from (docs/wiki is copied out of it),
+          # so it needs no credentials left behind in .git/config.
+          persist-credentials: false
 
-      - name: Checkout wiki repo
+      # Do NOT set persist-credentials: false here. The "Commit and push wiki
+      # changes" step below runs `git push` from wiki-checkout and relies on
+      # WIKI_TOKEN being persisted in its .git/config by this step. zizmor
+      # flags this as `artipacked` and offers it as an unsafe auto-fix --
+      # applying that fix breaks the wiki sync.
+      - name: Checkout wiki repo # zizmor: ignore[artipacked]
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: ${{ github.repository }}.wiki
