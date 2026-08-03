@@ -2,7 +2,7 @@
 radarr4k:
   name: radarr4k
   description: "Radarr 4K - 4K Movie Manager"
-  image: "lscr.io/linuxserver/radarr:6.3.0.10514-ls312"
+  image: "lscr.io/linuxserver/radarr:6.3.0.10514-ls313"
   volumes:
     - "{{ mms_config_dir }}/radarr4k:/config:Z"
     - "{{ mms_data_dir }}:/data"
