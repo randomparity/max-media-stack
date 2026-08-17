@@ -2,7 +2,7 @@
 sabnzbd:
   name: sabnzbd
   description: "SABnzbd - Usenet Downloader"
-  image: "lscr.io/linuxserver/sabnzbd:5.0.4-ls261"
+  image: "lscr.io/linuxserver/sabnzbd:5.1.0-ls267"
   volumes:
     - "{{ mms_config_dir }}/sabnzbd:/config:Z"
     - "{{ mms_data_dir }}:/data"
